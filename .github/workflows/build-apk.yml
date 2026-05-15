@@ -11,12 +11,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the main repository into a 'Lumera' directory
+      # 1. Checkout the main repository into a 'Lumera' directory (Com LFS)
       - name: Checkout Lumera
         uses: actions/checkout@v4
         with:
           path: Lumera
           submodules: recursive
+          lfs: true
 
       # 2. Checkout the auxiliary project into a sibling 'assrender' directory
       - name: Checkout assrender
@@ -44,9 +45,16 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 4. Create empty local.properties to avoid build warnings/errors
+      # 4.1 Create populated local.properties to prevent initialization crashes
       - name: Create local.properties
-        run: touch Lumera/local.properties
+        run: |
+          cat <<EOF > Lumera/local.properties
+          acra.url=https://dummy.acra.url/
+          acra.token=dummy_token
+          tmdb.api_key=dummy_tmdb_key
+          TRAKT_CLIENT_ID=dummy_trakt_id
+          TRAKT_CLIENT_SECRET=dummy_trakt_secret
+          EOF
 
       # 5. Grant execute permission for gradlew
       - name: Grant execute permission for gradlew
