@@ -1122,14 +1122,8 @@ class MainActivity : ComponentActivity() {
                                         .onPreviewKeyEvent { event ->
                                             if (settingsContentFocused) return@onPreviewKeyEvent false
                                             if (event.key == Key.Back && event.type == KeyEventType.KeyDown) {
-                                                val now = SystemClock.uptimeMillis()
-                                                if (now - lastBackPressMs < DOUBLE_BACK_EXIT_WINDOW_MS) {
-                                                    finishAffinity()
-                                                    true
-                                                } else {
-                                                    lastBackPressMs = now
-                                                    false
-                                                }
+                                                showExitConfirmation = true
+                                                true
                                             } else {
                                                 false
                                             }
@@ -1511,7 +1505,6 @@ class MainActivity : ComponentActivity() {
                             }
                         } else if (view == "details" || (view == "player" && selectedPlaybackId.startsWith("trailer_"))) {
                             val detailsNavController = rememberNavController()
-                            val playerViewModel = hiltViewModel<PlayerViewModel>()
                             val startRoute = "detail/${java.net.URLEncoder.encode(selectedMovieType, "UTF-8")}/${java.net.URLEncoder.encode(selectedMovieId, "UTF-8")}?addon=${java.net.URLEncoder.encode(selectedAddonBaseUrl ?: "", "UTF-8")}&resume=${java.net.URLEncoder.encode(detailsResumePlaybackHint ?: "", "UTF-8")}"
 
                             // Navigate to initial details when first entering
@@ -1559,13 +1552,8 @@ class MainActivity : ComponentActivity() {
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
 
-                                        // Merge internal/addon subs with external subtitles
-                                        val externalSubs = playerViewModel.loadExternalSubtitles(playbackType, playbackId)
-                                        val mergedSubtitles = subtitlePayload + externalSubs.map {
-                                            PlayerSubtitlePayload(it.id, it.url, it.label, it.language)
-                                        }
-
-                                        playerState.selectedPlayerSubtitles = mergedSubtitles
+                                        // Subtitles handled via buildSubtitlePayload
+                                        playerState.selectedPlayerSubtitles = subtitlePayload
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = ""
                                         torrentProgress = TorrentProgress("Connecting to peers...")
@@ -1597,14 +1585,9 @@ class MainActivity : ComponentActivity() {
                                         selectedPlaybackTitle = resolvedPlaybackTitle
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
+                                        // Subtitles handled via buildSubtitlePayload
 
-                                        // Merge internal/addon subs with external subtitles
-                                        val externalSubs = playerViewModel.loadExternalSubtitles(playbackType, playbackId)
-                                        val mergedSubtitles = subtitlePayload + externalSubs.map {
-                                            PlayerSubtitlePayload(it.id, it.url, it.label, it.language)
-                                        }
-
-                                        playerState.selectedPlayerSubtitles = mergedSubtitles
+                                        playerState.selectedPlayerSubtitles = subtitlePayload
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = url
                                         when (currentProfile?.playerPreference) {
