@@ -109,6 +109,9 @@ import com.lumera.app.data.profile.ProfileConfigurationManager
 import kotlinx.coroutines.runBlocking
 
 import java.util.Locale
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import javax.inject.Inject
 
 private const val DOUBLE_BACK_EXIT_WINDOW_MS = 400L
@@ -812,6 +815,39 @@ class MainActivity : ComponentActivity() {
         splashOverlay = container
     }
 
+    @Composable
+    private fun LocaleWrapper(language: String?, content: @Composable () -> Unit) {
+        val context = LocalContext.current
+        val configuration = LocalConfiguration.current
+        
+        val locale = remember(language) {
+            if (language.isNullOrBlank()) Locale.getDefault()
+            else {
+                val parts = language.split("-")
+                if (parts.size > 1) Locale(parts[0], parts[1].removePrefix("r"))
+                else Locale(language)
+            }
+        }
+
+        val localizedConfiguration = remember(locale) {
+            Configuration(configuration).apply {
+                setLocale(locale)
+                setLayoutDirection(locale)
+            }
+        }
+
+        val localizedContext = remember(locale) {
+            context.createConfigurationContext(localizedConfiguration)
+        }
+
+        CompositionLocalProvider(
+            LocalConfiguration provides localizedConfiguration,
+            LocalContext provides localizedContext
+        ) {
+            content()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Sanitize saved state: R8 can obfuscate Parcelable class names, causing
         // BadParcelableException on process-death restore. Clear the bundle if corrupt.
@@ -924,13 +960,14 @@ class MainActivity : ComponentActivity() {
             var updateDismissed by rememberSaveable { mutableStateOf(false) }
             val updateScope = rememberCoroutineScope()
             LaunchedEffect(Unit) { appUpdateManager.checkForUpdate() }
-
-            LumeraTheme(theme = currentTheme) {
-                CompositionLocalProvider(
-                    LocalRoundCorners provides roundCorners,
-                    LocalHubRoundCorners provides hubRoundCorners
-                ) {
-                LumeraBackground {
+            
+            LocaleWrapper(language = currentProfile?.appLanguage) {
+                LumeraTheme(theme = currentTheme) {
+                    CompositionLocalProvider(
+                        LocalRoundCorners provides roundCorners,
+                        LocalHubRoundCorners provides hubRoundCorners
+                    ) {
+                    LumeraBackground {
                     if (currentProfile == null) {
                         // Double-back-to-exit on profile selection
                         var lastBackPressMs by remember { mutableStateOf(0L) }
@@ -1023,6 +1060,7 @@ class MainActivity : ComponentActivity() {
                                 else -> Unit
                             }
                         }
+
 
                         // Focus restoration after navPosition change (Crossfade animation)
                         val navPosition = currentProfile?.navPosition ?: "left"
@@ -2335,6 +2373,7 @@ class MainActivity : ComponentActivity() {
 
                 }
                 }
+            }
             }
         }
 

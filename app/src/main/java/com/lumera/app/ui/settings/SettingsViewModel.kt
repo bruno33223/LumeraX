@@ -237,4 +237,11 @@ class SettingsViewModel @Inject constructor(
             if (profile != null) dao.insertProfile(profile.copy(sourceExcludedFormats = formats))
         }
     }
+
+    fun updateAppLanguage(profileId: Int, language: String) {
+        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+            val profile = dao.getProfileById(profileId)
+            if (profile != null) dao.insertProfile(profile.copy(appLanguage = language))
+        }
+    }
 }

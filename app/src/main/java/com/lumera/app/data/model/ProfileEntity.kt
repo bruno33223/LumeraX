@@ -67,6 +67,7 @@ data class ProfileEntity(
 
     // Watch thresholds
     val watchedThreshold: Int = 85,                  // 50-99%, marks as watched when exceeded
+    val appLanguage: String = "en",                  // "en", "pt-BR"
 
     // TMDB integration
     val tmdbEnabled: Boolean = false,

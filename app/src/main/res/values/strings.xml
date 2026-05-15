@@ -3,4 +3,34 @@
 
     <!-- ACRA crash reporting -->
     <string name="acra_toast_text">A crash report has been sent to help us fix this issue.</string>
+
+    <!-- Settings Sections -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_personalization">Personalization</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_dashboard">Home Screen</string>
+    <string name="settings_playback">Playback</string>
+    <string name="settings_source_prefs">Sort &amp; Filter</string>
+    <string name="settings_addons">Addons</string>
+    <string name="settings_integrations">Integrations</string>
+    <string name="settings_about">About</string>
+
+    <!-- Personalization -->
+    <string name="personalization_desc">Customize your viewing experience.</string>
+    <string name="settings_poster_corners">Poster Corners</string>
+    <string name="settings_hub_shape">Hub Shape</string>
+    <string name="settings_continue_watching">Continue Watching</string>
+    <string name="settings_menu_position">Menu Position</string>
+    <string name="settings_splash_screen">Splash Screen</string>
+    <string name="settings_locale">Locale</string>
+
+    <!-- Common Options -->
+    <string name="option_round">Round</string>
+    <string name="option_sharp">Sharp</string>
+    <string name="option_poster">Poster</string>
+    <string name="option_landscape">Landscape</string>
+    <string name="option_left">Left</string>
+    <string name="option_top">Top</string>
+    <string name="option_on">On</string>
+    <string name="option_off">Off</string>
 </resources>

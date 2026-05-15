@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Lumera</string>
+
+    <!-- ACRA crash reporting -->
+    <string name="acra_toast_text">Um relatório de erro foi enviado para nos ajudar a corrigir este problema.</string>
+
+    <!-- Settings Sections -->
+    <string name="settings_title">Configurações</string>
+    <string name="settings_personalization">Personalização</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_dashboard">Tela Inicial</string>
+    <string name="settings_playback">Reprodução</string>
+    <string name="settings_source_prefs">Ordenar e Filtrar</string>
+    <string name="settings_addons">Extensões</string>
+    <string name="settings_integrations">Integrações</string>
+    <string name="settings_about">Sobre</string>
+
+    <!-- Personalization -->
+    <string name="personalization_desc">Personalize sua experiência de visualização.</string>
+    <string name="settings_poster_corners">Bordas dos Posteres</string>
+    <string name="settings_hub_shape">Formato do Hub</string>
+    <string name="settings_continue_watching">Continuar Assistindo</string>
+    <string name="settings_menu_position">Posição do Menu</string>
+    <string name="settings_splash_screen">Tela de Início</string>
+    <string name="settings_locale">Idioma da Interface</string>
+
+    <!-- Common Options -->
+    <string name="option_round">Arredondado</string>
+    <string name="option_sharp">Reto</string>
+    <string name="option_poster">Poster</string>
+    <string name="option_landscape">Paisagem</string>
+    <string name="option_left">Esquerda</string>
+    <string name="option_top">Topo</string>
+    <string name="option_on">Ligado</string>
+    <string name="option_off">Desligado</string>
+</resources>

@@ -30,6 +30,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,15 +45,15 @@ import kotlinx.coroutines.launch
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 
-enum class SettingsSection(val label: String, @DrawableRes val iconRes: Int) {
-    Personalization("Personalization", R.drawable.personalization_icon),
-    Theme("Theme", R.drawable.palette_icon),
-    Dashboard("Home Screen", R.drawable.home_icon),
-    Playback("Playback", R.drawable.playback_icon),
-    SourcePreferences("Sort & Filter", R.drawable.source_preferences_icon),
-    Addons("Addons", R.drawable.puzzle_icon),
-    Integrations("Integrations", R.drawable.integrations_icon),
-    About("About", R.drawable.info_icon)
+enum class SettingsSection(val labelRes: Int, @DrawableRes val iconRes: Int) {
+    Personalization(R.string.settings_personalization, R.drawable.personalization_icon),
+    Theme(R.string.settings_theme, R.drawable.palette_icon),
+    Dashboard(R.string.settings_dashboard, R.drawable.home_icon),
+    Playback(R.string.settings_playback, R.drawable.playback_icon),
+    SourcePreferences(R.string.settings_source_prefs, R.drawable.source_preferences_icon),
+    Addons(R.string.settings_addons, R.drawable.puzzle_icon),
+    Integrations(R.string.settings_integrations, R.drawable.integrations_icon),
+    About(R.string.settings_about, R.drawable.info_icon)
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -145,7 +146,7 @@ fun SettingsScreen(
                 .rememberLastFocus()
         ) {
             Text(
-                "Settings",
+                stringResource(R.string.settings_title),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 20.sp
@@ -214,7 +215,7 @@ fun SettingsScreen(
                             }
 
                         SettingsSidebarItem(
-                            label = section.label,
+                            label = stringResource(section.labelRes),
                             iconRes = section.iconRes,
                             isSelected = isSelected,
                             modifier = focusModifier,

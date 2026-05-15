@@ -55,6 +55,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.res.stringResource
+import com.lumera.app.R
 import com.lumera.app.BuildConfig
 import com.lumera.app.data.model.ProfileEntity
 import com.lumera.app.data.model.ThemeEntity
@@ -143,12 +145,12 @@ fun PersonalizationSettings(
     ) {
         // HEADER
         Text(
-            "Personalization",
+            stringResource(R.string.settings_personalization),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 20.sp),
             color = Color.White
         )
         Text(
-            "Customize your viewing experience.",
+            stringResource(R.string.personalization_desc),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
             color = Color.White.copy(0.6f),
             modifier = Modifier.padding(top = 4.dp)
@@ -157,9 +159,9 @@ fun PersonalizationSettings(
         Spacer(Modifier.height(15.dp))
 
         // POSTER CORNERS
-        SettingRow("Poster Corners") {
+        SettingRow(stringResource(R.string.settings_poster_corners)) {
             VoidSegmentedControl(
-                options = listOf("Round" to true, "Sharp" to false),
+                options = listOf(stringResource(R.string.option_round) to true, stringResource(R.string.option_sharp) to false),
                 selectedOption = roundCorners,
                 onOptionSelected = { viewModel.updateRoundCorners(currentProfile.id, it) },
                 onBack = onGoBack,
@@ -171,9 +173,9 @@ fun PersonalizationSettings(
         Spacer(Modifier.height(15.dp))
 
         // HUB SHAPE
-        SettingRow("Hub Shape") {
+        SettingRow(stringResource(R.string.settings_hub_shape)) {
             VoidSegmentedControl(
-                options = listOf("Round" to true, "Sharp" to false),
+                options = listOf(stringResource(R.string.option_round) to true, stringResource(R.string.option_sharp) to false),
                 selectedOption = hubRoundCorners,
                 onOptionSelected = { viewModel.updateHubRoundCorners(currentProfile.id, it) },
                 onBack = onGoBack,
@@ -185,9 +187,9 @@ fun PersonalizationSettings(
         Spacer(Modifier.height(15.dp))
 
         // CONTINUE WATCHING SHAPE
-        SettingRow("Continue Watching") {
+        SettingRow(stringResource(R.string.settings_continue_watching)) {
             VoidSegmentedControl(
-                options = listOf("Poster" to "poster", "Landscape" to "landscape"),
+                options = listOf(stringResource(R.string.option_poster) to "poster", stringResource(R.string.option_landscape) to "landscape"),
                 selectedOption = currentProfile.continueWatchingShape,
                 onOptionSelected = { viewModel.updateContinueWatchingShape(currentProfile.id, it) },
                 onBack = onGoBack,
@@ -199,9 +201,9 @@ fun PersonalizationSettings(
         Spacer(Modifier.height(15.dp))
 
         // MENU POSITION
-        SettingRow("Menu Position") {
+        SettingRow(stringResource(R.string.settings_menu_position)) {
             VoidSegmentedControl(
-                options = listOf("Left" to "left", "Top" to "top"),
+                options = listOf(stringResource(R.string.option_left) to "left", stringResource(R.string.option_top) to "top"),
                 selectedOption = navPos,
                 onOptionSelected = { viewModel.updateNavPosition(currentProfile.id, it) },
                 onBack = onGoBack,
@@ -213,11 +215,25 @@ fun PersonalizationSettings(
         Spacer(Modifier.height(15.dp))
 
         // SPLASH SCREEN
-        SettingRow("Splash Screen") {
+        SettingRow(stringResource(R.string.settings_splash_screen)) {
             VoidSegmentedControl(
-                options = listOf("On" to true, "Off" to false),
+                options = listOf(stringResource(R.string.option_on) to true, stringResource(R.string.option_off) to false),
                 selectedOption = currentProfile.splashEnabled,
                 onOptionSelected = { viewModel.updateSplashEnabled(currentProfile.id, it) },
+                onBack = onGoBack,
+                blockUp = false
+            )
+        }
+        Spacer(Modifier.height(15.dp))
+        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(0.1f)))
+        Spacer(Modifier.height(15.dp))
+
+        // LOCALE
+        SettingRow(stringResource(R.string.settings_locale)) {
+            VoidSegmentedControl(
+                options = listOf("EN" to "en", "PT-BR" to "pt-BR"),
+                selectedOption = currentProfile.appLanguage,
+                onOptionSelected = { viewModel.updateAppLanguage(currentProfile.id, it) },
                 onBack = onGoBack,
                 blockUp = false
             )
