@@ -836,8 +836,13 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val localizedContext = remember(locale) {
-            context.createConfigurationContext(localizedConfiguration)
+        // Correção Cirúrgica: Retorna um ContextWrapper com base na Activity (context), 
+        // mas servindo os resources traduzidos (configContext). Isso impede o crash do HiltViewModelFactory.
+        val localizedContext = remember(locale, context) {
+            val configContext = context.createConfigurationContext(localizedConfiguration)
+            object : android.content.ContextWrapper(context) {
+                override fun getResources() = configContext.resources
+            }
         }
 
         CompositionLocalProvider(
