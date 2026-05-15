@@ -2414,12 +2414,11 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                } // 1. closes else (currentProfile != null)
-                } // 2. closes LumeraBackground
-                } // 3. closes CompositionLocalProvider
-            } // 4. closes LumeraTheme
-            } // 5. closes LocaleWrapper
-        } // 6. closes setContent
+                    } // closes LumeraBackground
+                } // closes CompositionLocalProvider
+            } // closes LumeraTheme
+            } // closes LocaleWrapper
+        } // closes setContent
 
         // Attach native splash overlay on top of Compose content — renders immediately
         if (showSplash) {
@@ -2431,4 +2430,4 @@ class MainActivity : ComponentActivity() {
         private const val SPLASH_PAUSE_MS = 4500
         private const val KEY_SPLASH_SHOWN = "splash_shown"
     }
-} // closes class MainActivity
+} // closes MainActivity
