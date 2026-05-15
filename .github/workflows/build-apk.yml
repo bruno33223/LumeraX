@@ -3,7 +3,6 @@ name: Build Android APK
 on:
   push:
     branches: [ "main", "master" ]
-  # Permite que você clique em um botão para rodar a action quando quiser:
   workflow_dispatch: 
 
 jobs:
@@ -12,11 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Baixa o código do seu repositório
+      # 1. Baixa o código do seu repositório (Lumera)
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Configura o Java 17 (Requisito do Lumera)
+      # 2. Baixa o projeto auxiliar de legendas (assrender) no caminho esperado
+      - name: Checkout assrender
+        uses: actions/checkout@v4
+        with:
+          repository: LumeraD3v/assrender
+          path: '../assrender'
+
+      # 3. Configura o Java 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -24,15 +30,15 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 3. Dá permissão de execução para o Gradle
+      # 4. Dá permissão de execução para o Gradle
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 4. Constrói o APK (Versão Debug)
+      # 5. Constrói o APK (Versão Debug)
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      # 5. Salva o APK gerado para você baixar
+      # 6. Salva o APK gerado para você baixar
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
