@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -2390,10 +2391,10 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             else -> {}
-                        } // Fim do when
-                    } // Fim do if (_splashFinished.value ...)
+                        }
+                    }
 
-                    // POPUP DE SAÍDA - Posição correta (Fora do when)
+                    // EXIT POPUP
                     if (showExitConfirmation) {
                         Dialog(onDismissRequest = { showExitConfirmation = false }) {
                             Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp)).padding(24.dp)) {
@@ -2404,29 +2405,30 @@ class MainActivity : ComponentActivity() {
                                         horizontalArrangement = Arrangement.End, 
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        androidx.compose.material3.TextButton(onClick = { showExitConfirmation = false }) { Text("Cancelar") }
-                                        androidx.compose.material3.TextButton(onClick = { finishAffinity() }) { Text("Sair") }
+                                        TextButton(onClick = { showExitConfirmation = false }) { Text("Cancelar") }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        TextButton(onClick = { finishAffinity() }) { Text("Sair") }
                                     }
                                 }
                             }
                         }
                     }
 
-                } // Fim do CompositionLocalProvider (LocalRoundCorners)
-                } // Fim do LumeraBackground
-                } // Fim do CompositionLocalProvider (LocalConfiguration)
-            } // Fim do LumeraTheme
-            } // Fim do LocaleWrapper
-        } // Fim do setContent
+                } // 1. closes else (currentProfile != null)
+                } // 2. closes LumeraBackground
+                } // 3. closes CompositionLocalProvider
+            } // 4. closes LumeraTheme
+            } // 5. closes LocaleWrapper
+        } // 6. closes setContent
 
         // Attach native splash overlay on top of Compose content — renders immediately
         if (showSplash) {
             attachSplashOverlay()
         }
-    }
+    } // closes onCreate
 
     companion object {
         private const val SPLASH_PAUSE_MS = 4500
         private const val KEY_SPLASH_SHOWN = "splash_shown"
     }
-}
+} // closes class MainActivity
