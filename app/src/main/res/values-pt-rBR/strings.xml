@@ -33,4 +33,134 @@
     <string name="option_top">Topo</string>
     <string name="option_on">Ligado</string>
     <string name="option_off">Desligado</string>
+    <string name="option_manage">Gerenciar</string>
+    <string name="option_side">Lateral</string>
+
+    <string name="settings_app_language">Idioma</string>
+    <string name="settings_app_language_desc">Idioma selecionado para a interface do aplicativo</string>
+    <string name="settings_nav_position">Posição da Navegação</string>
+    <string name="settings_nav_position_desc">Escolha onde mostrar a gaveta de navegação</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Início</string>
+    <string name="nav_movies">Filmes</string>
+    <string name="nav_series">Séries</string>
+    <string name="nav_watchlist">Minha Lista</string>
+    <string name="nav_search">Busca</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_settings">Configurações</string>
+    <string name="nav_exit">Sair</string>
+    <string name="profile_avatar_content_desc">Avatar do Perfil</string>
+    <string name="change_profile">Mudar Perfil</string>
+
+    <!-- Playback Settings -->
+    <string name="playback_header">Reprodução</string>
+    <string name="playback_desc_full">Configure as opções de decodificação de vídeo e exibição.</string>
+    <string name="settings_tunneling">Reprodução com Tunneling</string>
+    <string name="settings_tunneling_desc">Melhor suporte a 4K/HDR, pode não funcionar em todos os dispositivos</string>
+    <string name="settings_dv7_fallback">Fallback Dolby Vision Perfil 7</string>
+    <string name="settings_dv7_fallback_desc">Reproduz conteúdo DV7 como HDR em telas compatíveis</string>
+    <string name="settings_frame_rate">Sincronizar Taxa de Quadros</string>
+    <string name="settings_frame_rate_desc">Sincroniza a frequência da tela com a do vídeo</string>
+    <string name="settings_decoder_priority">Prioridade do Decodificador</string>
+    <string name="settings_player">Player</string>
+    <string name="settings_remember_source">Lembrar Seleção de Fonte</string>
+    <string name="settings_remember_source_desc">Salva sua escolha de fonte e a reutiliza ao retomar</string>
+    <string name="settings_auto_select_source">Selecionar Fonte Automaticamente</string>
+    <string name="settings_auto_select_source_desc">Escolhe automaticamente a primeira fonte disponível para novos conteúdos</string>
+    <string name="settings_skip_intro">Pular Abertura</string>
+    <string name="settings_skip_intro_desc">Mostra um botão para pular a abertura se disponível no IntroDB</string>
+    <string name="settings_autoplay">Auto-reproduzir Próximo Episódio</string>
+    <string name="settings_autoplay_desc">Reproduz o próximo episódio automaticamente ao terminar</string>
+    <string name="settings_autoplay_threshold">Limite</string>
+    <string name="settings_language_prefs">Preferências de Idioma</string>
+    <string name="settings_audio_lang">Idioma do Áudio</string>
+    <string name="settings_audio_lang_secondary">Idioma do Áudio (Secundário)</string>
+    <string name="settings_subtitle_lang">Idioma da Legenda</string>
+    <string name="settings_subtitle_lang_secondary">Idioma da Legenda (Secundário)</string>
+    <string name="settings_subtitle_style">Estilo da Legenda</string>
+    <string name="settings_subtitle_appearance">Aparência da Legenda</string>
+    <string name="settings_ass_renderer">Legendas ASS/SSA Estilizadas</string>
+    <string name="settings_ass_renderer_desc">Renderiza legendas ASS/SSA com estilização completa via libass (experimental)</string>
+
+    <string name="onboarding_language_title">Selecione seu idioma</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_welcome_title">BEM-VINDO AO LUMERA</string>
+    <string name="profile_welcome_subtitle">Seu universo cinematográfico espera.</string>
+    <string name="profile_create_first">Criar Primeiro Perfil</string>
+    <string name="profile_who_is_watching">QUEM ESTÁ ASSISTINDO?</string>
+    <string name="profile_setup_title">Configurar \"%1$s\"</string>
+    <string name="profile_setup_subtitle">Escolha como este perfil deve começar.</string>
+    <string name="profile_copy_another">Copiar de Outro Perfil</string>
+    <string name="profile_no_copy_available">Nenhum Perfil Disponível para Copiar</string>
+    <string name="profile_start_scratch">Começar do Zero</string>
+    <string name="profile_copy_config_title">Copiar Configuração</string>
+    <string name="profile_copy_config_subtitle">Selecione o perfil para copiar para \"%1$s\".</string>
+    <string name="profile_no_profiles_to_copy">Nenhum perfil disponível para copiar.</string>
+    <string name="profile_start_scratch_confirm_title">Começar do Zero?</string>
+    <string name="profile_start_scratch_confirm_subtitle">\"%1$s\" começará sem extensões, sem integrações e com uma tela inicial limpa.</string>
+    <string name="profile_yes_start_fresh">Sim, Começar Limpo</string>
+    <string name="profile_edit">Editar Perfil</string>
+    <string name="profile_delete">Excluir Perfil</string>
+    <string name="profile_delete_confirm_title">Excluir Perfil?</string>
+    <string name="profile_delete_confirm_subtitle">Tem certeza que deseja excluir \"%1$s\"?</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_back">Voltar</string>
+    <string name="common_yes">Sim</string>
+    <string name="common_no">Não</string>
+    <string name="common_or">Ou</string>
+    <string name="profile_wizard_name_title_new">Como devemos chamar você?</string>
+    <string name="profile_wizard_name_title_edit">Atualize seu nome</string>
+    <string name="profile_wizard_name_placeholder">Digite o Nome</string>
+    <string name="profile_wizard_avatar_title">Escolha um Avatar</string>
+    <string name="profile_wizard_avatar_subtitle">Selecione um avatar que represente você.</string>
+    <string name="option_upload_own">Fazer Upload do Seu</string>
+
+    <!-- Subtitle Appearance -->
+    <string name="subtitle_size">Tamanho: %1$d%%</string>
+    <string name="subtitle_offset">Deslocamento: %1$d%%</string>
+    <string name="subtitle_text_color">Cor do Texto</string>
+    <string name="subtitle_background">Fundo</string>
+    <string name="subtitle_color_white">Branco</string>
+    <string name="subtitle_color_gray">Cinza</string>
+    <string name="subtitle_color_yellow">Amarelo</string>
+    <string name="subtitle_color_cyan">Ciano</string>
+    <string name="subtitle_color_red">Vermelho</string>
+    <string name="subtitle_color_orange">Laranja</string>
+    <string name="subtitle_color_green">Verde</string>
+    <string name="subtitle_color_none">Nenhum</string>
+    <string name="subtitle_color_black">Preto</string>
+    <string name="subtitle_color_semi">Semi-Transparente</string>
+    <string name="subtitle_color_dark">Escuro</string>
+
+    <!-- Source Preferences -->
+    <string name="source_prefs_header">Ordenar &amp; Filtrar</string>
+    <string name="source_prefs_desc">Configure como as fontes são ordenadas e filtradas.</string>
+    <string name="source_sort_enable">Ordenar Fontes</string>
+    <string name="source_sort_enable_desc">Classificar fontes por qualidade ou tamanho do arquivo</string>
+    <string name="source_sort_by_header">Ordenar Por</string>
+    <string name="source_sort_by_desc">Escolha o que mais importa ao classificar as fontes.</string>
+    <string name="source_sort_quality">Qualidade</string>
+    <string name="source_sort_size">Tamanho do Arquivo</string>
+    <string name="source_quality_filter_header">Qualidades Permitidas</string>
+    <string name="source_quality_filter_desc">Fontes com qualidades desativadas serão ocultadas.</string>
+    <string name="source_max_size_header">Tamanho Máximo do Arquivo</string>
+    <string name="source_no_limit">Sem Limite</string>
+    <string name="source_exclude_formats_header">Excluir Formatos</string>
+    <string name="source_exclude_formats_desc">Ocultar fontes com esses codecs e formatos.</string>
+    <string name="source_exclude_phrases_header">Excluir Frases</string>
+    <string name="source_exclude_phrases_desc">Fontes contendo estas palavras serão ocultadas. Separadas por vírgula.</string>
+    <string name="source_exclude_phrases_placeholder">ex: amostra, remux, cam</string>
+
+    <!-- About -->
+    <string name="about_header">Sobre</string>
+    <string name="about_desc">Informações do app e atualizações.</string>
+    <string name="about_version">Versão</string>
+    <string name="about_show_popup">Mostrar pop-up de atualização ao iniciar</string>
+    <string name="about_check_updates">Verificar Atualizações</string>
+    <string name="about_checking">Verificando…</string>
+    <string name="about_downloading">Baixando %1$d%%</string>
+    <string name="about_update_available">Atualização Disponível</string>
+    <string name="about_up_to_date">O app está atualizado</string>
 </resources>

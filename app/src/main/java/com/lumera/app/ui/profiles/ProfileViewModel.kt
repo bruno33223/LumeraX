@@ -34,7 +34,8 @@ class ProfileViewModel @Inject constructor(
     // WIZARD DATA
     var tempName = ""
     var tempAvatarRef = "avatar_1"
-    var tempThemeId = "void"  // Changed from tempColor
+    var tempThemeId = "void"
+    var tempAppLanguage = "en"  // Changed from tempColor
 
     private var editingProfileId: Int? = null
 
@@ -104,6 +105,7 @@ class ProfileViewModel @Inject constructor(
                         name = tempName,
                         avatarRef = tempAvatarRef,
                         themeId = tempThemeId,
+                        appLanguage = tempAppLanguage,
                         navPosition = "left",
                         homeTabLayout = "cinematic",
                         roundCorners = true

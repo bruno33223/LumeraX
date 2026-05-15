@@ -57,6 +57,10 @@ import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import android.content.res.Configuration
+import androidx.compose.ui.res.stringResource
+import java.util.Locale
 
 private const val PROFILE_HORIZONTAL_REPEAT_INTERVAL_MS = 150L
 
@@ -66,6 +70,9 @@ fun ProfileScreen(
     onProfileSelected: (ProfileEntity) -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
+    var initialLanguageSelected by remember { mutableStateOf(false) }
+    var currentLanguage by remember { mutableStateOf("en") }
+
     val wizardStep by viewModel.wizardStep.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
@@ -78,40 +85,52 @@ fun ProfileScreen(
         // FIX: If loading, just show black background (or nothing)
         // This prevents the "WelcomeView" from flashing briefly.
         if (!isLoading) {
-            AnimatedContent(
-                targetState = wizardStep,
-                transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(300)) },
-                label = "ProfileFlow"
-            ) { step ->
-                when (step) {
-                    0 -> {
-                        // ZERO STATE or SELECTOR
-                        if (profiles.isEmpty()) {
-                            WelcomeView(onStart = { viewModel.startWizard() })
-                        } else {
-                            ProfileSelectorView(
-                                profiles = profiles,
-                                onSelect = onProfileSelected,
-                                onAdd = { viewModel.startWizard() },
-                                onEdit = { viewModel.startEditWizard(it) },
-                                onDelete = { viewModel.deleteProfile(it.id) },
-                                viewModel = viewModel
-                            )
+            OnboardingLocaleWrapper(language = currentLanguage) {
+                AnimatedContent(
+                    targetState = wizardStep,
+                    transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(300)) },
+                    label = "ProfileFlow"
+                ) { step ->
+                    when (step) {
+                        0 -> {
+                            // ZERO STATE or SELECTOR
+                            if (profiles.isEmpty()) {
+                                if (!initialLanguageSelected) {
+                                    OnboardingLanguageSelector(
+                                        onLanguageSelected = { lang ->
+                                            viewModel.tempAppLanguage = lang
+                                            currentLanguage = lang
+                                            initialLanguageSelected = true
+                                        }
+                                    )
+                                } else {
+                                    WelcomeView(onStart = { viewModel.startWizard() })
+                                }
+                            } else {
+                                ProfileSelectorView(
+                                    profiles = profiles,
+                                    onSelect = onProfileSelected,
+                                    onAdd = { viewModel.startWizard() },
+                                    onEdit = { viewModel.startEditWizard(it) },
+                                    onDelete = { viewModel.deleteProfile(it.id) },
+                                    viewModel = viewModel
+                                )
+                            }
                         }
+                        1 -> WizardNameStep(
+                            initialName = viewModel.tempName,
+                            onNext = { viewModel.setWizardName(it) },
+                            onCancel = { viewModel.cancelWizard() }
+                        )
+                        2 -> WizardAvatarStep(
+                            onNext = { viewModel.setWizardAvatar(it) },
+                            onBack = { viewModel.goBackStep() }
+                        )
+                        3 -> WizardThemeStep(
+                            onFinish = { viewModel.setWizardTheme(it) },
+                            onBack = { viewModel.goBackStep() }
+                        )
                     }
-                    1 -> WizardNameStep(
-                        initialName = viewModel.tempName,
-                        onNext = { viewModel.setWizardName(it) },
-                        onCancel = { viewModel.cancelWizard() }
-                    )
-                    2 -> WizardAvatarStep(
-                        onNext = { viewModel.setWizardAvatar(it) },
-                        onBack = { viewModel.goBackStep() }
-                    )
-                    3 -> WizardThemeStep(
-                        onFinish = { viewModel.setWizardTheme(it) },
-                        onBack = { viewModel.goBackStep() }
-                    )
                 }
             }
         }
@@ -132,20 +151,20 @@ fun WelcomeView(onStart: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "WELCOME TO LUMERA",
+            stringResource(R.string.profile_welcome_title),
             style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 4.sp),
             color = Color.White
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            "Your cinematic universe awaits.",
+            stringResource(R.string.profile_welcome_subtitle),
             style = MaterialTheme.typography.titleMedium,
             color = Color.Gray
         )
         Spacer(Modifier.height(48.dp))
 
         VoidButton(
-            text = "Create First Profile",
+            text = stringResource(R.string.profile_create_first),
             onClick = onStart,
             isPrimary = true,
             modifier = Modifier.width(250.dp),
@@ -177,7 +196,7 @@ fun ProfileSelectorView(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "WHO IS WATCHING?",
+            stringResource(R.string.profile_who_is_watching),
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = Color.White
         )
@@ -336,20 +355,20 @@ private fun ProfileInitialSetupDialog(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Set Up \"$profileName\"",
+                    text = stringResource(R.string.profile_setup_title, profileName),
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = "Choose how this profile should start.",
+                    text = stringResource(R.string.profile_setup_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
                 Spacer(Modifier.height(24.dp))
 
                 VoidButton(
-                    text = if (canCopy) "Copy From Another Profile" else "No Profile Available To Copy",
+                    text = if (canCopy) stringResource(R.string.profile_copy_another) else stringResource(R.string.profile_no_copy_available),
                     onClick = onCopy,
                     enabled = canCopy && !isLoading,
                     isPrimary = true,
@@ -357,14 +376,14 @@ private fun ProfileInitialSetupDialog(
                 )
                 Spacer(Modifier.height(12.dp))
                 VoidButton(
-                    text = "Start From Scratch",
+                    text = stringResource(R.string.profile_start_scratch),
                     onClick = onStartScratch,
                     enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(12.dp))
                 VoidButton(
-                    text = "Cancel",
+                    text = stringResource(R.string.common_cancel),
                     onClick = onDismiss,
                     enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth()
@@ -394,13 +413,13 @@ private fun CopyProfileSelectionDialog(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Copy Configuration",
+                    text = stringResource(R.string.profile_copy_config_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    text = "Select the profile to copy into \"$targetProfileName\".",
+                    text = stringResource(R.string.profile_copy_config_subtitle, targetProfileName),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
@@ -408,7 +427,7 @@ private fun CopyProfileSelectionDialog(
 
                 if (sourceProfiles.isEmpty()) {
                     Text(
-                        text = "No available profiles to copy.",
+                        text = stringResource(R.string.profile_no_profiles_to_copy),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray
                     )
@@ -425,7 +444,7 @@ private fun CopyProfileSelectionDialog(
                 }
 
                 VoidButton(
-                    text = "Back",
+                    text = stringResource(R.string.common_back),
                     onClick = onBack,
                     enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth()
@@ -454,19 +473,19 @@ private fun ScratchConfirmDialog(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Start From Scratch?",
+                    text = stringResource(R.string.profile_start_scratch_confirm_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = "\"$profileName\" will start with no addons, no integrations, and a fresh home setup.",
+                    text = stringResource(R.string.profile_start_scratch_confirm_subtitle, profileName),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
                 Spacer(Modifier.height(24.dp))
                 VoidButton(
-                    text = "Yes, Start Fresh",
+                    text = stringResource(R.string.profile_yes_start_fresh),
                     onClick = onConfirm,
                     enabled = !isLoading,
                     isPrimary = true,
@@ -474,7 +493,7 @@ private fun ScratchConfirmDialog(
                 )
                 Spacer(Modifier.height(12.dp))
                 VoidButton(
-                    text = "Back",
+                    text = stringResource(R.string.common_back),
                     onClick = onBack,
                     enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth()
@@ -545,7 +564,7 @@ fun ProfileOptionsDialog(
 
                     // Action Buttons
                     VoidButton(
-                        text = "Edit Profile",
+                        text = stringResource(R.string.profile_edit),
                         onClick = {
                             if (areButtonsReady) onEdit()
                         },
@@ -555,7 +574,7 @@ fun ProfileOptionsDialog(
                     )
                     Spacer(Modifier.height(16.dp))
                     VoidButton(
-                        text = "Delete Profile",
+                        text = stringResource(R.string.profile_delete),
                         onClick = {
                             if (areButtonsReady) showDeleteConfirmation = true
                         },
@@ -609,13 +628,13 @@ fun DeleteConfirmationDialog(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Delete Profile?",
+                    text = stringResource(R.string.profile_delete_confirm_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = "Are you sure you want to delete \"${profileName}\"?",
+                    text = stringResource(R.string.profile_delete_confirm_subtitle, profileName),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
@@ -626,14 +645,14 @@ fun DeleteConfirmationDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     VoidButton(
-                        text = "Yes",
+                        text = stringResource(R.string.common_yes),
                         onClick = onConfirm,
                         isPrimary = false,
                         isDestructive = true,
                         modifier = Modifier.weight(1f)
                     )
                     VoidButton(
-                        text = "No",
+                        text = stringResource(R.string.common_no),
                         onClick = onDismiss,
                         isPrimary = false,
                         modifier = Modifier.weight(1f),
@@ -663,7 +682,7 @@ fun WizardNameStep(initialName: String, onNext: (String) -> Unit, onCancel: () -
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            if(initialName.isEmpty()) "What should we call you?" else "Update your name",
+            if(initialName.isEmpty()) stringResource(R.string.profile_wizard_name_title_new) else stringResource(R.string.profile_wizard_name_title_edit),
             style = MaterialTheme.typography.headlineMedium,
             color = Color.White
         )
@@ -673,7 +692,7 @@ fun WizardNameStep(initialName: String, onNext: (String) -> Unit, onCancel: () -
             VoidInput(
                 value = name,
                 onValueChange = { name = it },
-                placeholder = "Enter Name",
+                placeholder = stringResource(R.string.profile_wizard_name_placeholder),
                 modifier = Modifier.focusRequester(focusRequester),
                 onDone = { if(name.isNotEmpty()) onNext(name) }
             )
@@ -706,9 +725,9 @@ fun WizardAvatarStep(onNext: (String) -> Unit, onBack: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Choose an Avatar", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+        Text(stringResource(R.string.profile_wizard_avatar_title), style = MaterialTheme.typography.headlineMedium, color = Color.White)
         Spacer(Modifier.height(16.dp))
-        Text("Select an avatar that represents you.", color = Color.Gray)
+        Text(stringResource(R.string.profile_wizard_avatar_subtitle), color = Color.Gray)
 
         Spacer(Modifier.height(40.dp))
 
@@ -740,7 +759,7 @@ fun WizardAvatarStep(onNext: (String) -> Unit, onBack: () -> Unit) {
         Spacer(Modifier.height(32.dp))
         
         Text(
-            "Or",
+            stringResource(R.string.common_or),
             style = MaterialTheme.typography.bodyLarge,
             color = Color.Gray
         )
@@ -793,10 +812,107 @@ private fun UploadAvatarButton(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            "Upload Your Own",
+            stringResource(R.string.option_upload_own),
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = if (isFocused) Color.Black else Color.White.copy(alpha = 0.8f)
         )
+    }
+}
+
+// --- 4. ONBOARDING COMPONENTS ---
+
+@Composable
+fun OnboardingLanguageSelector(onLanguageSelected: (String) -> Unit) {
+    val requester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { delay(100); requester.requestFocus() }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            stringResource(R.string.onboarding_language_title),
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.White
+        )
+        Spacer(Modifier.height(48.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            LanguageEmojiButton(
+                emoji = "\uD83C\uDDFA\uD83C\uDDF8", // US Flag
+                label = "English",
+                onClick = { onLanguageSelected("en") },
+                focusRequester = requester
+            )
+            LanguageEmojiButton(
+                emoji = "\uD83C\uDDE7\uD83C\uDDF7", // Brazil Flag
+                label = "Português",
+                onClick = { onLanguageSelected("pt-BR") }
+            )
+        }
+    }
+}
+
+@Composable
+fun LanguageEmojiButton(
+    emoji: String,
+    label: String,
+    onClick: () -> Unit,
+    focusRequester: FocusRequester? = null
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val scale by animateFloatAsState(if (isFocused) 1.1f else 1f, label = "EmojiScale")
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .scale(scale)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (isFocused) Color.White.copy(0.2f) else Color.Transparent)
+            .border(2.dp, if (isFocused) Color.White else Color.Transparent, RoundedCornerShape(16.dp))
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+            .clickable(interactionSource = interactionSource, indication = null) { onClick() }
+            .focusable(interactionSource = interactionSource)
+            .padding(24.dp)
+    ) {
+        Text(emoji, fontSize = 48.sp)
+        Spacer(Modifier.height(8.dp))
+        Text(label, color = Color.White, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun OnboardingLocaleWrapper(language: String, content: @Composable () -> Unit) {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    
+    val locale = remember(language) {
+        val parts = language.split("-")
+        if (parts.size > 1) Locale(parts[0], parts[1].removePrefix("r"))
+        else Locale(language)
+    }
+
+    val localizedConfiguration = remember(locale) {
+        Configuration(configuration).apply {
+            setLocale(locale)
+            setLayoutDirection(locale)
+        }
+    }
+
+    val localizedContext = remember(locale, context) {
+        val configContext = context.createConfigurationContext(localizedConfiguration)
+        object : android.content.ContextWrapper(context) {
+            override fun getResources() = configContext.resources
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalConfiguration provides localizedConfiguration,
+        LocalContext provides localizedContext
+    ) {
+        content()
     }
 }
 
@@ -1108,7 +1224,7 @@ fun ProfileCard(
         ) {
             Icon(
                 imageVector = Icons.Default.Edit,
-                contentDescription = "Edit Profile",
+                contentDescription = stringResource(R.string.profile_edit),
                 tint = if (isEditFocused) Color.Black else Color.White,
                 modifier = Modifier.size(18.dp)
             )
@@ -1143,7 +1259,7 @@ fun AddProfileCard(onClick: () -> Unit, focusRequester: FocusRequester? = null) 
         }
         Spacer(Modifier.height(12.dp))
         Text(
-            "ADD PROFILE",
+            stringResource(R.string.profile_create_first),
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
             color = if(isFocused) Color.White else Color.Gray
         )

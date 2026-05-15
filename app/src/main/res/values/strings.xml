@@ -33,4 +33,134 @@
     <string name="option_top">Top</string>
     <string name="option_on">On</string>
     <string name="option_off">Off</string>
+    <string name="option_manage">Manage</string>
+    <string name="option_side">Side</string>
+
+    <string name="settings_app_language">Language</string>
+    <string name="settings_app_language_desc">Selected language for application interface</string>
+    <string name="settings_nav_position">Nav Position</string>
+    <string name="settings_nav_position_desc">Choose where to show the navigation drawer</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_movies">Movies</string>
+    <string name="nav_series">Series</string>
+    <string name="nav_watchlist">Watchlist</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_exit">Exit</string>
+    <string name="profile_avatar_content_desc">Profile Avatar</string>
+    <string name="change_profile">Change Profile</string>
+
+    <!-- Playback Settings -->
+    <string name="playback_header">Playback</string>
+    <string name="playback_desc_full">Configure video decoding and display settings.</string>
+    <string name="settings_tunneling">Tunneled Playback</string>
+    <string name="settings_tunneling_desc">Better 4K/HDR support, may not work on all devices</string>
+    <string name="settings_dv7_fallback">Dolby Vision Profile 7 Fallback</string>
+    <string name="settings_dv7_fallback_desc">Play DV7 content as HDR on compatible displays</string>
+    <string name="settings_frame_rate">Frame Rate Matching</string>
+    <string name="settings_frame_rate_desc">Match display refresh rate to video frame rate</string>
+    <string name="settings_decoder_priority">Decoder Priority</string>
+    <string name="settings_player">Player</string>
+    <string name="settings_remember_source">Remember Source Selection</string>
+    <string name="settings_remember_source_desc">Save your source choice and reuse it on resume</string>
+    <string name="settings_auto_select_source">Auto-select Source</string>
+    <string name="settings_auto_select_source_desc">Automatically pick the first available source for new content</string>
+    <string name="settings_skip_intro">Skip Intro</string>
+    <string name="settings_skip_intro_desc">Show a skip button during intro segments if available in IntroDB</string>
+    <string name="settings_autoplay">Autoplay Next Episode</string>
+    <string name="settings_autoplay_desc">Automatically play the next episode when one finishes</string>
+    <string name="settings_autoplay_threshold">Threshold</string>
+    <string name="settings_language_prefs">Language Preferences</string>
+    <string name="settings_audio_lang">Audio Language</string>
+    <string name="settings_audio_lang_secondary">Audio Language (Secondary)</string>
+    <string name="settings_subtitle_lang">Subtitle Language</string>
+    <string name="settings_subtitle_lang_secondary">Subtitle Language (Secondary)</string>
+    <string name="settings_subtitle_style">Subtitle Style</string>
+    <string name="settings_subtitle_appearance">Subtitle Appearance</string>
+    <string name="settings_ass_renderer">Styled ASS/SSA Subtitles</string>
+    <string name="settings_ass_renderer_desc">Render ASS/SSA subtitles with full styling via libass (experimental)</string>
+
+    <string name="onboarding_language_title">Select your language</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_welcome_title">WELCOME TO LUMERA</string>
+    <string name="profile_welcome_subtitle">Your cinematic universe awaits.</string>
+    <string name="profile_create_first">Create First Profile</string>
+    <string name="profile_who_is_watching">WHO IS WATCHING?</string>
+    <string name="profile_setup_title">Set Up \"%1$s\"</string>
+    <string name="profile_setup_subtitle">Choose how this profile should start.</string>
+    <string name="profile_copy_another">Copy From Another Profile</string>
+    <string name="profile_no_copy_available">No Profile Available To Copy</string>
+    <string name="profile_start_scratch">Start From Scratch</string>
+    <string name="profile_copy_config_title">Copy Configuration</string>
+    <string name="profile_copy_config_subtitle">Select the profile to copy into \"%1$s\".</string>
+    <string name="profile_no_profiles_to_copy">No available profiles to copy.</string>
+    <string name="profile_start_scratch_confirm_title">Start From Scratch?</string>
+    <string name="profile_start_scratch_confirm_subtitle">\"%1$s\" will start with no addons, no integrations, and a fresh home setup.</string>
+    <string name="profile_yes_start_fresh">Yes, Start Fresh</string>
+    <string name="profile_edit">Edit Profile</string>
+    <string name="profile_delete">Delete Profile</string>
+    <string name="profile_delete_confirm_title">Delete Profile?</string>
+    <string name="profile_delete_confirm_subtitle">Are you sure you want to delete \"%1$s\"?</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_back">Back</string>
+    <string name="common_yes">Yes</string>
+    <string name="common_no">No</string>
+    <string name="common_or">Or</string>
+    <string name="profile_wizard_name_title_new">What should we call you?</string>
+    <string name="profile_wizard_name_title_edit">Update your name</string>
+    <string name="profile_wizard_name_placeholder">Enter Name</string>
+    <string name="profile_wizard_avatar_title">Choose an Avatar</string>
+    <string name="profile_wizard_avatar_subtitle">Select an avatar that represents you.</string>
+    <string name="option_upload_own">Upload Your Own</string>
+
+    <!-- Subtitle Appearance -->
+    <string name="subtitle_size">Size: %1$d%%</string>
+    <string name="subtitle_offset">Offset: %1$d%%</string>
+    <string name="subtitle_text_color">Text Color</string>
+    <string name="subtitle_background">Background</string>
+    <string name="subtitle_color_white">White</string>
+    <string name="subtitle_color_gray">Gray</string>
+    <string name="subtitle_color_yellow">Yellow</string>
+    <string name="subtitle_color_cyan">Cyan</string>
+    <string name="subtitle_color_red">Red</string>
+    <string name="subtitle_color_orange">Orange</string>
+    <string name="subtitle_color_green">Green</string>
+    <string name="subtitle_color_none">None</string>
+    <string name="subtitle_color_black">Black</string>
+    <string name="subtitle_color_semi">Semi-Transparent</string>
+    <string name="subtitle_color_dark">Dark</string>
+
+    <!-- Source Preferences -->
+    <string name="source_prefs_header">Sort &amp; Filter</string>
+    <string name="source_prefs_desc">Configure how sources are sorted and filtered.</string>
+    <string name="source_sort_enable">Sort Sources</string>
+    <string name="source_sort_enable_desc">Rank sources by quality or file size</string>
+    <string name="source_sort_by_header">Sort By</string>
+    <string name="source_sort_by_desc">Choose what matters most when ranking sources.</string>
+    <string name="source_sort_quality">Quality</string>
+    <string name="source_sort_size">File Size</string>
+    <string name="source_quality_filter_header">Allowed Qualities</string>
+    <string name="source_quality_filter_desc">Sources with disabled qualities will be hidden.</string>
+    <string name="source_max_size_header">Max File Size</string>
+    <string name="source_no_limit">No Limit</string>
+    <string name="source_exclude_formats_header">Exclude Formats</string>
+    <string name="source_exclude_formats_desc">Hide sources with these codecs and formats.</string>
+    <string name="source_exclude_phrases_header">Exclude Phrases</string>
+    <string name="source_exclude_phrases_desc">Sources containing these words will be hidden. Comma-separated.</string>
+    <string name="source_exclude_phrases_placeholder">e.g. sample, remux, cam</string>
+
+    <!-- About -->
+    <string name="about_header">About</string>
+    <string name="about_desc">App information and updates.</string>
+    <string name="about_version">Version</string>
+    <string name="about_show_popup">Show update popup on launch</string>
+    <string name="about_check_updates">Check for Updates</string>
+    <string name="about_checking">Checking…</string>
+    <string name="about_downloading">Downloading %1$d%%</string>
+    <string name="about_update_available">Update Available</string>
+    <string name="about_up_to_date">App is up to date</string>
 </resources>

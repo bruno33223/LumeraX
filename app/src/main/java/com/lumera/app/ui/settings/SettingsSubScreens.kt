@@ -231,7 +231,7 @@ fun PersonalizationSettings(
         // LOCALE
         SettingRow(stringResource(R.string.settings_locale)) {
             VoidSegmentedControl(
-                options = listOf("EN" to "en", "PT-BR" to "pt-BR"),
+                options = listOf("English" to "en", "Português" to "pt-BR"),
                 selectedOption = currentProfile.appLanguage,
                 onOptionSelected = { viewModel.updateAppLanguage(currentProfile.id, it) },
                 onBack = onGoBack,
@@ -292,12 +292,12 @@ fun PlaybackSettings(
         ) {
             // HEADER
             Text(
-                "Playback",
+                stringResource(R.string.playback_header),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 20.sp),
                 color = Color.White
             )
             Text(
-                "Configure video decoding and display settings.",
+                stringResource(R.string.playback_desc_full),
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                 color = Color.White.copy(0.6f),
                 modifier = Modifier.padding(top = 4.dp)
@@ -307,8 +307,8 @@ fun PlaybackSettings(
 
             // TUNNELED PLAYBACK
             SettingToggleRow(
-                label = "Tunneled Playback",
-                subtitle = "Better 4K/HDR support, may not work on all devices",
+                label = stringResource(R.string.settings_tunneling),
+                subtitle = stringResource(R.string.settings_tunneling_desc),
                 isChecked = currentProfile.tunnelingEnabled,
                 onCheckedChange = { viewModel.updateTunnelingEnabled(currentProfile.id, it) },
                 onBack = onGoBack,
@@ -317,8 +317,8 @@ fun PlaybackSettings(
 
             // DV7 → HEVC FALLBACK
             SettingToggleRow(
-                label = "Dolby Vision Profile 7 Fallback",
-                subtitle = "Play DV7 content as HDR on compatible displays",
+                label = stringResource(R.string.settings_dv7_fallback),
+                subtitle = stringResource(R.string.settings_dv7_fallback_desc),
                 isChecked = currentProfile.mapDV7ToHevc,
                 onCheckedChange = { viewModel.updateMapDV7ToHevc(currentProfile.id, it) },
                 onBack = onGoBack
@@ -326,8 +326,8 @@ fun PlaybackSettings(
 
             // FRAME RATE MATCHING
             SettingToggleRow(
-                label = "Frame Rate Matching",
-                subtitle = "Match display refresh rate to video frame rate",
+                label = stringResource(R.string.settings_frame_rate),
+                subtitle = stringResource(R.string.settings_frame_rate_desc),
                 isChecked = currentProfile.frameRateMatching,
                 onCheckedChange = { viewModel.updateFrameRateMatching(currentProfile.id, it) },
                 onBack = onGoBack
@@ -335,7 +335,7 @@ fun PlaybackSettings(
 
             // DECODER PRIORITY
             SettingOptionRow(
-                label = "Decoder Priority",
+                label = stringResource(R.string.settings_decoder_priority),
                 options = listOf("Device" to 0, "Prefer Device" to 1, "Prefer App" to 2),
                 selectedOption = currentProfile.decoderPriority,
                 onOptionSelected = { viewModel.updateDecoderPriority(currentProfile.id, it) },
@@ -344,7 +344,7 @@ fun PlaybackSettings(
 
             // PLAYER PREFERENCE
             SettingOptionRow(
-                label = "Player",
+                label = stringResource(R.string.settings_player),
                 options = listOf("Internal" to "internal", "External" to "external", "Ask" to "ask"),
                 selectedOption = currentProfile.playerPreference,
                 onOptionSelected = { viewModel.updatePlayerPreference(currentProfile.id, it) },
@@ -353,8 +353,8 @@ fun PlaybackSettings(
 
             // REMEMBER SOURCE SELECTION
             SettingToggleRow(
-                label = "Remember Source Selection",
-                subtitle = "Save your source choice and reuse it on resume",
+                label = stringResource(R.string.settings_remember_source),
+                subtitle = stringResource(R.string.settings_remember_source_desc),
                 isChecked = currentProfile.rememberSourceSelection,
                 onCheckedChange = { viewModel.updateRememberSourceSelection(currentProfile.id, it) },
                 onBack = onGoBack
@@ -362,8 +362,8 @@ fun PlaybackSettings(
 
             // AUTO-SELECT SOURCE
             SettingToggleRow(
-                label = "Auto-select Source",
-                subtitle = "Automatically pick the first available source for new content",
+                label = stringResource(R.string.settings_auto_select_source),
+                subtitle = stringResource(R.string.settings_auto_select_source_desc),
                 isChecked = currentProfile.autoSelectSource,
                 onCheckedChange = { viewModel.updateAutoSelectSource(currentProfile.id, it) },
                 onBack = onGoBack
@@ -371,8 +371,8 @@ fun PlaybackSettings(
 
             // SKIP INTRO
             SettingToggleRow(
-                label = "Skip Intro",
-                subtitle = "Show a skip button during intro segments if available in IntroDB",
+                label = stringResource(R.string.settings_skip_intro),
+                subtitle = stringResource(R.string.settings_skip_intro_desc),
                 isChecked = currentProfile.skipIntro,
                 onCheckedChange = { viewModel.updateSkipIntro(currentProfile.id, it) },
                 onBack = onGoBack
@@ -380,8 +380,8 @@ fun PlaybackSettings(
 
             // AUTOPLAY NEXT EPISODE
             SettingToggleRow(
-                label = "Autoplay Next Episode",
-                subtitle = "Automatically play the next episode when one finishes",
+                label = stringResource(R.string.settings_autoplay),
+                subtitle = stringResource(R.string.settings_autoplay_desc),
                 isChecked = currentProfile.autoplayNextEpisode,
                 onCheckedChange = { viewModel.updateAutoplayNextEpisode(currentProfile.id, it) },
                 onBack = onGoBack
@@ -392,7 +392,7 @@ fun PlaybackSettings(
                 Spacer(Modifier.height(4.dp))
 
                 SettingOptionRow(
-                    label = "Threshold",
+                    label = stringResource(R.string.settings_autoplay_threshold),
                     options = listOf("Only IntroDB" to "introdb", "Percentage" to "percentage", "Time" to "time"),
                     selectedOption = currentProfile.autoplayThresholdMode,
                     onOptionSelected = { viewModel.updateAutoplayThresholdMode(currentProfile.id, it) },
@@ -438,14 +438,14 @@ fun PlaybackSettings(
             Spacer(Modifier.height(12.dp))
 
             Text(
-                "Language Preferences",
+                stringResource(R.string.settings_language_prefs),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                 color = Color.White.copy(0.7f),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
             SettingLanguageRow(
-                label = "Audio Language",
+                label = stringResource(R.string.settings_audio_lang),
                 currentDisplayName = languageDisplayName(currentProfile.preferredAudioLanguage),
                 isSet = currentProfile.preferredAudioLanguage.isNotEmpty(),
                 onClick = { activeLanguageField = LanguageField.AUDIO_PRIMARY },
@@ -454,7 +454,7 @@ fun PlaybackSettings(
             )
 
             SettingLanguageRow(
-                label = "Audio Language (Secondary)",
+                label = stringResource(R.string.settings_audio_lang_secondary),
                 currentDisplayName = languageDisplayName(currentProfile.preferredAudioLanguageSecondary),
                 isSet = currentProfile.preferredAudioLanguageSecondary.isNotEmpty(),
                 onClick = { activeLanguageField = LanguageField.AUDIO_SECONDARY },
@@ -463,7 +463,7 @@ fun PlaybackSettings(
             )
 
             SettingLanguageRow(
-                label = "Subtitle Language",
+                label = stringResource(R.string.settings_subtitle_lang),
                 currentDisplayName = languageDisplayName(currentProfile.preferredSubtitleLanguage),
                 isSet = currentProfile.preferredSubtitleLanguage.isNotEmpty(),
                 onClick = { activeLanguageField = LanguageField.SUBTITLE_PRIMARY },
@@ -472,7 +472,7 @@ fun PlaybackSettings(
             )
 
             SettingLanguageRow(
-                label = "Subtitle Language (Secondary)",
+                label = stringResource(R.string.settings_subtitle_lang_secondary),
                 currentDisplayName = languageDisplayName(currentProfile.preferredSubtitleLanguageSecondary),
                 isSet = currentProfile.preferredSubtitleLanguageSecondary.isNotEmpty(),
                 onClick = { activeLanguageField = LanguageField.SUBTITLE_SECONDARY },
@@ -486,7 +486,7 @@ fun PlaybackSettings(
             Spacer(Modifier.height(12.dp))
 
             Text(
-                "Subtitle Style",
+                stringResource(R.string.settings_subtitle_style),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                 color = Color.White.copy(0.7f),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -495,8 +495,8 @@ fun PlaybackSettings(
             val subtitleStyleFR = remember { FocusRequester() }
 
             SettingLanguageRow(
-                label = "Subtitle Appearance",
-                currentDisplayName = "Manage",
+                label = stringResource(R.string.settings_subtitle_appearance),
+                currentDisplayName = stringResource(R.string.option_manage),
                 isSet = currentProfile.subtitleSize != 100 ||
                         currentProfile.subtitleOffset != 0 ||
                         currentProfile.subtitleTextColor != 0xFFFFFFFFL ||
@@ -509,8 +509,8 @@ fun PlaybackSettings(
             Spacer(Modifier.height(8.dp))
 
             SettingToggleRow(
-                label = "Styled ASS/SSA Subtitles",
-                subtitle = "Render ASS/SSA subtitles with full styling via libass (experimental)",
+                label = stringResource(R.string.settings_ass_renderer),
+                subtitle = stringResource(R.string.settings_ass_renderer_desc),
                 isChecked = currentProfile.assRendererEnabled,
                 onCheckedChange = { viewModel.updateAssRendererEnabled(currentProfile.id, it) },
                 onBack = onGoBack
@@ -1167,7 +1167,7 @@ private fun SubtitleStyleSidebarContent(
 
         // Size
         Text(
-            text = "Size: ${profile.subtitleSize}%",
+            text = stringResource(R.string.subtitle_size, profile.subtitleSize),
             color = Color.White.copy(0.7f),
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp)
         )
@@ -1181,7 +1181,7 @@ private fun SubtitleStyleSidebarContent(
 
         // Offset
         Text(
-            text = "Offset: ${profile.subtitleOffset}%",
+            text = stringResource(R.string.subtitle_offset, profile.subtitleOffset),
             color = Color.White.copy(0.7f),
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp)
         )
@@ -1194,7 +1194,7 @@ private fun SubtitleStyleSidebarContent(
 
         // Text Color
         Text(
-            text = "Text Color",
+            text = stringResource(R.string.subtitle_text_color),
             color = Color.White.copy(0.7f),
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp)
         )
@@ -1206,7 +1206,7 @@ private fun SubtitleStyleSidebarContent(
 
         // Background Color
         Text(
-            text = "Background",
+            text = stringResource(R.string.subtitle_background),
             color = Color.White.copy(0.7f),
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp)
         )
@@ -1246,8 +1246,22 @@ private fun SubtitleColorChipRow(
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         colors.forEach { (label, colorValue) ->
+            val localizedLabel = when(label) {
+                "White" -> stringResource(R.string.subtitle_color_white)
+                "Gray" -> stringResource(R.string.subtitle_color_gray)
+                "Yellow" -> stringResource(R.string.subtitle_color_yellow)
+                "Cyan" -> stringResource(R.string.subtitle_color_cyan)
+                "Red" -> stringResource(R.string.subtitle_color_red)
+                "Orange" -> stringResource(R.string.subtitle_color_orange)
+                "Green" -> stringResource(R.string.subtitle_color_green)
+                "None" -> stringResource(R.string.subtitle_color_none)
+                "Black" -> stringResource(R.string.subtitle_color_black)
+                "Semi" -> stringResource(R.string.subtitle_color_semi)
+                "Dark" -> stringResource(R.string.subtitle_color_dark)
+                else -> label
+            }
             SubtitleColorChip(
-                label = label,
+                label = localizedLabel,
                 color = Color(colorValue.toInt()),
                 isSelected = selectedColor == colorValue,
                 onClick = { onSelect(colorValue) },
@@ -1599,12 +1613,12 @@ fun SourcePreferencesSettings(
     ) {
         // HEADER
         Text(
-            "Sort & Filter",
+            stringResource(R.string.source_prefs_header),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 20.sp),
             color = Color.White
         )
         Text(
-            "Configure how sources are sorted and filtered.",
+            stringResource(R.string.source_prefs_desc),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
             color = Color.White.copy(0.6f),
             modifier = Modifier.padding(top = 4.dp)
@@ -1614,8 +1628,8 @@ fun SourcePreferencesSettings(
 
         // ENABLE SORTING
         SettingToggleRow(
-            label = "Sort Sources",
-            subtitle = "Rank sources by quality or file size",
+            label = stringResource(R.string.source_sort_enable),
+            subtitle = stringResource(R.string.source_sort_enable_desc),
             isChecked = currentProfile.sourceSortingEnabled,
             onCheckedChange = { viewModel.updateSourceSortingEnabled(currentProfile.id, it) },
             onBack = onGoBack,
@@ -1629,20 +1643,20 @@ fun SourcePreferencesSettings(
 
             // SORT BY
             Text(
-                "Sort By",
+                stringResource(R.string.source_sort_by_header),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                 color = Color.White
             )
             Text(
-                "Choose what matters most when ranking sources.",
+                stringResource(R.string.source_sort_by_desc),
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                 color = Color.White.copy(0.6f),
                 modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
             )
 
             SettingOptionRow(
-                label = "Sort By",
-                options = listOf("Quality" to "quality", "File Size" to "size"),
+                label = stringResource(R.string.source_sort_by_header),
+                options = listOf(stringResource(R.string.source_sort_quality) to "quality", stringResource(R.string.source_sort_size) to "size"),
                 selectedOption = currentProfile.sourceSortPrimary,
                 onOptionSelected = { viewModel.updateSourceSortPrimary(currentProfile.id, it) },
                 onBack = onGoBack
@@ -1654,12 +1668,12 @@ fun SourcePreferencesSettings(
 
             // QUALITY FILTER
             Text(
-                "Allowed Qualities",
+                stringResource(R.string.source_quality_filter_header),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                 color = Color.White
             )
             Text(
-                "Sources with disabled qualities will be hidden.",
+                stringResource(R.string.source_quality_filter_desc),
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                 color = Color.White.copy(0.6f),
                 modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
@@ -1691,15 +1705,16 @@ fun SourcePreferencesSettings(
             Spacer(Modifier.height(15.dp))
 
             // MAX FILE SIZE
-            val sizeOptions = listOf("No Limit") + (listOf(2, 5) + (10..100 step 5).toList()).map { "$it GB" }
-            val currentSizeLabel = if (currentProfile.sourceMaxSizeGb == 0) "No Limit" else "${currentProfile.sourceMaxSizeGb} GB"
+            val noLimitLabel = stringResource(R.string.source_no_limit)
+            val sizeOptions = listOf(noLimitLabel) + (listOf(2, 5) + (10..100 step 5).toList()).map { "$it GB" }
+            val currentSizeLabel = if (currentProfile.sourceMaxSizeGb == 0) noLimitLabel else "${currentProfile.sourceMaxSizeGb} GB"
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Max File Size",
+                    stringResource(R.string.source_max_size_header),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                     color = Color.White,
                     modifier = Modifier.weight(1f)
@@ -1709,7 +1724,7 @@ fun SourcePreferencesSettings(
                     options = sizeOptions,
                     modifier = Modifier.width(160.dp),
                     onSelect = { selected ->
-                        val gb = if (selected == "No Limit") 0 else selected.replace(" GB", "").toIntOrNull() ?: 0
+                        val gb = if (selected == noLimitLabel) 0 else selected.replace(" GB", "").toIntOrNull() ?: 0
                         viewModel.updateSourceMaxSizeGb(currentProfile.id, gb)
                     }
                 )
@@ -1721,12 +1736,12 @@ fun SourcePreferencesSettings(
 
             // EXCLUDE FORMATS
             Text(
-                "Exclude Formats",
+                stringResource(R.string.source_exclude_formats_header),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                 color = Color.White
             )
             Text(
-                "Hide sources with these codecs and formats.",
+                stringResource(R.string.source_exclude_formats_desc),
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                 color = Color.White.copy(0.6f),
                 modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
@@ -1784,7 +1799,7 @@ fun SourcePreferencesSettings(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Exclude Phrases",
+                    stringResource(R.string.source_exclude_phrases_header),
                     color = Color.White.copy(0.8f),
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp),
                     modifier = Modifier.weight(1f)
@@ -1808,10 +1823,10 @@ fun SourcePreferencesSettings(
                         viewModel.updateSourceExcludePhrases(currentProfile.id, dialogInput)
                         showExcludeDialog = false
                     },
-                    title = "Exclude Phrases"
+                    title = stringResource(R.string.source_exclude_phrases_header)
                 ) {
                     Text(
-                        "Sources containing these words will be hidden. Comma-separated.",
+                        stringResource(R.string.source_exclude_phrases_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(0.6f),
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -1838,7 +1853,7 @@ fun SourcePreferencesSettings(
                         decorationBox = { innerTextField ->
                             Box {
                                 if (dialogInput.isEmpty()) {
-                                    Text("e.g. sample, remux, cam", color = Color.White.copy(0.3f), fontSize = 14.sp)
+                                    Text(stringResource(R.string.source_exclude_phrases_placeholder), color = Color.White.copy(0.3f), fontSize = 14.sp)
                                 }
                                 innerTextField()
                             }
@@ -1877,12 +1892,12 @@ fun AboutSettings(
     ) {
         // HEADER
         Text(
-            "About",
+            stringResource(R.string.about_header),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 20.sp),
             color = Color.White
         )
         Text(
-            "App information and updates.",
+            stringResource(R.string.about_desc),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
             color = Color.White.copy(0.6f),
             modifier = Modifier.padding(top = 4.dp)
@@ -1902,7 +1917,7 @@ fun AboutSettings(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Version",
+                stringResource(R.string.about_version),
                 color = Color.White.copy(0.8f),
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp)
             )
@@ -1918,7 +1933,7 @@ fun AboutSettings(
         // UPDATE POPUP TOGGLE
         var popupEnabled by remember { mutableStateOf(updateManager.isPopupEnabled) }
         SettingToggleRow(
-            label = "Show update popup on launch",
+            label = stringResource(R.string.about_show_popup),
             isChecked = popupEnabled,
             onCheckedChange = {
                 popupEnabled = it
@@ -1964,10 +1979,10 @@ fun AboutSettings(
         ) {
             Text(
                 text = when (updateState) {
-                    is UpdateState.Checking -> "Checking..."
-                    is UpdateState.UpToDate -> "You're up to date"
+                    is UpdateState.Checking -> stringResource(R.string.about_checking)
+                    is UpdateState.UpToDate -> stringResource(R.string.about_up_to_date)
                     is UpdateState.Error -> (updateState as UpdateState.Error).message
-                    else -> "Check for Updates"
+                    else -> stringResource(R.string.about_check_updates)
                 },
                 color = if (isCheckFocused) Color.White else Color.White.copy(0.8f),
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp)
@@ -1983,7 +1998,7 @@ fun AboutSettings(
             Spacer(Modifier.height(16.dp))
 
             Text(
-                "Update Available: v${info.versionName}",
+                stringResource(R.string.about_update_available) + ": v${info.versionName}",
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                 color = accentColor
             )

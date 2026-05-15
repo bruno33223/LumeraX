@@ -41,6 +41,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
+import com.lumera.app.R
 
 /**
  * Top Navigation Bar for TV interface.
@@ -474,7 +476,7 @@ fun TopNavItem(
                 // Icon (static)
                 Icon(
                     painter = painterResource(id = destination.iconRes),
-                    contentDescription = destination.label,
+                    contentDescription = stringResource(destination.labelRes),
                     tint = iconColor,
                     modifier = Modifier.size(20.dp)
                 )
@@ -483,7 +485,7 @@ fun TopNavItem(
                 if (showText) {
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = destination.label,
+                        text = stringResource(destination.labelRes),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = iconColor,
@@ -514,7 +516,7 @@ fun TopNavProfileAvatar(
     val showIndicator = if (isTopNavActive) isFocused else false
     
     val avatarSource = profile?.let { ProfileAssets.getAvatarSource(it.avatarRef) }
-    val displayName = profile?.name ?: "Profile"
+    val displayName = profile?.name ?: stringResource(R.string.nav_profile)
     
     // Content color animation
     val contentColor by animateColorAsState(
@@ -600,7 +602,7 @@ fun TopNavProfileAvatar(
                                 .size(100, 100)
                                 .crossfade(true)
                                 .build(),
-                            contentDescription = "Profile Avatar",
+                            contentDescription = stringResource(R.string.profile_avatar_content_desc),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -629,7 +631,7 @@ fun TopNavProfileAvatar(
                         overflow = TextOverflow.Visible
                     )
                     Text(
-                        text = "Change Profile",
+                        text = stringResource(R.string.change_profile),
                         fontSize = 10.sp,
                         color = contentColor.copy(alpha = 0.7f),
                         maxLines = 1,

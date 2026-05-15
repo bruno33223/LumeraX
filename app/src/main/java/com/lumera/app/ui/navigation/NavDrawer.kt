@@ -48,17 +48,17 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 
 enum class NavDestination(
     @DrawableRes val iconRes: Int,
-    val label: String,
+    val labelRes: Int,
     val iconSize: Dp = 20.dp
 ) {
-    Home(R.drawable.home_icon, "Home", iconSize = 21.dp),
-    Movies(R.drawable.movies_icon, "Movies"),
-    Series(R.drawable.series_icon, "Series"),
-    Watchlist(R.drawable.watchlist_icon, "Watchlist"),
-    Search(R.drawable.search_icon, "Search"),
-    Profile(R.drawable.profile_icon, "Profile", iconSize = 18.dp),
-    Settings(R.drawable.settings_icon, "Settings"),
-    Exit(R.drawable.exit_icon, "Exit", iconSize = 21.dp)
+    Home(R.drawable.home_icon, R.string.nav_home, iconSize = 21.dp),
+    Movies(R.drawable.movies_icon, R.string.nav_movies),
+    Series(R.drawable.series_icon, R.string.nav_series),
+    Watchlist(R.drawable.watchlist_icon, R.string.nav_watchlist),
+    Search(R.drawable.search_icon, R.string.nav_search),
+    Profile(R.drawable.profile_icon, R.string.nav_profile, iconSize = 18.dp),
+    Settings(R.drawable.settings_icon, R.string.nav_settings),
+    Exit(R.drawable.exit_icon, R.string.nav_exit, iconSize = 21.dp)
 }
 
 @Composable
@@ -322,7 +322,7 @@ fun SidebarItem(
         label = "TextOffset"
     )
 
-    val displayText = customLabel ?: screen.label
+    val displayText = customLabel ?: stringResource(screen.labelRes)
 
     Box(
         modifier = modifier
@@ -442,7 +442,7 @@ fun ProfileAvatarItem(
     )
     
     val avatarSource = profile?.let { ProfileAssets.getAvatarSource(it.avatarRef) }
-    val displayName = profile?.name ?: "Profile"
+    val displayName = profile?.name ?: stringResource(R.string.nav_profile)
     
     Box(
         modifier = modifier
@@ -489,7 +489,7 @@ fun ProfileAvatarItem(
                                 .size(100, 100)
                                 .crossfade(true)
                                 .build(),
-                            contentDescription = "Profile Avatar",
+                            contentDescription = stringResource(R.string.profile_avatar_content_desc),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -518,7 +518,7 @@ fun ProfileAvatarItem(
                         overflow = TextOverflow.Visible
                     )
                     Text(
-                        text = "Change Profile",
+                        text = stringResource(R.string.change_profile),
                         fontSize = 10.sp,
                         color = contentColor.copy(alpha = 0.7f),
                         maxLines = 1,
