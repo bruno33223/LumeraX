@@ -11,18 +11,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Baixa o código do seu repositório (Lumera)
-      - name: Checkout code
+      # 1. Checkout the main repository into a 'Lumera' directory
+      - name: Checkout Lumera
         uses: actions/checkout@v4
+        with:
+          path: Lumera
+          submodules: recursive
 
-      # 2. Baixa o projeto auxiliar de legendas (assrender) no caminho esperado
+      # 2. Checkout the auxiliary project into a sibling 'assrender' directory
       - name: Checkout assrender
         uses: actions/checkout@v4
         with:
           repository: LumeraD3v/assrender
-          path: '../assrender'
+          path: assrender
+          submodules: recursive
 
-      # 3. Configura o Java 17
+      # 3. Verify directory structure for assrender
+      - name: Verify assrender directory
+        run: |
+          echo "Current directory structure:"
+          ls -R .
+          if [ ! -d "assrender/assrender" ]; then
+            echo "::error::assrender/assrender directory not found! Check repository structure."
+            exit 1
+          fi
+
+      # 4. Set up JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -30,17 +44,22 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 4. Dá permissão de execução para o Gradle
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      # 4. Create empty local.properties to avoid build warnings/errors
+      - name: Create local.properties
+        run: touch Lumera/local.properties
 
-      # 5. Constrói o APK (Versão Debug)
+      # 5. Grant execute permission for gradlew
+      - name: Grant execute permission for gradlew
+        run: chmod +x Lumera/gradlew
+
+      # 6. Build the APK (Debug version)
       - name: Build Debug APK
+        working-directory: Lumera
         run: ./gradlew assembleDebug --stacktrace
 
-      # 6. Salva o APK gerado para você baixar
+      # 7. Upload the generated APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Lumera-Meu-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: Lumera/app/build/outputs/apk/debug/*.apk
