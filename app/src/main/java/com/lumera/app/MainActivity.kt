@@ -17,6 +17,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -2388,35 +2389,35 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+                            else -> {}
+                        } // Fim do when
+                    } // Fim do if (_splashFinished.value ...)
+
+                    // POPUP DE SAÍDA - Posição correta (Fora do when)
                     if (showExitConfirmation) {
                         Dialog(onDismissRequest = { showExitConfirmation = false }) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .padding(24.dp)
-                            ) {
-                                androidx.compose.foundation.layout.Column {
+                            Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp)).padding(24.dp)) {
+                                Column {
                                     Text("Deseja sair do Lumera?", color = Color.White)
                                     Spacer(modifier = Modifier.height(16.dp))
-                                    Row {
-                                        androidx.compose.material3.TextButton(onClick = { finishAffinity() }) {
-                                            Text("Sair", color = MaterialTheme.colorScheme.primary)
-                                        }
-                                        androidx.compose.material3.TextButton(onClick = { showExitConfirmation = false }) {
-                                            Text("Cancelar", color = Color.White)
-                                        }
+                                    Row(
+                                        horizontalArrangement = Arrangement.End, 
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        androidx.compose.material3.TextButton(onClick = { showExitConfirmation = false }) { Text("Cancelar") }
+                                        androidx.compose.material3.TextButton(onClick = { finishAffinity() }) { Text("Sair") }
                                     }
                                 }
                             }
                         }
                     }
 
-                }
-                }
-            }
-            }
-        }
+                } // Fim do CompositionLocalProvider (LocalRoundCorners)
+                } // Fim do LumeraBackground
+                } // Fim do CompositionLocalProvider (LocalConfiguration)
+            } // Fim do LumeraTheme
+            } // Fim do LocaleWrapper
+        } // Fim do setContent
 
         // Attach native splash overlay on top of Compose content — renders immediately
         if (showSplash) {
