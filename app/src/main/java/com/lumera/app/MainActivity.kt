@@ -1313,7 +1313,10 @@ class MainActivity : ComponentActivity() {
                                                     val dashboardTab = DashboardTab.fromString(tab)
 
                                                     key(tab) {
-                                                        LaunchedEffect(tab, currentProfile?.id) { vm.loadScreen(tab, currentProfile) }
+                                                                                                                LaunchedEffect(tab, currentProfile?.id) {
+                                                            delay(100)
+                                                            vm.loadScreen(tab, currentProfile)
+                                                        }
                                                         HomeScreen(
                                                             tab = dashboardTab,
                                                             viewModel = vm,

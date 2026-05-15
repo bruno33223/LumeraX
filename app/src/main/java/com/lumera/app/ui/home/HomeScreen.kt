@@ -109,6 +109,14 @@ fun HomeScreen(
         }
     }
 
+    // DEFERMENT: Avoid rendering heavy rows during navigation transition
+    var isTransitioning by remember { mutableStateOf(true) }
+    LaunchedEffect(tab) {
+        isTransitioning = true
+        delay(250) // Wait for Drawer to close and Crossfade to finish
+        isTransitioning = false
+    }
+
     // During tab switch, ignore persisted focus/scroll until this tab is actually loaded.
     // This avoids one-frame carry-over from the previous tab.
     val isCurrentTabLoaded = state.loadedScreen == screenName && state.loadedProfileId == currentProfile?.id
@@ -143,9 +151,9 @@ fun HomeScreen(
     ) {
         LumeraBackground {
         CompositionLocalProvider(com.lumera.app.ui.components.LocalWatchedIds provides state.watchedIds) {
-        // LOGIC: If we are just starting OR the ViewModel is loading, show the Loading Box.
+        // LOGIC: If we are just starting OR the ViewModel is loading, OR we are in transition, show the Loading Box.
         // This box accepts focus immediately, which forces the NavDrawer to collapse.
-        if (state.isLoading || state.loadedScreen != screenName || state.loadedProfileId != currentProfile?.id) {
+        if (isTransitioning || state.isLoading || state.loadedScreen != screenName || state.loadedProfileId != currentProfile?.id) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

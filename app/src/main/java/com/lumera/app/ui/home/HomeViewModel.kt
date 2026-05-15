@@ -145,7 +145,7 @@ class HomeViewModel @Inject constructor(
         // Pending buffer empty — fetch next page from API
         loadingMoreRows.add(configId)
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Initialize dedup set from current row items if not yet tracked
                 val fetchedIds = allFetchedRowIds.getOrPut(configId) {
@@ -269,7 +269,7 @@ class HomeViewModel @Inject constructor(
 
         if (!metadataRequestsInFlight.add(key)) return
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val meta = repository.resolveMetaDetails(item.type, item.id)
                     ?: throw Exception("No meta found")
@@ -562,7 +562,7 @@ class HomeViewModel @Inject constructor(
         }
 
         loadJob?.cancel()
-        loadJob = viewModelScope.launch {
+        loadJob = viewModelScope.launch(Dispatchers.IO) {
             // Clear 'rows' immediately so the UI doesn't show "Ghost Data" from the previous tab
             pendingRowItems.clear()
             allFetchedRowIds.clear()
@@ -727,7 +727,7 @@ class HomeViewModel @Inject constructor(
         }
 
         // 3. If not found, fetch from repository
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val fetchedRow = repository.getCategoryRowPreview(
                     configId = hubItem.categoryId,
