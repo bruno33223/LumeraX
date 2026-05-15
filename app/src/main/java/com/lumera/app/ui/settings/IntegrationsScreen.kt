@@ -59,6 +59,13 @@ import com.lumera.app.data.trakt.DeviceAuthState
 import com.lumera.app.remote_input.ServerInfo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.lumera.app.data.backup.DriveBackupManager
+import com.lumera.app.ui.addons.VoidButton
+import com.lumera.app.ui.addons.VoidDialog
+import androidx.compose.material.icons.filled.Storage
 
 @Composable
 fun IntegrationsScreen(
@@ -71,6 +78,15 @@ fun IntegrationsScreen(
     var showConnectDialog by remember { mutableStateOf(false) }
     var showManagementDialog by remember { mutableStateOf(false) }
     var showDisconnectConfirm by remember { mutableStateOf(false) }
+    var showDriveDialog by remember { mutableStateOf(false) }
+
+    val driveSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            showDriveDialog = true
+        }
+    }
 
     // Handle events
     LaunchedEffect(Unit) {
@@ -88,6 +104,12 @@ fun IntegrationsScreen(
                 }
                 is IntegrationsEvent.Disconnected -> {
                     Toast.makeText(context, "Disconnected from Stremio", Toast.LENGTH_SHORT).show()
+                }
+                is IntegrationsEvent.BackupSuccess -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+                is IntegrationsEvent.BackupError -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -174,6 +196,26 @@ fun IntegrationsScreen(
             onClick = { showTraktDialog = true },
             modifier = goBackModifier
         )
+
+        Spacer(Modifier.height(12.dp))
+
+        // Google Drive Integration Item
+        val driveAccount = GoogleSignIn.getLastSignedInAccount(context)
+        IntegrationItem(
+            title = "Google Drive",
+            subtitle = driveAccount?.email ?: "Not Connected",
+            isConnected = driveAccount != null,
+            onClick = {
+                if (driveAccount != null) {
+                    showDriveDialog = true
+                } else {
+                    val gso = DriveBackupManager.getGoogleSignInOptions()
+                    val signInClient = GoogleSignIn.getClient(context, gso)
+                    driveSignInLauncher.launch(signInClient.signInIntent)
+                }
+            },
+            modifier = goBackModifier
+        )
     }
 
     // Connect Dialog
@@ -248,6 +290,71 @@ fun IntegrationsScreen(
                 viewModel.resetTraktAuthState()
             }
         )
+    }
+
+    // Drive Backup Dialog
+    if (showDriveDialog) {
+        val driveAccount = GoogleSignIn.getLastSignedInAccount(context)
+        VoidDialog(
+            onDismissRequest = { showDriveDialog = false },
+            title = "Google Drive Sync"
+        ) {
+            Text(
+                "Keep your profiles, themes and addons synced across devices using your Google Drive AppData storage.",
+                color = Color.Gray,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            
+            if (driveAccount != null) {
+                Text(
+                    driveAccount.email ?: "",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            VoidButton(
+                text = "Backup para Google Drive",
+                onClick = {
+                    viewModel.exportBackup(context)
+                    showDriveDialog = false
+                },
+                modifier = Modifier.fillMaxWidth(),
+                isPrimary = true
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            VoidButton(
+                text = "Restaurar Backup",
+                onClick = {
+                    viewModel.restoreBackup(context)
+                    showDriveDialog = false
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(24.dp))
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                VoidButton(
+                    text = "Logout", 
+                    onClick = {
+                        val gso = DriveBackupManager.getGoogleSignInOptions()
+                        GoogleSignIn.getClient(context, gso).signOut().addOnCompleteListener {
+                            showDriveDialog = false
+                        }
+                    }, 
+                    modifier = Modifier.width(120.dp),
+                    isDestructive = true
+                )
+                Spacer(Modifier.width(12.dp))
+                VoidButton(text = "Close", onClick = { showDriveDialog = false }, modifier = Modifier.width(120.dp))
+            }
+        }
     }
 }
 

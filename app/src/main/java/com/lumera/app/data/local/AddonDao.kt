@@ -257,6 +257,42 @@ interface AddonDao {
     @Query("DELETE FROM watchlist WHERE id = :id")
     suspend fun removeFromWatchlist(id: String)
 
+    @Query("SELECT * FROM profiles")
+    suspend fun getAllProfilesSync(): List<ProfileEntity>
+
+    @Query("SELECT * FROM themes")
+    suspend fun getAllThemesSync(): List<ThemeEntity>
+
+    @Query("SELECT * FROM addons ORDER BY sortOrder ASC")
+    suspend fun getAllAddonsSync(): List<AddonEntity>
+
+    @Query("SELECT * FROM catalog_configs")
+    suspend fun getAllCatalogConfigsSync(): List<CatalogConfigEntity>
+
+    @Query("DELETE FROM profiles")
+    suspend fun clearProfiles()
+
+    @Query("DELETE FROM themes")
+    suspend fun clearThemes()
+
+    @Transaction
+    suspend fun restoreFullBackup(
+        profiles: List<ProfileEntity>,
+        themes: List<ThemeEntity>,
+        addons: List<AddonEntity>,
+        catalogConfigs: List<CatalogConfigEntity>
+    ) {
+        clearProfiles()
+        clearThemes()
+        clearAddons()
+        clearCatalogConfigs()
+
+        if (profiles.isNotEmpty()) profiles.forEach { insertProfile(it) }
+        if (themes.isNotEmpty()) themes.forEach { insertTheme(it) }
+        if (addons.isNotEmpty()) insertAddons(addons)
+        if (catalogConfigs.isNotEmpty()) saveCatalogConfigs(catalogConfigs)
+    }
+
     @Transaction
     suspend fun replaceRuntimeState(
         addons: List<AddonEntity>,

@@ -16,9 +16,23 @@ private const val WATCHED_THRESHOLD = 0.90 // 90% — above Trakt's 80% minimum
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    private val dao: AddonDao,
-    private val traktScrobbleManager: TraktScrobbleManager
+    private val dao: com.lumera.app.data.local.AddonDao,
+    private val traktScrobbleManager: com.lumera.app.data.trakt.TraktScrobbleManager,
+    private val subtitleRepository: com.lumera.app.data.repository.SubtitleRepository
 ) : ViewModel() {
+
+    suspend fun loadExternalSubtitles(type: String, playbackId: String): List<com.lumera.app.ui.player.base.PlayerSubtitleSource> {
+        return try {
+            subtitleRepository.getSubtitles(type, playbackId).map { 
+                com.lumera.app.ui.player.base.PlayerSubtitleSource(
+                    id = it.id,
+                    url = it.url,
+                    label = it.addonName,
+                    language = it.lang
+                )
+            }
+        } catch (e: Exception) { emptyList() }
+    }
 
     fun saveProgress(
         id: String,

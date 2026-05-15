@@ -29,6 +29,8 @@ sealed class IntegrationsEvent {
     data class LoginError(val message: String) : IntegrationsEvent()
     data class SyncComplete(val count: Int) : IntegrationsEvent()
     object Disconnected : IntegrationsEvent()
+    data class BackupSuccess(val message: String) : IntegrationsEvent()
+    data class BackupError(val message: String) : IntegrationsEvent()
 }
 
 data class IntegrationsUiState(
@@ -258,5 +260,33 @@ class IntegrationsViewModel @Inject constructor(
 
     fun resetTraktAuthState() {
         traktAuthManager.resetAuthState()
+    }
+
+    fun exportBackup(context: android.content.Context) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                com.lumera.app.data.backup.DriveBackupManager.getInstance().exportToDrive(context, dao)
+                _events.send(IntegrationsEvent.BackupSuccess("Backup completed!"))
+            } catch (e: Exception) {
+                _events.send(IntegrationsEvent.BackupError("Backup failed: ${e.message}"))
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+    }
+
+    fun restoreBackup(context: android.content.Context) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                com.lumera.app.data.backup.DriveBackupManager.getInstance().restoreFromDrive(context, dao)
+                _events.send(IntegrationsEvent.BackupSuccess("Restore completed!"))
+            } catch (e: Exception) {
+                _events.send(IntegrationsEvent.BackupError("Restore failed: ${e.message}"))
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
     }
 }

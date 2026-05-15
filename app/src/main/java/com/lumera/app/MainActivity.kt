@@ -116,7 +116,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import javax.inject.Inject
 
-private const val DOUBLE_BACK_EXIT_WINDOW_MS = 400L
+
 private const val SOURCE_SELECTION_COMMIT_MIN_POSITION_MS = 5_000L
 private const val SOURCE_SELECTION_FAILURE_RESET_MAX_POSITION_MS = 1_000L
 
@@ -925,6 +925,7 @@ class MainActivity : ComponentActivity() {
             var selectedPlaybackTitle by rememberSaveable { mutableStateOf("") }
             var selectedPlaybackPoster by rememberSaveable { mutableStateOf("") }
             var previousView by rememberSaveable { mutableStateOf("menu") }
+            var showExitConfirmation by rememberSaveable { mutableStateOf(false) }
             val playerState = remember { PlayerState() }
 
 
@@ -976,15 +977,8 @@ class MainActivity : ComponentActivity() {
                     ) {
                     LumeraBackground {
                     if (currentProfile == null) {
-                        // Double-back-to-exit on profile selection
-                        var lastBackPressMs by remember { mutableStateOf(0L) }
                         BackHandler {
-                            val now = SystemClock.uptimeMillis()
-                            if (now - lastBackPressMs < DOUBLE_BACK_EXIT_WINDOW_MS) {
-                                finishAffinity()
-                            } else {
-                                lastBackPressMs = now
-                            }
+                            showExitConfirmation = true
                         }
 
                         val isRestoringSession = sessionProfileId != null
@@ -1082,15 +1076,17 @@ class MainActivity : ComponentActivity() {
                             // CONDITIONAL NAVIGATION RENDERING (no animation)
                             val view = activeView
                             if (view == "menu") {
-                                // Double-back-to-exit: two rapid back presses exit the app
-                                var lastBackPressMs by remember { mutableStateOf(0L) }
+                                // Back handler for main menu
+                                BackHandler {
+                                    showExitConfirmation = true
+                                }
                                 var settingsContentFocused by remember { mutableStateOf(false) }
 
                                 // Shared content composable
                                 // Shared navigation handler
                                 val handleNavigate: (NavDestination) -> Unit = { destination ->
                                     if (destination == NavDestination.Exit) {
-                                        finishAffinity()
+                                        showExitConfirmation = true
                                     } else if (currentNav == destination) {
                                         // Already here - just focus content
                                         when(destination) {
@@ -1513,6 +1509,7 @@ class MainActivity : ComponentActivity() {
                             }
                         } else if (view == "details" || (view == "player" && selectedPlaybackId.startsWith("trailer_"))) {
                             val detailsNavController = rememberNavController()
+                            val playerViewModel = hiltViewModel<PlayerViewModel>()
                             val startRoute = "detail/${java.net.URLEncoder.encode(selectedMovieType, "UTF-8")}/${java.net.URLEncoder.encode(selectedMovieId, "UTF-8")}?addon=${java.net.URLEncoder.encode(selectedAddonBaseUrl ?: "", "UTF-8")}&resume=${java.net.URLEncoder.encode(detailsResumePlaybackHint ?: "", "UTF-8")}"
 
                             // Navigate to initial details when first entering
@@ -1559,7 +1556,14 @@ class MainActivity : ComponentActivity() {
                                         selectedPlaybackTitle = resolvedPlaybackTitle
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
-                                        playerState.selectedPlayerSubtitles = subtitlePayload
+
+                                        // Merge internal/addon subs with external subtitles
+                                        val externalSubs = playerViewModel.loadExternalSubtitles(playbackType, playbackId)
+                                        val mergedSubtitles = subtitlePayload + externalSubs.map {
+                                            PlayerSubtitlePayload(it.id, it.url, it.label, it.language)
+                                        }
+
+                                        playerState.selectedPlayerSubtitles = mergedSubtitles
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = ""
                                         torrentProgress = TorrentProgress("Connecting to peers...")
@@ -1591,7 +1595,14 @@ class MainActivity : ComponentActivity() {
                                         selectedPlaybackTitle = resolvedPlaybackTitle
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
-                                        playerState.selectedPlayerSubtitles = subtitlePayload
+
+                                        // Merge internal/addon subs with external subtitles
+                                        val externalSubs = playerViewModel.loadExternalSubtitles(playbackType, playbackId)
+                                        val mergedSubtitles = subtitlePayload + externalSubs.map {
+                                            PlayerSubtitlePayload(it.id, it.url, it.label, it.language)
+                                        }
+
+                                        playerState.selectedPlayerSubtitles = mergedSubtitles
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = url
                                         when (currentProfile?.playerPreference) {
@@ -2377,7 +2388,27 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-                            else -> {}
+                    if (showExitConfirmation) {
+                        Dialog(onDismissRequest = { showExitConfirmation = false }) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .padding(24.dp)
+                            ) {
+                                androidx.compose.foundation.layout.Column {
+                                    Text("Deseja sair do Lumera?", color = Color.White)
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Row {
+                                        androidx.compose.material3.TextButton(onClick = { finishAffinity() }) {
+                                            Text("Sair", color = MaterialTheme.colorScheme.primary)
+                                        }
+                                        androidx.compose.material3.TextButton(onClick = { showExitConfirmation = false }) {
+                                            Text("Cancelar", color = Color.White)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
