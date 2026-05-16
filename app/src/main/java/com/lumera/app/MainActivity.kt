@@ -604,149 +604,72 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onExit = { finishAndRemoveTask() },
                                         content = {
-                                            when (currentNav) {
-                                                NavDestination.Home, NavDestination.Movies, NavDestination.Series -> {
-                                                    val vm = hiltViewModel<HomeViewModel>()
-                                                    val tab = if(currentNav == NavDestination.Home) "home" else if(currentNav == NavDestination.Movies) "movies" else "series"
-                                                    val dashboardTab = DashboardTab.fromString(tab)
-
-                                                    key(tab) {
-                                                        LaunchedEffect(tab, currentProfile?.id) { vm.loadScreen(tab, currentProfile) }
-                                                        HomeScreen(
-                                                            tab = dashboardTab,
-                                                            viewModel = vm,
-                                                            currentProfile = currentProfile,
-                                                            entryRequester = homeEntryRequester,
-                                                            drawerRequester = drawerRequesters[currentNav]!!,
-                                                            onMovieClick = { movie ->
-                                                                selectedMovieId = movie.id
-                                                                selectedMovieType = movie.type
-                                                                selectedMovieTitle = movie.name
-                                                                selectedMoviePoster = movie.poster ?: ""
-                                                                selectedMovieBackground = movie.background ?: ""
-                                                                selectedMovieLogo = movie.logo ?: ""
-                                                                selectedAddonBaseUrl = movie.addonBaseUrl
-                                                                detailsResumePlaybackHint = null
-                                                                selectedPlaybackId = movie.id
-                                                                selectedPlaybackType = movie.type
-                                                                selectedPlaybackTitle = movie.name
-                                                                selectedPlaybackPoster = movie.poster ?: ""
-                                                                previousView = "menu"
-                                                                activeView = "details"
-                                                            },
-                                                            onViewMore = { title, items, configId ->
-                                                                gridViewTitle = title
-                                                                gridViewItems = items
-                                                                gridViewConfigId = configId
-                                                                activeView = "grid"
-                                                            }
-                                                        )
-                                                    }
-                                                }
-                                                NavDestination.Search -> {
-                                                    val searchHomeVm = hiltViewModel<HomeViewModel>()
-                                                    SearchScreen(
-                                                        currentProfile = currentProfile,
-                                                        watchedIds = searchHomeVm.state.collectAsState().value.watchedIds,
-                                                        onMovieClick = { movie ->
-                                                            selectedMovieId = movie.id
-                                                            selectedMovieType = movie.type
-                                                            selectedMovieTitle = movie.name
-                                                            selectedMoviePoster = movie.poster ?: ""
-                                                            selectedMovieBackground = movie.background ?: ""
-                                                            selectedMovieLogo = movie.logo ?: ""
-                                                            selectedAddonBaseUrl = movie.addonBaseUrl
-                                                            detailsResumePlaybackHint = null
-                                                            selectedPlaybackId = movie.id
-                                                            selectedPlaybackType = movie.type
-                                                            selectedPlaybackTitle = movie.name
-                                                            selectedPlaybackPoster = movie.poster ?: ""
-                                                            searchFocusTarget = "poster"
-                                                            previousView = "menu"
-                                                            activeView = "details"
-                                                        },
-                                                        onViewMore = { title, items ->
-                                                            searchFocusTarget = if (title == "Movies") "movies" else "series"
-                                                            gridViewTitle = title
-                                                            gridViewItems = items
-                                                            gridViewConfigId = ""
-                                                            activeView = "grid"
-                                                        },
-                                                        moviesViewMoreRequester = searchMoviesViewMoreRequester,
-                                                        seriesViewMoreRequester = searchSeriesViewMoreRequester,
-                                                        resultsRequester = searchResultsRequester,
-                                                        discoverRequester = searchDiscoverRequester,
-                                                        lastFocusedId = searchLastFocusedId,
-                                                        onFocusedIdChange = { searchLastFocusedId = it },
-                                                        onDiscoverClick = { movie ->
-                                                            selectedMovieId = movie.id
-                                                            selectedMovieType = movie.type
-                                                            selectedMovieTitle = movie.name
-                                                            selectedMoviePoster = movie.poster ?: ""
-                                                            selectedMovieBackground = movie.background ?: ""
-                                                            selectedMovieLogo = movie.logo ?: ""
-                                                            selectedAddonBaseUrl = movie.addonBaseUrl
-                                                            detailsResumePlaybackHint = null
-                                                            selectedPlaybackId = movie.id
-                                                            selectedPlaybackType = movie.type
-                                                            selectedPlaybackTitle = movie.name
-                                                            selectedPlaybackPoster = movie.poster ?: ""
-                                                            searchFocusTarget = "discover"
-                                                            previousView = "menu"
-                                                            activeView = "details"
-                                                        },
-                                                        entryRequester = searchEntryRequester,
-                                                        drawerRequester = drawerRequesters[NavDestination.Search]!!
-                                                    )
-                                                }
-                                                NavDestination.Profile -> {
+                                            com.lumera.app.ui.navigation.MainDashboardContent(
+                                                currentNav = currentNav,
+                                                currentProfile = currentProfile,
+                                                homeEntryRequester = homeEntryRequester,
+                                                searchEntryRequester = searchEntryRequester,
+                                                watchlistEntryRequester = watchlistEntryRequester,
+                                                settingsEntryRequester = settingsEntryRequester,
+                                                drawerRequesters = drawerRequesters,
+                                                onMovieClick = { movie ->
+                                                    selectedMovieId = movie.id
+                                                    selectedMovieType = movie.type
+                                                    selectedMovieTitle = movie.name
+                                                    selectedMoviePoster = movie.poster ?: ""
+                                                    selectedMovieBackground = movie.background ?: ""
+                                                    selectedMovieLogo = movie.logo ?: ""
+                                                    selectedAddonBaseUrl = movie.addonBaseUrl
+                                                    detailsResumePlaybackHint = null
+                                                    selectedPlaybackId = movie.id
+                                                    selectedPlaybackType = movie.type
+                                                    selectedPlaybackTitle = movie.name
+                                                    selectedPlaybackPoster = movie.poster ?: ""
+                                                    previousView = "menu"
+                                                    activeView = "details"
+                                                },
+                                                onViewMore = { title, items, configId ->
+                                                    gridViewTitle = title
+                                                    gridViewItems = items
+                                                    gridViewConfigId = configId
+                                                    activeView = "grid"
+                                                },
+                                                onSearchDiscoverClick = { movie ->
+                                                    selectedMovieId = movie.id
+                                                    selectedMovieType = movie.type
+                                                    selectedMovieTitle = movie.name
+                                                    selectedMoviePoster = movie.poster ?: ""
+                                                    selectedMovieBackground = movie.background ?: ""
+                                                    selectedMovieLogo = movie.logo ?: ""
+                                                    selectedAddonBaseUrl = movie.addonBaseUrl
+                                                    detailsResumePlaybackHint = null
+                                                    selectedPlaybackId = movie.id
+                                                    selectedPlaybackType = movie.type
+                                                    selectedPlaybackTitle = movie.name
+                                                    selectedPlaybackPoster = movie.poster ?: ""
+                                                    searchFocusTarget = "discover"
+                                                    previousView = "menu"
+                                                    activeView = "details"
+                                                },
+                                                searchFocusTarget = searchFocusTarget,
+                                                onSearchFocusTargetChange = { searchFocusTarget = it },
+                                                searchLastFocusedId = searchLastFocusedId,
+                                                onSearchLastFocusedIdChange = { searchLastFocusedId = it },
+                                                searchMoviesViewMoreRequester = searchMoviesViewMoreRequester,
+                                                searchSeriesViewMoreRequester = searchSeriesViewMoreRequester,
+                                                searchResultsRequester = searchResultsRequester,
+                                                searchDiscoverRequester = searchDiscoverRequester,
+                                                onDashboardChanged = {},
+                                                onSettingsContentFocusChanged = { settingsContentFocused = it },
+                                                onNavigate = { currentNav = it },
+                                                onLogout = {
                                                     sessionProfileId = null
                                                     sessionRestoreAttemptedProfileId = null
                                                     activeView = "menu"
                                                     themeManager.resetTheme()
                                                     mainViewModel.logout()
                                                 }
-                                                NavDestination.Watchlist -> {
-                                                    val watchlistHomeVm = hiltViewModel<HomeViewModel>()
-                                                    WatchlistScreen(
-                                                        currentProfile = currentProfile,
-                                                        entryRequester = watchlistEntryRequester,
-                                                        drawerRequester = drawerRequesters[NavDestination.Watchlist]!!,
-                                                        watchedIds = watchlistHomeVm.state.collectAsState().value.watchedIds,
-                                                        onMovieClick = { movie ->
-                                                            selectedMovieId = movie.id
-                                                            selectedMovieType = movie.type
-                                                            selectedMovieTitle = movie.name
-                                                            selectedMoviePoster = movie.poster ?: ""
-                                                            selectedMovieBackground = movie.background ?: ""
-                                                            selectedMovieLogo = movie.logo ?: ""
-                                                            selectedAddonBaseUrl = movie.addonBaseUrl
-                                                            detailsResumePlaybackHint = null
-                                                            selectedPlaybackId = movie.id
-                                                            selectedPlaybackType = movie.type
-                                                            selectedPlaybackTitle = movie.name
-                                                            selectedPlaybackPoster = movie.poster ?: ""
-                                                            previousView = "menu"
-                                                            activeView = "details"
-                                                        }
-                                                    )
-                                                }
-                                                NavDestination.Settings -> {
-                                                    val homeVm = hiltViewModel<HomeViewModel>()
-                                                    SettingsScreen(
-                                                        currentProfile = currentProfile,
-                                                        onBack = {
-                                                            currentNav = NavDestination.Home
-                                                            drawerRequesters[NavDestination.Home]?.requestFocus()
-                                                        },
-                                                        entryRequester = settingsEntryRequester,
-                                                        drawerRequester = drawerRequesters[NavDestination.Settings]!!,
-                                                        onDashboardChanged = { homeVm.invalidate() },
-                                                        onContentFocusChanged = { settingsContentFocused = it }
-                                                    )
-                                                }
-                                                NavDestination.Exit -> { /* App closes */ }
-                                            }
+                                            )
                                         }
                                     )
                                 } else { // position == "left"
@@ -757,152 +680,72 @@ class MainActivity : ComponentActivity() {
                                         onNavigate = handleNavigate,
                                         onClose = handleEnterContent,
                                         content = {
-                                            when (currentNav) {
-                                                NavDestination.Home, NavDestination.Movies, NavDestination.Series -> {
-                                                    val vm = hiltViewModel<HomeViewModel>()
-                                                    val tab = if(currentNav == NavDestination.Home) "home" else if(currentNav == NavDestination.Movies) "movies" else "series"
-                                                    val dashboardTab = DashboardTab.fromString(tab)
-
-                                                    key(tab) {
-                                                                                                                LaunchedEffect(tab, currentProfile?.id) {
-                                                            delay(100)
-                                                            vm.loadScreen(tab, currentProfile)
-                                                        }
-                                                        HomeScreen(
-                                                            tab = dashboardTab,
-                                                            viewModel = vm,
-                                                            currentProfile = currentProfile,
-                                                            entryRequester = homeEntryRequester,
-                                                            drawerRequester = drawerRequesters[currentNav]!!,
-                                                            onMovieClick = { movie ->
-                                                                selectedMovieId = movie.id
-                                                                selectedMovieType = movie.type
-                                                                selectedMovieTitle = movie.name
-                                                                selectedMoviePoster = movie.poster ?: ""
-                                                                selectedMovieBackground = movie.background ?: ""
-                                                                selectedMovieLogo = movie.logo ?: ""
-                                                                selectedAddonBaseUrl = movie.addonBaseUrl
-                                                                detailsResumePlaybackHint = null
-                                                                selectedPlaybackId = movie.id
-                                                                selectedPlaybackType = movie.type
-                                                                selectedPlaybackTitle = movie.name
-                                                                selectedPlaybackPoster = movie.poster ?: ""
-                                                                previousView = "menu"
-                                                                activeView = "details"
-                                                            },
-                                                            onViewMore = { title, items, configId ->
-                                                                gridViewTitle = title
-                                                                gridViewItems = items
-                                                                gridViewConfigId = configId
-                                                                activeView = "grid"
-                                                            }
-                                                        )
-                                                    }
-                                                }
-                                                NavDestination.Search -> {
-                                                    val searchHomeVm = hiltViewModel<HomeViewModel>()
-                                                    SearchScreen(
-                                                        currentProfile = currentProfile,
-                                                        watchedIds = searchHomeVm.state.collectAsState().value.watchedIds,
-                                                        onMovieClick = { movie ->
-                                                            selectedMovieId = movie.id
-                                                            selectedMovieType = movie.type
-                                                            selectedMovieTitle = movie.name
-                                                            selectedMoviePoster = movie.poster ?: ""
-                                                            selectedMovieBackground = movie.background ?: ""
-                                                            selectedMovieLogo = movie.logo ?: ""
-                                                            selectedAddonBaseUrl = movie.addonBaseUrl
-                                                            detailsResumePlaybackHint = null
-                                                            selectedPlaybackId = movie.id
-                                                            selectedPlaybackType = movie.type
-                                                            selectedPlaybackTitle = movie.name
-                                                            selectedPlaybackPoster = movie.poster ?: ""
-                                                            searchFocusTarget = "poster"
-                                                            previousView = "menu"
-                                                            activeView = "details"
-                                                        },
-                                                        onViewMore = { title, items ->
-                                                            searchFocusTarget = if (title == "Movies") "movies" else "series"
-                                                            gridViewTitle = title
-                                                            gridViewItems = items
-                                                            gridViewConfigId = ""
-                                                            activeView = "grid"
-                                                        },
-                                                        moviesViewMoreRequester = searchMoviesViewMoreRequester,
-                                                        seriesViewMoreRequester = searchSeriesViewMoreRequester,
-                                                        resultsRequester = searchResultsRequester,
-                                                        discoverRequester = searchDiscoverRequester,
-                                                        lastFocusedId = searchLastFocusedId,
-                                                        onFocusedIdChange = { searchLastFocusedId = it },
-                                                        onDiscoverClick = { movie ->
-                                                            selectedMovieId = movie.id
-                                                            selectedMovieType = movie.type
-                                                            selectedMovieTitle = movie.name
-                                                            selectedMoviePoster = movie.poster ?: ""
-                                                            selectedMovieBackground = movie.background ?: ""
-                                                            selectedMovieLogo = movie.logo ?: ""
-                                                            selectedAddonBaseUrl = movie.addonBaseUrl
-                                                            detailsResumePlaybackHint = null
-                                                            selectedPlaybackId = movie.id
-                                                            selectedPlaybackType = movie.type
-                                                            selectedPlaybackTitle = movie.name
-                                                            selectedPlaybackPoster = movie.poster ?: ""
-                                                            searchFocusTarget = "discover"
-                                                            previousView = "menu"
-                                                            activeView = "details"
-                                                        },
-                                                        entryRequester = searchEntryRequester,
-                                                        drawerRequester = drawerRequesters[NavDestination.Search]!!
-                                                    )
-                                                }
-                                                NavDestination.Profile -> {
+                                            com.lumera.app.ui.navigation.MainDashboardContent(
+                                                currentNav = currentNav,
+                                                currentProfile = currentProfile,
+                                                homeEntryRequester = homeEntryRequester,
+                                                searchEntryRequester = searchEntryRequester,
+                                                watchlistEntryRequester = watchlistEntryRequester,
+                                                settingsEntryRequester = settingsEntryRequester,
+                                                drawerRequesters = drawerRequesters,
+                                                onMovieClick = { movie ->
+                                                    selectedMovieId = movie.id
+                                                    selectedMovieType = movie.type
+                                                    selectedMovieTitle = movie.name
+                                                    selectedMoviePoster = movie.poster ?: ""
+                                                    selectedMovieBackground = movie.background ?: ""
+                                                    selectedMovieLogo = movie.logo ?: ""
+                                                    selectedAddonBaseUrl = movie.addonBaseUrl
+                                                    detailsResumePlaybackHint = null
+                                                    selectedPlaybackId = movie.id
+                                                    selectedPlaybackType = movie.type
+                                                    selectedPlaybackTitle = movie.name
+                                                    selectedPlaybackPoster = movie.poster ?: ""
+                                                    previousView = "menu"
+                                                    activeView = "details"
+                                                },
+                                                onViewMore = { title, items, configId ->
+                                                    gridViewTitle = title
+                                                    gridViewItems = items
+                                                    gridViewConfigId = configId
+                                                    activeView = "grid"
+                                                },
+                                                onSearchDiscoverClick = { movie ->
+                                                    selectedMovieId = movie.id
+                                                    selectedMovieType = movie.type
+                                                    selectedMovieTitle = movie.name
+                                                    selectedMoviePoster = movie.poster ?: ""
+                                                    selectedMovieBackground = movie.background ?: ""
+                                                    selectedMovieLogo = movie.logo ?: ""
+                                                    selectedAddonBaseUrl = movie.addonBaseUrl
+                                                    detailsResumePlaybackHint = null
+                                                    selectedPlaybackId = movie.id
+                                                    selectedPlaybackType = movie.type
+                                                    selectedPlaybackTitle = movie.name
+                                                    selectedPlaybackPoster = movie.poster ?: ""
+                                                    searchFocusTarget = "discover"
+                                                    previousView = "menu"
+                                                    activeView = "details"
+                                                },
+                                                searchFocusTarget = searchFocusTarget,
+                                                onSearchFocusTargetChange = { searchFocusTarget = it },
+                                                searchLastFocusedId = searchLastFocusedId,
+                                                onSearchLastFocusedIdChange = { searchLastFocusedId = it },
+                                                searchMoviesViewMoreRequester = searchMoviesViewMoreRequester,
+                                                searchSeriesViewMoreRequester = searchSeriesViewMoreRequester,
+                                                searchResultsRequester = searchResultsRequester,
+                                                searchDiscoverRequester = searchDiscoverRequester,
+                                                onDashboardChanged = {},
+                                                onSettingsContentFocusChanged = { settingsContentFocused = it },
+                                                onNavigate = { currentNav = it },
+                                                onLogout = {
                                                     sessionProfileId = null
                                                     sessionRestoreAttemptedProfileId = null
                                                     activeView = "menu"
                                                     themeManager.resetTheme()
                                                     mainViewModel.logout()
                                                 }
-                                                NavDestination.Watchlist -> {
-                                                    val watchlistHomeVm = hiltViewModel<HomeViewModel>()
-                                                    WatchlistScreen(
-                                                        currentProfile = currentProfile,
-                                                        entryRequester = watchlistEntryRequester,
-                                                        drawerRequester = drawerRequesters[NavDestination.Watchlist]!!,
-                                                        watchedIds = watchlistHomeVm.state.collectAsState().value.watchedIds,
-                                                        onMovieClick = { movie ->
-                                                            selectedMovieId = movie.id
-                                                            selectedMovieType = movie.type
-                                                            selectedMovieTitle = movie.name
-                                                            selectedMoviePoster = movie.poster ?: ""
-                                                            selectedMovieBackground = movie.background ?: ""
-                                                            selectedMovieLogo = movie.logo ?: ""
-                                                            selectedAddonBaseUrl = movie.addonBaseUrl
-                                                            detailsResumePlaybackHint = null
-                                                            selectedPlaybackId = movie.id
-                                                            selectedPlaybackType = movie.type
-                                                            selectedPlaybackTitle = movie.name
-                                                            selectedPlaybackPoster = movie.poster ?: ""
-                                                            previousView = "menu"
-                                                            activeView = "details"
-                                                        }
-                                                    )
-                                                }
-                                                NavDestination.Settings -> {
-                                                    val homeVm = hiltViewModel<HomeViewModel>()
-                                                    SettingsScreen(
-                                                        currentProfile = currentProfile,
-                                                        onBack = {
-                                                            currentNav = NavDestination.Home
-                                                            drawerRequesters[NavDestination.Home]?.requestFocus()
-                                                        },
-                                                        entryRequester = settingsEntryRequester,
-                                                        drawerRequester = drawerRequesters[NavDestination.Settings]!!,
-                                                        onDashboardChanged = { homeVm.invalidate() },
-                                                        onContentFocusChanged = { settingsContentFocused = it }
-                                                    )
-                                                }
-                                                NavDestination.Exit -> { /* App closes */ }
-                                            }
+                                            )
                                         }
                                     )
                                 }
@@ -961,26 +804,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         } else if (view == "details" || (view == "player" && selectedPlaybackId.startsWith("trailer_"))) {
-                            val detailsNavController = rememberNavController()
-                            val startRoute = "detail/${java.net.URLEncoder.encode(selectedMovieType, "UTF-8")}/${java.net.URLEncoder.encode(selectedMovieId, "UTF-8")}?addon=${java.net.URLEncoder.encode(selectedAddonBaseUrl ?: "", "UTF-8")}&resume=${java.net.URLEncoder.encode(detailsResumePlaybackHint ?: "", "UTF-8")}"
-
-                            // Navigate to initial details when first entering
-                            LaunchedEffect(selectedMovieType, selectedMovieId) {
-                                val currentRoute = detailsNavController.currentBackStackEntry?.destination?.route
-                                if (currentRoute == null || currentRoute == "detail_start") {
-                                    detailsNavController.navigate(startRoute) {
-                                        popUpTo("detail_start") { inclusive = true }
-                                    }
-                                }
-                            }
-
-                            BackHandler {
-                                if (!detailsNavController.popBackStack()) {
-                                    activeView = previousView
-                                }
-                            }
-
-                            // Shared onPlayClick lambda for all detail screens
                             val onPlayClick: (String, String, String, String, String, String, com.lumera.app.data.model.stremio.Stream, List<com.lumera.app.domain.AddonSubtitle>, List<com.lumera.app.data.model.stremio.Stream>, List<com.lumera.app.data.model.stremio.MetaVideo>) -> Unit = { url, playbackId, playbackType, playbackTitle, seriesTitle, logo, stream, addonSubtitles, availableStreams, episodes ->
                                 val resolvedPlaybackTitle = playbackTitle.ifBlank { selectedMovieTitle }
                                 val resolvedSeriesTitle = seriesTitle.ifBlank { selectedMovieTitle }
@@ -1059,118 +882,39 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            NavHost(
-                                navController = detailsNavController,
-                                startDestination = "detail_start",
-                            ) {
-                                composable("detail_start") { }
-                                composable(
-                                    "detail/{type}/{id}?addon={addon}&resume={resume}",
-                                    arguments = listOf(
-                                        navArgument("type") { type = NavType.StringType },
-                                        navArgument("id") { type = NavType.StringType },
-                                        navArgument("addon") { type = NavType.StringType; defaultValue = "" },
-                                        navArgument("resume") { type = NavType.StringType; defaultValue = "" }
-                                    )
-                                ) { backStackEntry ->
-                                    val detailType = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("type") ?: "movie", "UTF-8")
-                                    val detailId = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("id") ?: "", "UTF-8")
-                                    val detailAddon = backStackEntry.arguments?.getString("addon")?.takeIf { it.isNotEmpty() }
-                                    val detailResume = backStackEntry.arguments?.getString("resume")?.takeIf { it.isNotEmpty() }
-
-                                    DetailsScreen(
-                                        type = detailType,
-                                        id = detailId,
-                                        addonBaseUrl = detailAddon,
-                                        resumePlaybackHint = detailResume,
-                                        autoSelectSource = currentProfile?.autoSelectSource ?: false,
-                                        rememberSourceSelection = currentProfile?.rememberSourceSelection ?: true,
-                                        onPosterResolved = { selectedMoviePoster = it },
-                                        onPlayClick = onPlayClick,
-                                        onNavigateToDetails = { navType, navId ->
-                                            val route = "detail/${java.net.URLEncoder.encode(navType, "UTF-8")}/${java.net.URLEncoder.encode(navId, "UTF-8")}"
-                                            detailsNavController.navigate(route)
-                                        },
-                                        onNavigateToCastDetail = { castPersonId, castPersonName ->
-                                            val route = "cast_detail/$castPersonId/${java.net.URLEncoder.encode(castPersonName, "UTF-8")}"
-                                            detailsNavController.navigate(route)
-                                        },
-                                        onNavigateToStudioDetail = { entityId, entityKind, entityName, sourceType ->
-                                            val route = "studio_detail/$entityId/$entityKind/${java.net.URLEncoder.encode(entityName, "UTF-8")}/$sourceType"
-                                            detailsNavController.navigate(route)
-                                        },
-                                        trailerReturnToken = trailerReturnToken,
-                                        isTrailerLoading = isTrailerLoading,
-                                        onTrailerClick = { youtubeKey, trailerName ->
-                                            isTrailerLoading = true
-                                            uiScope.launch {
-                                                val extractor = com.lumera.app.data.trailer.YouTubeExtractor()
-                                                val source = extractor.extractPlaybackSource(youtubeKey)
-                                                isTrailerLoading = false
-                                                if (source != null) {
-                                                    selectedVideoUrl = source.videoUrl
-                                                    selectedTrailerAudioUrl = source.audioUrl ?: ""
-                                                    selectedPlaybackId = "trailer_$youtubeKey"
-                                                    selectedPlaybackType = selectedMovieType
-                                                    selectedPlaybackTitle = trailerName
-                                                    selectedPlaybackPoster = selectedMoviePoster
-                                                    playerState.selectedPlayerSubtitles = emptyList()
-                                                    playerState.selectedPlayerSources = emptyList()
-                                                    activeView = "player"
-                                                } else {
-                                                    showTrailerError = true
-                                                }
-                                            }
+                            com.lumera.app.ui.details.DetailsNavGraph(
+                                selectedMovieType = selectedMovieType,
+                                selectedMovieId = selectedMovieId,
+                                selectedAddonBaseUrl = selectedAddonBaseUrl,
+                                detailsResumePlaybackHint = detailsResumePlaybackHint,
+                                currentProfile = currentProfile,
+                                trailerReturnToken = trailerReturnToken,
+                                isTrailerLoading = isTrailerLoading,
+                                onPosterResolved = { selectedMoviePoster = it },
+                                onPlayClick = onPlayClick,
+                                onTrailerClick = { youtubeKey, trailerName ->
+                                    isTrailerLoading = true
+                                    uiScope.launch {
+                                        val extractor = com.lumera.app.data.trailer.YouTubeExtractor()
+                                        val source = extractor.extractPlaybackSource(youtubeKey)
+                                        isTrailerLoading = false
+                                        if (source != null) {
+                                            selectedVideoUrl = source.videoUrl
+                                            selectedTrailerAudioUrl = source.audioUrl ?: ""
+                                            selectedPlaybackId = "trailer_$youtubeKey"
+                                            selectedPlaybackType = selectedMovieType
+                                            selectedPlaybackTitle = trailerName
+                                            selectedPlaybackPoster = selectedMoviePoster
+                                            playerState.selectedPlayerSubtitles = emptyList()
+                                            playerState.selectedPlayerSources = emptyList()
+                                            activeView = "player"
+                                        } else {
+                                            showTrailerError = true
                                         }
-                                    )
-                                }
-                                composable(
-                                    "cast_detail/{personId}/{personName}",
-                                    arguments = listOf(
-                                        navArgument("personId") { type = NavType.StringType },
-                                        navArgument("personName") { type = NavType.StringType }
-                                    )
-                                ) { backStackEntry ->
-                                    val castPersonId = (backStackEntry.arguments?.getString("personId") ?: "0").toIntOrNull() ?: 0
-                                    val castPersonName = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("personName") ?: "", "UTF-8")
-
-                                    com.lumera.app.ui.cast.CastDetailScreen(
-                                        personId = castPersonId,
-                                        personName = castPersonName,
-                                        onBackPress = { detailsNavController.popBackStack() },
-                                        onNavigateToDetails = { navType, navId ->
-                                            val route = "detail/${java.net.URLEncoder.encode(navType, "UTF-8")}/${java.net.URLEncoder.encode(navId, "UTF-8")}"
-                                            detailsNavController.navigate(route)
-                                        }
-                                    )
-                                }
-                                composable(
-                                    "studio_detail/{entityId}/{entityKind}/{entityName}/{sourceType}",
-                                    arguments = listOf(
-                                        navArgument("entityId") { type = NavType.StringType },
-                                        navArgument("entityKind") { type = NavType.StringType },
-                                        navArgument("entityName") { type = NavType.StringType },
-                                        navArgument("sourceType") { type = NavType.StringType }
-                                    )
-                                ) { backStackEntry ->
-                                    val studioEntityId = (backStackEntry.arguments?.getString("entityId") ?: "0").toIntOrNull() ?: 0
-                                    val studioEntityKind = backStackEntry.arguments?.getString("entityKind") ?: "company"
-                                    val studioEntityName = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("entityName") ?: "", "UTF-8")
-                                    val studioSourceType = backStackEntry.arguments?.getString("sourceType") ?: "movie"
-
-                                    com.lumera.app.ui.studio.StudioDetailScreen(
-                                        entityId = studioEntityId,
-                                        entityKind = studioEntityKind,
-                                        entityName = studioEntityName,
-                                        sourceType = studioSourceType,
-                                        onBackPress = { detailsNavController.popBackStack() },
-                                        onNavigateToDetails = { navType, navId ->
-                                            val route = "detail/${java.net.URLEncoder.encode(navType, "UTF-8")}/${java.net.URLEncoder.encode(navId, "UTF-8")}"
-                                            detailsNavController.navigate(route)
-                                        }
-                                    )
-                                }
-                            }
+                                    }
+                                },
+                                onBack = { activeView = previousView }
+                            )
                         }
                         if (view == "player") {
                             if (selectedVideoUrl.isBlank() && torrentProgress == null) {
