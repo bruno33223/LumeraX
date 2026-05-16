@@ -108,8 +108,14 @@ class SubtitleRepository @Inject constructor(
     }
 
     private fun buildSubtitleRequest(type: String, playbackId: String): SubtitleRequest {
-        val normalizedType = type.trim().lowercase(Locale.ROOT)
+        var normalizedType = type.trim().lowercase(Locale.ROOT)
         val normalizedId = playbackId.trim()
+
+        if (normalizedType == "anime") {
+            // Map anime to series or movie based on ID structure (animes are usually series unless no colon is present)
+            val parts = normalizedId.split(":")
+            normalizedType = if (parts.size >= 3) "series" else "movie"
+        }
 
         if (normalizedType == "series") {
             val parts = normalizedId.split(":")

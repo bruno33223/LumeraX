@@ -165,10 +165,6 @@ fun DetailsScreen(
     LaunchedEffect(autoPlayStream) {
         val stream = autoPlayStream ?: return@LaunchedEffect
         
-        if (addonSubtitles.isEmpty()) {
-            android.widget.Toast.makeText(context, "Nenhuma legenda encontrada", android.widget.Toast.LENGTH_LONG).show()
-        }
-        
         val urlToPlay = resolvePlayableUrl(stream)
         if (!urlToPlay.isNullOrEmpty()) {
             val playbackId = pendingPlaybackId.ifBlank { movie?.id ?: id }

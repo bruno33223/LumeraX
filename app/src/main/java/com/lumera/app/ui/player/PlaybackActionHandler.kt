@@ -322,7 +322,8 @@ fun CoroutineScope.fetchAddonSubtitlesAsync(
     playbackType: String,
     playbackId: String,
     stream: Stream,
-    playerState: PlayerState
+    playerState: PlayerState,
+    alternateId: String? = null
 ) {
     launch(Dispatchers.IO) {
         try {
@@ -333,6 +334,7 @@ fun CoroutineScope.fetchAddonSubtitlesAsync(
             val fetchedSubs = repository.getSubtitles(
                 type = playbackType,
                 playbackId = playbackId,
+                alternateId = alternateId,
                 videoHash = vHash,
                 videoSize = vSize,
                 filename = vFilename
@@ -343,14 +345,6 @@ fun CoroutineScope.fetchAddonSubtitlesAsync(
                 withContext(Dispatchers.Main) {
                     playerState.selectedPlayerSubtitles = 
                         (playerState.selectedPlayerSubtitles + newPayload).distinctBy { it.id }
-                }
-            } else {
-                withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(
-                        com.lumera.app.LumeraApplication.instance,
-                        "Nenhuma legenda encontrada",
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
                 }
             }
         } catch (e: Exception) {

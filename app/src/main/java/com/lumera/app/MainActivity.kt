@@ -754,13 +754,19 @@ class MainActivity : ComponentActivity() {
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
 
-                                        playerState.selectedPlayerSubtitles = buildSubtitlePayload(stream, emptyList())
+                                        playerState.selectedPlayerSubtitles = buildSubtitlePayload(stream, addonSubtitles)
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = ""
                                         torrentProgress = TorrentProgress("Connecting to peers...")
                                         activeView = "player"
 
-                                        uiScope.fetchAddonSubtitlesAsync(subtitleRepository, playbackType, playbackId, stream, playerState)
+                                        run {
+                                             val altId = if (playbackType == "movie") null else {
+                                                 val ep = episodes.find { it.id == playbackId }
+                                                 ep?.imdbId ?: (if (selectedMovieId.startsWith("tt")) selectedMovieId else null)?.let { "$it:${ep?.season ?: 1}:${ep?.episode ?: 1}" }
+                                             }
+                                             uiScope.fetchAddonSubtitlesAsync(subtitleRepository, playbackType, playbackId, stream, playerState, alternateId = altId)
+                                         }
 
                                         TorrentService.onStreamReady = { localUrl ->
                                             torrentProgress = null
@@ -790,7 +796,7 @@ class MainActivity : ComponentActivity() {
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
 
-                                        playerState.selectedPlayerSubtitles = buildSubtitlePayload(stream, emptyList())
+                                        playerState.selectedPlayerSubtitles = buildSubtitlePayload(stream, addonSubtitles)
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = url
                                         when (currentProfile?.playerPreference) {
@@ -799,7 +805,13 @@ class MainActivity : ComponentActivity() {
                                             else -> activeView = "player"
                                         }
 
-                                        uiScope.fetchAddonSubtitlesAsync(subtitleRepository, playbackType, playbackId, stream, playerState)
+                                        run {
+                                             val altId = if (playbackType == "movie") null else {
+                                                 val ep = episodes.find { it.id == playbackId }
+                                                 ep?.imdbId ?: (if (selectedMovieId.startsWith("tt")) selectedMovieId else null)?.let { "$it:${ep?.season ?: 1}:${ep?.episode ?: 1}" }
+                                             }
+                                             uiScope.fetchAddonSubtitlesAsync(subtitleRepository, playbackType, playbackId, stream, playerState, alternateId = altId)
+                                         }
                                     }
                                 }
                             }

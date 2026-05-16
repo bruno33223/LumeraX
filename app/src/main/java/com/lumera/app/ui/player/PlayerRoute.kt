@@ -324,7 +324,13 @@ fun PlayerRoute(
                                                 onSelectedVideoUrlChange(nextUrl)
                                             }
 
-                                            uiScope.fetchAddonSubtitlesAsync(subtitleRepository, "series", nextStreamId, streamToPlay, playerState)
+                                                                                        run {
+                                                val altId = {
+                                                    val ep = playerState.currentEpisodeList.find { it.id == nextStreamId }
+                                                    ep?.imdbId ?: (if (selectedMovieId.startsWith("tt")) selectedMovieId else null)?.let { "$it:${ep?.season ?: 1}:${ep?.episode ?: 1}" }
+                                                }()
+                                                uiScope.fetchAddonSubtitlesAsync(subtitleRepository, "series", nextStreamId, streamToPlay, playerState, alternateId = altId)
+                                            }
                                         }
                                     }
                                 } else null,
@@ -488,7 +494,13 @@ fun PlayerRoute(
                                                 onSelectedVideoUrlChange(epUrl)
                                             }
 
-                                            uiScope.fetchAddonSubtitlesAsync(subtitleRepository, "series", epStreamId, streamToPlay, playerState)
+                                                                                        run {
+                                                val altId = {
+                                                    val ep = playerState.currentEpisodeList.find { it.id == epStreamId }
+                                                    ep?.imdbId ?: (if (selectedMovieId.startsWith("tt")) selectedMovieId else null)?.let { "$it:${ep?.season ?: 1}:${ep?.episode ?: 1}" }
+                                                }()
+                                                uiScope.fetchAddonSubtitlesAsync(subtitleRepository, "series", epStreamId, streamToPlay, playerState, alternateId = altId)
+                                            }
                                         }
                                     }
                                 } else null,
@@ -580,7 +592,13 @@ fun PlayerRoute(
                                             onSelectedVideoUrlChange(sourceUrl)
                                         }
 
-                                        uiScope.fetchAddonSubtitlesAsync(subtitleRepository, "series", pending.playbackId, streamToPlay, playerState)
+                                                                                 run {
+                                             val altId = {
+                                                 val ep = playerState.currentEpisodeList.find { it.id == pending.playbackId }
+                                                 ep?.imdbId ?: (if (selectedMovieId.startsWith("tt")) selectedMovieId else null)?.let { "$it:${ep?.season ?: 1}:${ep?.episode ?: 1}" }
+                                             }()
+                                             uiScope.fetchAddonSubtitlesAsync(subtitleRepository, "series", pending.playbackId, streamToPlay, playerState, alternateId = altId)
+                                         }
                                     }
                                 },
                                 onEpisodeSwitchDismissed = { playerState.pendingEpisodeSwitch = null; playerState.isEpisodeSwitchLoading = false },
