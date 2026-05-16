@@ -23,7 +23,7 @@ val traktClientId: String = localProperties.getProperty("TRAKT_CLIENT_ID", "")
 val traktClientSecret: String = localProperties.getProperty("TRAKT_CLIENT_SECRET", "")
 
 android {
-    namespace = "com.lumerax.app"
+    namespace = "com.lumera.app"
     compileSdk = 36
 
     signingConfigs {
