@@ -48,7 +48,7 @@ class IntegrationsViewModel @Inject constructor(
     private val stremioAuthManager: StremioAuthManager,
     private val addonRepository: AddonRepository,
     private val profileConfigurationManager: ProfileConfigurationManager,
-    private val dao: AddonDao,
+    internal val dao: AddonDao,
     private val traktAuthManager: TraktAuthManager,
     private val traktSyncManager: TraktSyncManager
 ) : ViewModel() {
@@ -265,28 +265,20 @@ class IntegrationsViewModel @Inject constructor(
     fun exportBackup(context: android.content.Context) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            try {
-                com.lumera.app.data.backup.DriveBackupManager.getInstance().exportToDrive(context, dao)
-                _events.send(IntegrationsEvent.BackupSuccess("Backup completed!"))
-            } catch (e: Exception) {
-                _events.send(IntegrationsEvent.BackupError("Backup failed: ${e.message}"))
-            } finally {
-                _uiState.value = _uiState.value.copy(isLoading = false)
-            }
+            val result = com.lumera.app.data.backup.DriveBackupManager.getInstance().exportToDrive(context, dao)
+            result.onSuccess { _events.send(IntegrationsEvent.BackupSuccess(it)) }
+            result.onFailure { _events.send(IntegrationsEvent.BackupError("Backup failed: ${it.message}")) }
+            _uiState.value = _uiState.value.copy(isLoading = false)
         }
     }
 
     fun restoreBackup(context: android.content.Context) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            try {
-                com.lumera.app.data.backup.DriveBackupManager.getInstance().restoreFromDrive(context, dao)
-                _events.send(IntegrationsEvent.BackupSuccess("Restore completed!"))
-            } catch (e: Exception) {
-                _events.send(IntegrationsEvent.BackupError("Restore failed: ${e.message}"))
-            } finally {
-                _uiState.value = _uiState.value.copy(isLoading = false)
-            }
+            val result = com.lumera.app.data.backup.DriveBackupManager.getInstance().restoreFromDrive(context, dao)
+            result.onSuccess { _events.send(IntegrationsEvent.BackupSuccess(it)) }
+            result.onFailure { _events.send(IntegrationsEvent.BackupError("Restore failed: ${it.message}")) }
+            _uiState.value = _uiState.value.copy(isLoading = false)
         }
     }
 }

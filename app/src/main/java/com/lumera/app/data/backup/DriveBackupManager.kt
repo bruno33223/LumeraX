@@ -1,6 +1,7 @@
 package com.lumera.app.data.backup
 
 import android.content.Context
+import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -20,7 +21,6 @@ import com.lumera.app.data.model.ProfileEntity
 import com.lumera.app.data.model.ThemeEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.FileOutputStream
 import java.util.Collections
 
 /**
@@ -38,8 +38,12 @@ data class LumeraBackupPayload(
 class DriveBackupManager private constructor() {
 
     companion object {
+        private const val TAG = "LumeraDrive"
         private const val BACKUP_FILENAME = "lumera_backup.json"
-        
+        private const val PREFS_NAME = "lumera_drive_prefs"
+        private const val KEY_LAST_BACKUP_MS = "last_backup_ms"
+        private const val AUTO_BACKUP_THROTTLE_MS = 3_600_000L // 1 hour
+
         @Volatile
         private var instance: DriveBackupManager? = null
 
@@ -55,6 +59,14 @@ class DriveBackupManager private constructor() {
                 .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
                 .build()
         }
+
+        fun isSignedIn(context: Context): Boolean {
+            return GoogleSignIn.getLastSignedInAccount(context) != null
+        }
+
+        fun getSignedInEmail(context: Context): String? {
+            return GoogleSignIn.getLastSignedInAccount(context)?.email
+        }
     }
 
     private fun getDriveService(context: Context, account: GoogleSignInAccount): Drive {
@@ -62,7 +74,7 @@ class DriveBackupManager private constructor() {
             context, Collections.singleton(DriveScopes.DRIVE_APPDATA)
         )
         credential.selectedAccount = account.account
-        
+
         return Drive.Builder(
             NetHttpTransport(),
             GsonFactory.getDefaultInstance(),
@@ -70,75 +82,151 @@ class DriveBackupManager private constructor() {
         ).setApplicationName("Lumera").build()
     }
 
-    suspend fun exportToDrive(context: Context, dao: AddonDao) = withContext(Dispatchers.IO) {
-        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return@withContext
-        val driveService = getDriveService(context, account)
-
-        // 1. Prepare Payload
-        // Using firstOrNull() or similar if they were flows, but for backup we need them once.
-        // AddonDao needs non-flow versions of these for backup.
-        // For now, assuming DAO has or will have these methods.
-        val payload = LumeraBackupPayload(
-            profiles = dao.getAllProfilesSync(),
-            themes = dao.getAllThemesSync(),
-            addons = dao.getAllAddonsSync(),
-            catalogConfigs = dao.getAllCatalogConfigsSync()
-        )
-
-        val json = Gson().toJson(payload)
-        val tempFile = java.io.File(context.cacheDir, BACKUP_FILENAME)
-        tempFile.writeText(json)
-
-        // 2. Drive Upload
-        val metadata = File().apply {
-            name = BACKUP_FILENAME
-            parents = Collections.singletonList("appDataFolder")
-        }
-        val mediaContent = FileContent("application/json", tempFile)
-
-        // Check if file already exists to update or create
-        val existingFiles = driveService.files().list()
-            .setSpaces("appDataFolder")
-            .setFields("files(id, name)")
-            .execute()
-            .files
-
-        val existingFile = existingFiles?.find { it.name == BACKUP_FILENAME }
-
-        if (existingFile != null) {
-            driveService.files().update(existingFile.id, null, mediaContent).execute()
-        } else {
-            driveService.files().create(metadata, mediaContent).execute()
-        }
-        
-        tempFile.delete()
+    private fun requireAccount(context: Context): GoogleSignInAccount {
+        return GoogleSignIn.getLastSignedInAccount(context)
+            ?: throw IllegalStateException("Nenhuma conta Google conectada")
     }
 
-    suspend fun restoreFromDrive(context: Context, dao: AddonDao) = withContext(Dispatchers.IO) {
-        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return@withContext
-        val driveService = getDriveService(context, account)
+    /**
+     * Checks if a backup file exists on Drive.
+     * Returns the backup timestamp if found, null otherwise.
+     */
+    suspend fun hasBackup(context: Context): Long? = withContext(Dispatchers.IO) {
+        try {
+            val account = GoogleSignIn.getLastSignedInAccount(context) ?: return@withContext null
+            val driveService = getDriveService(context, account)
 
-        val files = driveService.files().list()
-            .setSpaces("appDataFolder")
-            .setFields("files(id, name)")
-            .execute()
-            .files
+            val result = driveService.files().list()
+                .setSpaces("appDataFolder")
+                .setFields("files(id, name, modifiedTime)")
+                .execute()
 
-        val backupFile = files?.find { it.name == BACKUP_FILENAME } ?: return@withContext
+            val file = result.files?.find { it.name == BACKUP_FILENAME }
+            file?.modifiedTime?.value
+        } catch (e: Exception) {
+            Log.e(TAG, "hasBackup check failed", e)
+            null
+        }
+    }
 
-        val outputStream = java.io.ByteArrayOutputStream()
-        driveService.files().get(backupFile.id).executeMediaAndDownloadTo(outputStream)
-        
-        val json = outputStream.toString("UTF-8")
-        val payload = Gson().fromJson(json, LumeraBackupPayload::class.java)
+    /**
+     * Exports current data to Google Drive.
+     * Returns a Result with a user-facing success/error message.
+     */
+    suspend fun exportToDrive(context: Context, dao: AddonDao): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val account = requireAccount(context)
+            val driveService = getDriveService(context, account)
 
-        // 3. Restore to DAO
-        dao.restoreFullBackup(
-            profiles = payload.profiles,
-            themes = payload.themes,
-            addons = payload.addons,
-            catalogConfigs = payload.catalogConfigs
-        )
+            val payload = LumeraBackupPayload(
+                profiles = dao.getAllProfilesSync(),
+                themes = dao.getAllThemesSync(),
+                addons = dao.getAllAddonsSync(),
+                catalogConfigs = dao.getAllCatalogConfigsSync()
+            )
+
+            val json = Gson().toJson(payload)
+            val tempFile = java.io.File(context.cacheDir, BACKUP_FILENAME)
+            tempFile.writeText(json)
+
+            val mediaContent = FileContent("application/json", tempFile)
+
+            val existingFiles = driveService.files().list()
+                .setSpaces("appDataFolder")
+                .setFields("files(id, name)")
+                .execute()
+                .files
+
+            val existingFile = existingFiles?.find { it.name == BACKUP_FILENAME }
+
+            if (existingFile != null) {
+                driveService.files().update(existingFile.id, null, mediaContent).execute()
+            } else {
+                val metadata = File().apply {
+                    name = BACKUP_FILENAME
+                    parents = Collections.singletonList("appDataFolder")
+                }
+                driveService.files().create(metadata, mediaContent).execute()
+            }
+
+            tempFile.delete()
+
+            // Save timestamp for throttling
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putLong(KEY_LAST_BACKUP_MS, System.currentTimeMillis())
+                .apply()
+
+            val profileCount = payload.profiles.size
+            val addonCount = payload.addons.size
+            Log.i(TAG, "Backup exported: $profileCount profiles, $addonCount addons")
+            Result.success("Backup salvo! ($profileCount perfis, $addonCount addons)")
+        } catch (e: Exception) {
+            Log.e(TAG, "Export failed", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Restores data from Google Drive backup.
+     * Returns a Result with a user-facing success/error message.
+     */
+    suspend fun restoreFromDrive(context: Context, dao: AddonDao): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val account = requireAccount(context)
+            val driveService = getDriveService(context, account)
+
+            val files = driveService.files().list()
+                .setSpaces("appDataFolder")
+                .setFields("files(id, name)")
+                .execute()
+                .files
+
+            val backupFile = files?.find { it.name == BACKUP_FILENAME }
+                ?: return@withContext Result.success("Nenhum backup encontrado na nuvem.")
+
+            val outputStream = java.io.ByteArrayOutputStream()
+            driveService.files().get(backupFile.id).executeMediaAndDownloadTo(outputStream)
+
+            val json = outputStream.toString("UTF-8")
+            val payload = Gson().fromJson(json, LumeraBackupPayload::class.java)
+
+            dao.restoreFullBackup(
+                profiles = payload.profiles,
+                themes = payload.themes,
+                addons = payload.addons,
+                catalogConfigs = payload.catalogConfigs
+            )
+
+            val profileCount = payload.profiles.size
+            val addonCount = payload.addons.size
+            Log.i(TAG, "Backup restored: $profileCount profiles, $addonCount addons")
+            Result.success("Backup restaurado! ($profileCount perfis, $addonCount addons)")
+        } catch (e: Exception) {
+            Log.e(TAG, "Restore failed", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Silent auto-backup with throttle. Only runs if >1h since last backup.
+     */
+    suspend fun autoBackupIfNeeded(context: Context, dao: AddonDao) {
+        if (!isSignedIn(context)) return
+
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val lastBackup = prefs.getLong(KEY_LAST_BACKUP_MS, 0L)
+        val elapsed = System.currentTimeMillis() - lastBackup
+
+        if (elapsed < AUTO_BACKUP_THROTTLE_MS) {
+            Log.d(TAG, "Auto-backup skipped: ${elapsed / 1000}s since last backup")
+            return
+        }
+
+        Log.i(TAG, "Auto-backup triggered")
+        val result = exportToDrive(context, dao)
+        result.onFailure { Log.e(TAG, "Auto-backup failed", it) }
+        result.onSuccess { Log.i(TAG, "Auto-backup: $it") }
     }
 
     suspend fun checkBackupStatus(context: Context): String = withContext(Dispatchers.IO) {
@@ -154,9 +242,9 @@ class DriveBackupManager private constructor() {
 
             val file = result.files?.firstOrNull()
             if (file != null) {
-                "Backup Encontrado! Tamanho: ${file.getSize()} bytes. Modificado em: ${file.modifiedTime}"
+                "Backup encontrado! Tamanho: ${file.getSize()} bytes. Modificado em: ${file.modifiedTime}"
             } else {
-                "Nenhum backup encontrado na nuvem oculta."
+                "Nenhum backup encontrado na nuvem."
             }
         } catch (e: Exception) {
             "Erro ao consultar Drive: ${e.localizedMessage}"

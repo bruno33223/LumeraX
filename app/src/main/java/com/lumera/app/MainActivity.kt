@@ -942,33 +942,65 @@ class MainActivity : ComponentActivity() {
             var hasCheckedStartupBackup by rememberSaveable { mutableStateOf(false) }
             var driveRestoreInProgress by remember { mutableStateOf(false) }
             var driveRestoreMessage by remember { mutableStateOf<String?>(null) }
+            var driveRestoreIsError by remember { mutableStateOf(false) }
             val driveOnboardingScope = rememberCoroutineScope()
+
+            // Shared logic: after sign-in, check if backup exists → restore or create
+            fun performDriveOnboarding() {
+                driveRestoreInProgress = true
+                driveRestoreMessage = "Verificando backup na nuvem..."
+                driveRestoreIsError = false
+                driveOnboardingScope.launch {
+                    try {
+                        val driveManager = DriveBackupManager.getInstance()
+                        val backupTimestamp = driveManager.hasBackup(this@MainActivity)
+
+                        if (backupTimestamp != null) {
+                            driveRestoreMessage = "Backup encontrado! Restaurando..."
+                            val result = driveManager.restoreFromDrive(this@MainActivity, addonDao)
+                            result.onSuccess { msg ->
+                                driveRestoreMessage = msg
+                                driveRestoreIsError = false
+                            }
+                            result.onFailure { err ->
+                                driveRestoreMessage = "Falha ao restaurar: ${err.localizedMessage}"
+                                driveRestoreIsError = true
+                            }
+                        } else {
+                            driveRestoreMessage = "Nenhum backup encontrado. Criando primeiro backup..."
+                            val result = driveManager.exportToDrive(this@MainActivity, addonDao)
+                            result.onSuccess { msg ->
+                                driveRestoreMessage = "Primeiro backup criado! $msg"
+                                driveRestoreIsError = false
+                            }
+                            result.onFailure { err ->
+                                driveRestoreMessage = "Falha ao criar backup: ${err.localizedMessage}"
+                                driveRestoreIsError = true
+                            }
+                        }
+
+                        driveRestoreInProgress = false
+                        kotlinx.coroutines.delay(2500)
+                        driveRestoreMessage = null
+                        hasCheckedStartupBackup = true
+                    } catch (e: Exception) {
+                        Log.e("LumeraDrive", "Onboarding failed", e)
+                        driveRestoreMessage = "Erro: ${e.localizedMessage}"
+                        driveRestoreIsError = true
+                        driveRestoreInProgress = false
+                        kotlinx.coroutines.delay(2500)
+                        driveRestoreMessage = null
+                        hasCheckedStartupBackup = true
+                    }
+                }
+            }
 
             val googleDriveAuthLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()
             ) { result ->
-                if (result.resultCode == Activity.RESULT_OK) {
-                    // Sign-in succeeded — trigger restore
-                    driveRestoreInProgress = true
-                    driveRestoreMessage = "Restaurando backup do Google Drive..."
-                    driveOnboardingScope.launch {
-                        try {
-                            DriveBackupManager.getInstance().restoreFromDrive(this@MainActivity, addonDao)
-                            driveRestoreMessage = null
-                            driveRestoreInProgress = false
-                            hasCheckedStartupBackup = true
-                        } catch (e: Exception) {
-                            Log.e("LumeraDrive", "Restore failed", e)
-                            driveRestoreMessage = "Falha ao restaurar: ${e.localizedMessage}"
-                            driveRestoreInProgress = false
-                            // Let user proceed even if restore fails
-                            kotlinx.coroutines.delay(2000)
-                            driveRestoreMessage = null
-                            hasCheckedStartupBackup = true
-                        }
-                    }
+                if (result.resultCode == Activity.RESULT_OK && GoogleSignIn.getLastSignedInAccount(this@MainActivity) != null) {
+                    performDriveOnboarding()
                 } else {
-                    // User cancelled sign-in — proceed locally
                     hasCheckedStartupBackup = true
                 }
             }
@@ -1013,6 +1045,13 @@ class MainActivity : ComponentActivity() {
             var updateDismissed by rememberSaveable { mutableStateOf(false) }
             val updateScope = rememberCoroutineScope()
             LaunchedEffect(Unit) { appUpdateManager.checkForUpdate() }
+
+            // Silent auto-backup to Google Drive (throttled, non-blocking)
+            LaunchedEffect(currentProfile) {
+                if (currentProfile != null && DriveBackupManager.isSignedIn(this@MainActivity)) {
+                    DriveBackupManager.getInstance().autoBackupIfNeeded(this@MainActivity, addonDao)
+                }
+            }
             
             LocaleWrapper(language = currentProfile?.appLanguage) {
                 LumeraTheme(theme = currentTheme) {
@@ -1071,41 +1110,28 @@ class MainActivity : ComponentActivity() {
                                                 }
 
                                                 driveRestoreMessage?.let { msg ->
+                                                    val msgColor = when {
+                                                        driveRestoreIsError -> Color(0xFFFF5252)
+                                                        msg.contains("Restaurado", ignoreCase = true) || msg.contains("criado", ignoreCase = true) -> Color(0xFF4CAF50)
+                                                        else -> Color.Yellow
+                                                    }
                                                     Text(
                                                         msg,
                                                         style = MaterialTheme.typography.bodySmall,
-                                                        color = Color.Yellow,
+                                                        color = msgColor,
                                                         textAlign = TextAlign.Center,
                                                         modifier = Modifier.padding(bottom = 16.dp)
                                                     )
                                                 }
 
-                                                if (!driveRestoreInProgress) {
+                                                if (!driveRestoreInProgress && driveRestoreMessage == null) {
                                                     VoidButton(
                                                         text = "Sincronizar com Google Drive",
                                                         onClick = {
                                                             val account = GoogleSignIn.getLastSignedInAccount(this@MainActivity)
                                                             if (account != null) {
-                                                                // Already signed in — restore directly
-                                                                driveRestoreInProgress = true
-                                                                driveRestoreMessage = "Restaurando backup do Google Drive..."
-                                                                driveOnboardingScope.launch {
-                                                                    try {
-                                                                        DriveBackupManager.getInstance().restoreFromDrive(this@MainActivity, addonDao)
-                                                                        driveRestoreMessage = null
-                                                                        driveRestoreInProgress = false
-                                                                        hasCheckedStartupBackup = true
-                                                                    } catch (e: Exception) {
-                                                                        Log.e("LumeraDrive", "Restore failed", e)
-                                                                        driveRestoreMessage = "Falha ao restaurar: ${e.localizedMessage}"
-                                                                        driveRestoreInProgress = false
-                                                                        kotlinx.coroutines.delay(2000)
-                                                                        driveRestoreMessage = null
-                                                                        hasCheckedStartupBackup = true
-                                                                    }
-                                                                }
+                                                                performDriveOnboarding()
                                                             } else {
-                                                                // Need sign-in first
                                                                 val gso = DriveBackupManager.getGoogleSignInOptions()
                                                                 val signInClient = GoogleSignIn.getClient(this@MainActivity, gso)
                                                                 googleDriveAuthLauncher.launch(signInClient.signInIntent)
