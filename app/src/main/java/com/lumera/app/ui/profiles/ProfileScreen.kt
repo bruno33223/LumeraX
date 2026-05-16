@@ -852,6 +852,11 @@ fun OnboardingLanguageSelector(onLanguageSelected: (String) -> Unit) {
                 label = "Português",
                 onClick = { onLanguageSelected("pt-BR") }
             )
+            LanguageEmojiButton(
+                emoji = "\uD83C\uDDEA\uD83C\uDDF8", // Spain Flag
+                label = "Español",
+                onClick = { onLanguageSelected("es") }
+            )
         }
     }
 }
