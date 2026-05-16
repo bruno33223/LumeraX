@@ -936,7 +936,7 @@ class MainActivity : ComponentActivity() {
             var selectedPlaybackPoster by rememberSaveable { mutableStateOf("") }
             var previousView by rememberSaveable { mutableStateOf("menu") }
             var showExitConfirmation by rememberSaveable { mutableStateOf(false) }
-            val playerState = remember { com.lumera.app.ui.player.base.PlayerState() }
+            val playerState = remember { PlayerState() }
 
 
             LaunchedEffect(currentProfile?.id) {
@@ -2673,7 +2673,7 @@ private fun kotlinx.coroutines.CoroutineScope.fetchAddonSubtitlesAsync(
     playbackType: String,
     playbackId: String,
     stream: com.lumera.app.data.model.stremio.Stream,
-    playerState: com.lumera.app.ui.player.base.PlayerState
+    playerState: PlayerState
 ) {
     launch(kotlinx.coroutines.Dispatchers.IO) {
         try {
@@ -2690,7 +2690,7 @@ private fun kotlinx.coroutines.CoroutineScope.fetchAddonSubtitlesAsync(
             )
             
             if (fetchedSubs.isNotEmpty()) {
-                val newPayload = com.lumera.app.domain.buildAddonSubtitlePayload(fetchedSubs)
+                val newPayload = buildAddonSubtitlePayload(fetchedSubs)
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     playerState.selectedPlayerSubtitles = 
                         (playerState.selectedPlayerSubtitles + newPayload).distinctBy { it.id }
