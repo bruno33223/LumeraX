@@ -32,5 +32,6 @@ data class StreamSubtitle(
 data class StreamBehaviorHints(
     val bingeGroup: String? = null,
     val filename: String? = null,
+    val videoHash: String? = null,
     val videoSize: Long? = null
 )

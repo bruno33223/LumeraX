@@ -1727,9 +1727,18 @@ class MainActivity : ComponentActivity() {
                                         activeView = "player"
 
                                         // Async addon subtitle fetch — doesn't block video start
+                                        val vHash = stream.behaviorHints?.videoHash
+                                        val vSize = stream.behaviorHints?.videoSize
+                                        val vFilename = stream.behaviorHints?.filename
                                         launch {
                                             try {
-                                                val addonSubs = subtitleRepository.getSubtitles(playbackType, playbackId)
+                                                val addonSubs = subtitleRepository.getSubtitles(
+                                                    type = playbackType,
+                                                    playbackId = playbackId,
+                                                    videoHash = vHash,
+                                                    videoSize = vSize,
+                                                    filename = vFilename
+                                                )
                                                 if (addonSubs.isNotEmpty()) {
                                                     playerState.selectedPlayerSubtitles =
                                                         (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
@@ -1777,9 +1786,18 @@ class MainActivity : ComponentActivity() {
                                         }
 
                                         // Async addon subtitle fetch — doesn't block video start
+                                        val vHash = stream.behaviorHints?.videoHash
+                                        val vSize = stream.behaviorHints?.videoSize
+                                        val vFilename = stream.behaviorHints?.filename
                                         launch {
                                             try {
-                                                val addonSubs = subtitleRepository.getSubtitles(playbackType, playbackId)
+                                                val addonSubs = subtitleRepository.getSubtitles(
+                                                    type = playbackType,
+                                                    playbackId = playbackId,
+                                                    videoHash = vHash,
+                                                    videoSize = vSize,
+                                                    filename = vFilename
+                                                )
                                                 if (addonSubs.isNotEmpty()) {
                                                     playerState.selectedPlayerSubtitles =
                                                         (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
@@ -2170,9 +2188,18 @@ class MainActivity : ComponentActivity() {
                                             }
 
                                             // Async addon subtitle fetch for the new episode
+                                            val vHash = streamToPlay.behaviorHints?.videoHash
+                                            val vSize = streamToPlay.behaviorHints?.videoSize
+                                            val vFilename = streamToPlay.behaviorHints?.filename
                                             launch {
                                                 try {
-                                                    val addonSubs = subtitleRepository.getSubtitles("series", nextStreamId)
+                                                    val addonSubs = subtitleRepository.getSubtitles(
+                                                        type = "series",
+                                                        playbackId = nextStreamId,
+                                                        videoHash = vHash,
+                                                        videoSize = vSize,
+                                                        filename = vFilename
+                                                    )
                                                     if (addonSubs.isNotEmpty()) {
                                                         playerState.selectedPlayerSubtitles =
                                                             (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
@@ -2345,9 +2372,18 @@ class MainActivity : ComponentActivity() {
                                             }
 
                                             // Async addon subtitle fetch for the switched episode
+                                            val vHash = streamToPlay.behaviorHints?.videoHash
+                                            val vSize = streamToPlay.behaviorHints?.videoSize
+                                            val vFilename = streamToPlay.behaviorHints?.filename
                                             launch {
                                                 try {
-                                                    val addonSubs = subtitleRepository.getSubtitles("series", epStreamId)
+                                                    val addonSubs = subtitleRepository.getSubtitles(
+                                                        type = "series",
+                                                        playbackId = epStreamId,
+                                                        videoHash = vHash,
+                                                        videoSize = vSize,
+                                                        filename = vFilename
+                                                    )
                                                     if (addonSubs.isNotEmpty()) {
                                                         playerState.selectedPlayerSubtitles =
                                                             (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
@@ -2449,9 +2485,18 @@ class MainActivity : ComponentActivity() {
                                         }
 
                                         // Async addon subtitle fetch for source-switched episode
+                                        val vHash = streamToPlay.behaviorHints?.videoHash
+                                        val vSize = streamToPlay.behaviorHints?.videoSize
+                                        val vFilename = streamToPlay.behaviorHints?.filename
                                         uiScope.launch {
                                             try {
-                                                val addonSubs = subtitleRepository.getSubtitles("series", pending.playbackId)
+                                                val addonSubs = subtitleRepository.getSubtitles(
+                                                    type = "series",
+                                                    playbackId = pending.playbackId,
+                                                    videoHash = vHash,
+                                                    videoSize = vSize,
+                                                    filename = vFilename
+                                                )
                                                 if (addonSubs.isNotEmpty()) {
                                                     playerState.selectedPlayerSubtitles =
                                                         (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
