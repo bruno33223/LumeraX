@@ -207,9 +207,9 @@ fun PlayerScreen(
     }
 
     // Injeção a Quente: Escuta a chegada de legendas externas assíncronas.
-    LaunchedEffect(subtitles) {
+    LaunchedEffect(subtitles, uiState.isReady) {
         // Dispara o hot-swap para injetá-las no menu nativo do ExoPlayer sem reiniciar do zero
-        if (subtitles.isNotEmpty()) {
+        if (subtitles.isNotEmpty() && uiState.isReady) {
             playbackController.updateSubtitlesSeamlessly(subtitles)
         }
     }
