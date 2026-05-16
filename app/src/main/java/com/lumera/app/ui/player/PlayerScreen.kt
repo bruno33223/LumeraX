@@ -206,16 +206,11 @@ fun PlayerScreen(
         }
     }
 
-    // React to subtitle list changes (async addon subtitles arriving after initial load)
-    var initialSubtitleLoadDone by remember { mutableStateOf(false) }
+    // Injeção a Quente: Escuta a chegada de legendas externas assíncronas.
     LaunchedEffect(subtitles) {
-        if (!initialSubtitleLoadDone) {
-            // Skip the first emission — load() already handled it
-            initialSubtitleLoadDone = true
-            return@LaunchedEffect
-        }
+        // Dispara o hot-swap para injetá-las no menu nativo do ExoPlayer sem reiniciar do zero
         if (subtitles.isNotEmpty()) {
-            playbackController.updateExternalSubtitles(subtitles)
+            playbackController.updateSubtitlesSeamlessly(subtitles)
         }
     }
 

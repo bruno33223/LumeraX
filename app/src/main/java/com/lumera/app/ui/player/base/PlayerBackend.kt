@@ -33,7 +33,7 @@ interface PlayerPlaybackController {
     fun setSubtitleTextColor(color: Int)
     fun setSubtitleBackgroundColor(color: Int)
 
-    fun updateExternalSubtitles(subtitles: List<PlayerSubtitleSource>)
+    fun updateSubtitlesSeamlessly(subtitles: List<PlayerSubtitleSource>)
     fun release()
 }
 

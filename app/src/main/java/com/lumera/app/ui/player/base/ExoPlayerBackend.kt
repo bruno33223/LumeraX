@@ -822,7 +822,7 @@ class ExoPlayerBackend(
         sv.post { sv.setCues(transformed) }
     }
 
-    override fun updateExternalSubtitles(subtitles: List<PlayerSubtitleSource>) {
+    override fun updateSubtitlesSeamlessly(subtitles: List<PlayerSubtitleSource>) {
         if (released) return
         val player = exoPlayer ?: return
         val request = loadRequest ?: return
