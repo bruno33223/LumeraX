@@ -206,6 +206,19 @@ fun PlayerScreen(
         }
     }
 
+    // React to subtitle list changes (async addon subtitles arriving after initial load)
+    var initialSubtitleLoadDone by remember { mutableStateOf(false) }
+    LaunchedEffect(subtitles) {
+        if (!initialSubtitleLoadDone) {
+            // Skip the first emission — load() already handled it
+            initialSubtitleLoadDone = true
+            return@LaunchedEffect
+        }
+        if (subtitles.isNotEmpty()) {
+            playbackController.updateExternalSubtitles(subtitles)
+        }
+    }
+
     val persistAndBack = {
         val hasError = !uiState.errorMessage.isNullOrBlank()
         val position = uiState.positionMs.coerceAtLeast(0L)

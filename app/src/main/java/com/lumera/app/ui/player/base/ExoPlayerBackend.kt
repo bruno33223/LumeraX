@@ -822,6 +822,102 @@ class ExoPlayerBackend(
         sv.post { sv.setCues(transformed) }
     }
 
+    override fun updateExternalSubtitles(subtitles: List<PlayerSubtitleSource>) {
+        if (released) return
+        val player = exoPlayer ?: return
+        val request = loadRequest ?: return
+
+        // Normalize incoming subtitles (same logic as load())
+        val normalizedSubtitles = subtitles.mapIndexed { index, subtitle ->
+            val normalizedId = subtitle.id.trim().ifBlank { "ext_$index" }
+            val normalizedLabel = subtitle.label.ifBlank { "Subtitle ${index + 1}" }
+            subtitle.copy(id = normalizedId, label = normalizedLabel)
+        }
+
+        // Check if there are actually new subtitles to add
+        val newSubs = normalizedSubtitles.filter { sub ->
+            externalSubtitleTrackId(sub.id) !in externalSubtitleSources.keys
+        }
+        if (newSubs.isEmpty()) return
+
+        // Update external subtitle maps with merged set
+        externalSubtitleSources = normalizedSubtitles.associateBy { subtitle ->
+            externalSubtitleTrackId(subtitle.id)
+        }
+        externalSubtitleLabelKeys = externalSubtitleSources.mapValues { (_, source) ->
+            normalizedSubtitleLabelKey(source.label)
+        }
+
+        // Preserve playback state
+        val currentPosition = player.currentPosition.coerceAtLeast(0L)
+        val wasPlaying = player.playWhenReady
+        val currentSpeed = player.playbackParameters.speed
+        val selectedSubId = _uiState.value.selectedSubtitleTrackId
+        val selectedAudioId = _uiState.value.selectedAudioTrackId
+
+        // Rebuild the source from the currently active source option
+        val currentSource = _sourceOptions.value.firstOrNull { it.id == currentSourceId }
+            ?: PlayerSourceOption(
+                id = "default",
+                url = request.mediaUrl,
+                label = request.title.ifBlank { "Source" },
+                title = request.title.ifBlank { "Source" }
+            )
+
+        // Preserve pending track selections so they survive the rebuild
+        pendingAudioTrackId = selectedAudioId
+        pendingSubtitleTrackId = selectedSubId
+        forcedSubtitleTrackId = selectedSubId?.takeIf { it in externalSubtitleSources.keys }
+        hasAppliedAudioLanguagePref = false
+        hasAppliedSubtitleLanguagePref = false
+
+        scope.launch {
+            val mediaSource = withContext(Dispatchers.Default) {
+                val subtitleConfigs = externalSubtitleSources.map { (_, subtitle) ->
+                    MediaItem.SubtitleConfiguration.Builder(Uri.parse(subtitle.url))
+                        .setId(externalSubtitleTrackId(subtitle.id))
+                        .setLabel(subtitle.label)
+                        .setLanguage(subtitle.language)
+                        .setRoleFlags(C.ROLE_FLAG_SUBTITLE)
+                        .also { builder ->
+                            inferSubtitleMimeType(subtitle.url)?.let { builder.setMimeType(it) }
+                        }
+                        .build()
+                }
+                val mediaItem = MediaItem.Builder()
+                    .setUri(currentSource.url)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(request.title)
+                            .setDisplayTitle(request.title)
+                            .build()
+                    )
+                    .setSubtitleConfigurations(subtitleConfigs)
+                    .build()
+                createMediaSource(currentSource.url, mediaItem)
+            }
+
+            if (released) return@launch
+
+            val finalMediaSource = if (!request.separateAudioUrl.isNullOrBlank()) {
+                val ytSourceFactory = DefaultMediaSourceFactory(
+                    com.lumera.app.data.trailer.YoutubeChunkedDataSourceFactory()
+                )
+                val videoSource = ytSourceFactory.createMediaSource(MediaItem.fromUri(currentSource.url))
+                val audioSource = ytSourceFactory.createMediaSource(MediaItem.fromUri(request.separateAudioUrl))
+                MergingMediaSource(videoSource, audioSource)
+            } else {
+                mediaSource
+            }
+
+            player.setMediaSource(finalMediaSource)
+            pendingStartPositionMs = currentPosition
+            player.playWhenReady = wasPlaying
+            player.prepare()
+            setPlaybackSpeed(currentSpeed)
+        }
+    }
+
     override fun release() {
         released = true
         frameRateManager?.restoreOriginalMode()
