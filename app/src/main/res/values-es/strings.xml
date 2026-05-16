@@ -1,0 +1,312 @@
+<resources>
+    <string name="app_name">LumeraX</string>
+
+    <!-- ACRA crash reporting -->
+    <string name="acra_toast_text">Se ha enviado un informe de error para ayudarnos a solucionar este problema.</string>
+
+    <!-- Settings Sections -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_personalization">Personalización</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_dashboard">Pantalla de Inicio</string>
+    <string name="settings_playback">Reproducción</string>
+    <string name="settings_source_prefs">Ordenar y Filtrar</string>
+    <string name="settings_addons">Complementos</string>
+    <string name="settings_integrations">Integraciones</string>
+    <string name="settings_about">Acerca de</string>
+
+    <!-- Personalization -->
+    <string name="personalization_desc">Personaliza tu experiencia de visualización.</string>
+    <string name="settings_poster_corners">Bordes de Póster</string>
+    <string name="settings_hub_shape">Forma del Hub</string>
+    <string name="settings_continue_watching">Continuar Viendo</string>
+    <string name="settings_menu_position">Posición del Menú</string>
+    <string name="settings_splash_screen">Pantalla de Inicio</string>
+    <string name="settings_locale">Idioma</string>
+
+    <!-- Common Options -->
+    <string name="option_round">Redondeado</string>
+    <string name="option_sharp">Afilado</string>
+    <string name="option_poster">Póster</string>
+    <string name="option_landscape">Horizontal</string>
+    <string name="option_left">Izquierda</string>
+    <string name="option_top">Arriba</string>
+    <string name="option_on">Activado</string>
+    <string name="option_off">Desactivado</string>
+    <string name="option_manage">Gestionar</string>
+    <string name="option_side">Lateral</string>
+
+    <string name="settings_app_language">Idioma</string>
+    <string name="settings_app_language_desc">Idioma seleccionado para la interfaz de la aplicación</string>
+    <string name="settings_nav_position">Posición de Navegación</string>
+    <string name="settings_nav_position_desc">Elige dónde mostrar el panel de navegación</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_movies">Películas</string>
+    <string name="nav_series">Series</string>
+    <string name="nav_watchlist">Lista de seguimiento</string>
+    <string name="nav_search">Buscar</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_settings">Ajustes</string>
+    <string name="nav_exit">Salir</string>
+    <string name="profile_avatar_content_desc">Avatar de Perfil</string>
+    <string name="change_profile">Cambiar Perfil</string>
+
+    <!-- Playback Settings -->
+    <string name="playback_header">Reproducción</string>
+    <string name="playback_desc_full">Configura los ajustes de decodificación de video y pantalla.</string>
+    <string name="settings_tunneling">Reproducción Tunneled</string>
+    <string name="settings_tunneling_desc">Mejor soporte 4K/HDR, puede no funcionar en todos los dispositivos</string>
+    <string name="settings_dv7_fallback">Dolby Vision Perfil 7 Fallback</string>
+    <string name="settings_dv7_fallback_desc">Reproducir contenido DV7 como HDR en pantallas compatibles</string>
+    <string name="settings_frame_rate">Ajuste de Frecuencia de Actualización</string>
+    <string name="settings_frame_rate_desc">Ajustar la frecuencia de actualización de la pantalla a la del video</string>
+    <string name="settings_decoder_priority">Prioridad del Decodificador</string>
+    <string name="settings_player">Reproductor</string>
+    <string name="settings_remember_source">Recordar Selección de Fuente</string>
+    <string name="settings_remember_source_desc">Guardar tu elección de fuente y reutilizarla al reanudar</string>
+    <string name="settings_auto_select_source">Selección Automática de Fuente</string>
+    <string name="settings_auto_select_source_desc">Elegir automáticamente la primera fuente disponible para nuevo contenido</string>
+    <string name="settings_skip_intro">Omitir Introducción</string>
+    <string name="settings_skip_intro_desc">Mostrar botón de omitir durante segmentos de intro si están en IntroDB</string>
+    <string name="settings_autoplay">Reproducir Siguiente Episodio</string>
+    <string name="settings_autoplay_desc">Reproducir automáticamente el siguiente episodio al terminar uno</string>
+    <string name="settings_autoplay_threshold">Umbral</string>
+    <string name="settings_language_prefs">Preferencias de Idioma</string>
+    <string name="settings_audio_lang">Idioma de Audio</string>
+    <string name="settings_audio_lang_secondary">Idioma de Audio (Secundario)</string>
+    <string name="settings_subtitle_lang">Idioma de Subtítulos</string>
+    <string name="settings_subtitle_lang_secondary">Idioma de Subtítulos (Secundario)</string>
+    <string name="settings_subtitle_style">Estilo de Subtítulos</string>
+    <string name="settings_subtitle_appearance">Apariencia de Subtítulos</string>
+    <string name="settings_ass_renderer">Subtítulos ASS/SSA Estilizados</string>
+    <string name="settings_ass_renderer_desc">Renderizar subtítulos ASS/SSA con estilo completo mediante libass (experimental)</string>
+
+    <string name="onboarding_language_title">Selecciona tu idioma</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_welcome_title">BIENVENIDO A LUMERAX</string>
+    <string name="profile_welcome_subtitle">Tu universo cinematográfico te espera.</string>
+    <string name="profile_create_first">Crear Primer Perfil</string>
+    <string name="profile_who_is_watching">¿QUIÉN ESTÁ VIENDO?</string>
+    <string name="profile_setup_title">Configurar \"%1$s\"</string>
+    <string name="profile_setup_subtitle">Elige cómo debe comenzar este perfil.</string>
+    <string name="profile_copy_another">Copiar de Otro Perfil</string>
+    <string name="profile_no_copy_available">No hay perfiles disponibles para copiar</string>
+    <string name="profile_start_scratch">Empezar de Cero</string>
+    <string name="profile_copy_config_title">Copiar Configuración</string>
+    <string name="profile_copy_config_subtitle">Selecciona el perfil a copiar en \"%1$s\".</string>
+    <string name="profile_no_profiles_to_copy">No hay perfiles disponibles para copiar.</string>
+    <string name="profile_start_scratch_confirm_title">¿Empezar de Cero?</string>
+    <string name="profile_start_scratch_confirm_subtitle">\"%1$s\" comenzará sin complementos, sin integraciones y con una configuración de inicio nueva.</string>
+    <string name="profile_yes_start_fresh">Sí, empezar de nuevo</string>
+    <string name="profile_edit">Editar Perfil</string>
+    <string name="profile_delete">Eliminar Perfil</string>
+    <string name="profile_delete_confirm_title">¿Eliminar Perfil?</string>
+    <string name="profile_delete_confirm_subtitle">¿Estás seguro de que quieres eliminar \"%1$s\"?</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_back">Atrás</string>
+    <string name="common_yes">Sí</string>
+    <string name="common_no">No</string>
+    <string name="common_or">O</string>
+    <string name="profile_wizard_name_title_new">¿Cómo deberíamos llamarte?</string>
+    <string name="profile_wizard_name_title_edit">Actualiza tu nombre</string>
+    <string name="profile_wizard_name_placeholder">Introduce un nombre</string>
+    <string name="profile_wizard_avatar_title">Elige un Avatar</string>
+    <string name="profile_wizard_avatar_subtitle">Selecciona un avatar que te represente.</string>
+    <string name="option_upload_own">Subir el Tuyo</string>
+
+    <!-- Subtitle Appearance -->
+    <string name="subtitle_size">Tamaño: %1$d%%</string>
+    <string name="subtitle_offset">Desplazamiento: %1$d%%</string>
+    <string name="subtitle_text_color">Color de Texto</string>
+    <string name="subtitle_background">Fondo</string>
+    <string name="subtitle_color_white">Blanco</string>
+    <string name="subtitle_color_gray">Gris</string>
+    <string name="subtitle_color_yellow">Amarillo</string>
+    <string name="subtitle_color_cyan">Cian</string>
+    <string name="subtitle_color_red">Rojo</string>
+    <string name="subtitle_color_orange">Naranja</string>
+    <string name="subtitle_color_green">Verde</string>
+    <string name="subtitle_color_none">Ninguno</string>
+    <string name="subtitle_color_black">Negro</string>
+    <string name="subtitle_color_semi">Semi-transparente</string>
+    <string name="subtitle_color_dark">Oscuro</string>
+
+    <!-- Source Preferences -->
+    <string name="source_prefs_header">Ordenar y Filtrar</string>
+    <string name="source_prefs_desc">Configura cómo se ordenan y filtran las fuentes.</string>
+    <string name="source_sort_enable">Ordenar Fuentes</string>
+    <string name="source_sort_enable_desc">Clasificar fuentes por calidad o tamaño de archivo</string>
+    <string name="source_sort_by_header">Ordenar Por</string>
+    <string name="source_sort_by_desc">Elige qué es lo más importante al clasificar fuentes.</string>
+    <string name="source_sort_quality">Calidad</string>
+    <string name="source_sort_size">Tamaño de Archivo</string>
+    <string name="source_quality_filter_header">Calidades Permitidas</string>
+    <string name="source_quality_filter_desc">Las fuentes con calidades desactivadas se ocultarán.</string>
+    <string name="source_max_size_header">Tamaño Máximo de Archivo</string>
+    <string name="source_no_limit">Sin Límite</string>
+    <string name="source_exclude_formats_header">Excluir Formatos</string>
+    <string name="source_exclude_formats_desc">Ocultar fuentes con estos códecs y formatos.</string>
+    <string name="source_exclude_phrases_header">Excluir Frases</string>
+    <string name="source_exclude_phrases_desc">Las fuentes que contengan estas palabras se ocultarán. Separadas por comas.</string>
+    <string name="source_exclude_phrases_placeholder">ej. muestra, remux, cam</string>
+
+    <!-- About -->
+    <string name="about_header">Acerca de</string>
+    <string name="about_desc">Información de la aplicación y actualizaciones.</string>
+    <string name="about_version">Versión</string>
+    <string name="about_show_popup">Mostrar ventana de actualización al iniciar</string>
+    <string name="about_check_updates">Buscar Actualizaciones</string>
+    <string name="about_checking">Buscando…</string>
+    <string name="about_downloading">Descargando %1$d%%</string>
+    <string name="about_update_available">Actualización Disponible</string>
+    <string name="about_up_to_date">La aplicación está actualizada</string>
+
+    <!-- Search -->
+    <string name="search_placeholder">Escribe para buscar…</string>
+    <string name="search_tab_movies">Películas</string>
+    <string name="search_tab_series">Series</string>
+    <string name="searching">Buscando…</string>
+    <string name="search_no_results">No se encontraron resultados para \"%1$s\"</string>
+    <string name="search_try_different">Prueba con una palabra clave diferente o comprueba la ortografía.</string>
+    <string name="search_trending">Búsquedas Populares</string>
+
+    <!-- Watchlist -->
+    <string name="watchlist_title">Lista de seguimiento</string>
+    <string name="watchlist_empty">Tu lista de seguimiento está vacía</string>
+    <string name="watchlist_empty_desc">Añade películas y series a tu lista de seguimiento para llevar un control de lo que quieres ver.</string>
+
+    <!-- General UI -->
+    <string name="go_back">Volver</string>
+    <string name="cancel">Cancelar</string>
+    <string name="save">Guardar</string>
+    <string name="close">Cerrar</string>
+    <string name="selected">Seleccionado</string>
+    <string name="default_label">Predeterminado</string>
+    <string name="off">Apagado</string>
+    <string name="none">Ninguno</string>
+
+    <!-- Addons -->
+    <string name="addons_header">Gestor de Complementos</string>
+    <string name="addons_desc">Instala y gestiona tus complementos de Stremio.</string>
+    <string name="addons_remote_paste">Pegado Remoto</string>
+    <string name="addons_install">Instalar</string>
+    <string name="addons_installed_header">Complementos Instalados</string>
+    <string name="addons_reorder_mode">Modo Reordenar  ·  ▲▼ mover  ·  OK listo  ·  Atrás cancelar</string>
+    <string name="addons_manage_title">Gestionar Complemento</string>
+    <string name="addons_rename">Renombrar</string>
+    <string name="addons_move">Mover</string>
+    <string name="addons_uninstall">Desinstalar</string>
+    <string name="addons_uninstall_confirm">¿Estás seguro de que quieres eliminar %1$s?</string>
+    <string name="addons_sync_config_title">Configurar Sincronización</string>
+    <string name="addons_sync_catalogs_desc">Selecciona qué catálogos sincronizar:</string>
+    <string name="addons_sync_home">Pantalla de Inicio</string>
+    <string name="addons_sync_movies">Pestaña de Películas</string>
+    <string name="addons_sync_series">Pestaña de Series</string>
+    <string name="addons_manage_short">Gestionar</string>
+
+    <!-- Integrations -->
+    <string name="integrations_header">Integraciones</string>
+    <string name="integrations_desc">Conecta servicios externos para mejorar tu experiencia.</string>
+    <string name="integrations_connected">Conectado</string>
+    <string name="integrations_not_connected">No Conectado</string>
+    <string name="integrations_connect">Conectar</string>
+    <string name="integrations_manage">Gestionar</string>
+    <string name="integrations_stremio_connected_toast">¡Conectado a Stremio!</string>
+    <string name="integrations_stremio_disconnected_toast">Desconectado de Stremio</string>
+    <string name="integrations_stremio_import_toast">Se importaron %1$d complementos</string>
+    <string name="integrations_stremio_dialog_title">Conecta tu cuenta de Stremio</string>
+    <string name="integrations_stremio_dialog_desc">Importa tus complementos existentes de Stremio</string>
+    <string name="integrations_stremio_qr_desc">O escanea con el móvil</string>
+    <string name="integrations_stremio_qr_content_desc">Código QR</string>
+    <string name="integrations_stremio_account_title">Cuenta de Stremio</string>
+    <string name="integrations_stremio_sync_title">Añadir Nuevos Complementos</string>
+    <string name="integrations_stremio_sync_desc">Importa complementos de tu cuenta de Stremio</string>
+    <string name="integrations_stremio_disconnect_title">Desconectar Cuenta</string>
+    <string name="integrations_stremio_disconnect_desc">Eliminar conexión con Stremio</string>
+    <string name="integrations_stremio_disconnect_confirm_title">¿Desconectar Stremio?</string>
+    <string name="integrations_stremio_disconnect_confirm_desc">Tus complementos instalados permanecerán, pero no podrás sincronizar nuevos complementos hasta que vuelvas a conectar.</string>
+    
+    <string name="integrations_tmdb_header">Ajustes de TMDB</string>
+    <string name="integrations_tmdb_desc">Enriquece los metadados con información localizada, reparto, puntuaciones y más.</string>
+    <string name="integrations_tmdb_enable">Activar TMDB</string>
+    <string name="integrations_tmdb_enable_desc">Obtener metadados mejorados de The Movie Database</string>
+    <string name="integrations_tmdb_lang_header">Idioma de Metadados</string>
+    <string name="integrations_tmdb_lang_desc">Los títulos, descripciones y logotipos usarán este idioma cuando esté disponible.</string>
+    <string name="integrations_tmdb_device_lang">Idioma del Dispositivo</string>
+
+    <string name="integrations_trakt_header">Trakt</string>
+    <string name="integrations_trakt_desc">Registra lo que ves automáticamente en todas tus aplicaciones.</string>
+    <string name="integrations_trakt_connected_msg">Conectado a Trakt</string>
+    <string name="integrations_trakt_auth_desc">Conecta tu cuenta de Trakt para sincronizar tu lista de seguimiento, historial de visualización y reproducción scrobble.</string>
+    <string name="integrations_trakt_auth_step">Ve a la URL de abajo e introduce el código:</string>
+    <string name="integrations_trakt_waiting">Esperando autorización…</string>
+    <string name="integrations_trakt_success">¡Conectado con éxito!</string>
+    <string name="integrations_trakt_expired">El código de autorización ha caducado. Por favor, inténtalo de nuevo.</string>
+
+    <!-- Player Settings Sub -->
+    <string name="autoplay_trigger_at">Disparar al %1$d%%</string>
+    <string name="autoplay_remaining_min_sec">quedan %1$dm %2$ds</string>
+    <string name="autoplay_remaining_sec">quedan %1$ds</string>
+    <string name="autoplay_trigger_with">Disparar con %1$s</string>
+    <string name="subtitle_preview_text">Tus subtítulos se verán así</string>
+    <string name="about_download_install">Descargar e Instalar</string>
+    <string name="about_downloading_progress">Descargando… %1$d%%</string>
+    <string name="about_installing">Descarga completada. Instalando…</string>
+
+    <string name="addons_import_title">Importar Complementos de Stremio</string>
+    <string name="addons_import_stats">Encontrados %1$d complementos • %2$d seleccionados</string>
+    <string name="addons_select_all">Seleccionar Todos</string>
+    <string name="addons_deselect_all">Deseleccionar Todos</string>
+    <string name="addons_import_action">Importar (%1$d)</string>
+    <string name="addons_installed_badge">Instalado</string>
+    <string name="addons_selected_desc">Seleccionado</string>
+    <string name="addons_not_selected_desc">No seleccionado</string>
+    <string name="integrations_stremio_sync_complete">Se importaron %1$d complementos</string>
+    
+    <string name="dialog_cancel">Cancelar</string>
+    <string name="dialog_close">Cerrar</string>
+    <string name="dialog_save">Guardar</string>
+    <string name="dialog_done">Listo</string>
+    <string name="dialog_retry">Reintentar</string>
+    
+    <string name="addons_uninstall_confirm_title">¿Desinstalar Complemento?</string>
+    <string name="addons_uninstall_confirm_desc">¿Estás seguro de que quieres eliminar %1$s?</string>
+    <string name="addons_sync_config_desc">Selecciona qué catálogos sincronizar para este complemento:</string>
+    
+    <string name="keyboard_space">Espacio</string>
+    <string name="keyboard_back">Borrar</string>
+    <string name="keyboard_system">Teclado</string>
+    
+    <string name="integrations_stremio_connected">Conectado</string>
+    <string name="integrations_stremio_disconnected">Desconectado</string>
+    <string name="integrations_stremio_connect_title">Conectar Cuenta de Stremio</string>
+    <string name="integrations_stremio_connect_desc">Importa tus complementos y configuraciones de sincronización.</string>
+    <string name="integrations_stremio_connecting">Conectando…</string>
+    <string name="integrations_qr_title">Conectar con el Móvil</string>
+    <string name="integrations_sync_addons_title">Sincronizar Complementos</string>
+    <string name="integrations_sync_addons_desc">Obtener nuevos complementos de tu cuenta.</string>
+    <string name="integrations_disconnect_title">Desconectar Stremio</string>
+    <string name="integrations_disconnect_desc">Eliminar tu conexión con Stremio.</string>
+    <string name="integrations_disconnect_confirm_title">¿Desconectar Cuenta?</string>
+    <string name="integrations_disconnect_confirm_desc">Tus complementos instalados permanecerán, pero no podrás sincronizar nuevos complementos hasta que vuelvas a conectar.</string>
+    <string name="integrations_disconnect_confirm_action">Desconectar</string>
+    
+    <string name="integrations_tmdb_settings_title">Ajustes de TMDB</string>
+    <string name="integrations_tmdb_settings_desc">Configura la integración de metadados de TMDB.</string>
+    <string name="integrations_tmdb_enable_title">Activar Metadados TMDB</string>
+    <string name="integrations_tmdb_lang_title">Idioma de Metadados</string>
+    
+    <string name="integrations_trakt_connected">Conectado a Trakt</string>
+    <string name="integrations_trakt_connect_desc">Sincroniza tu lista de seguimiento e historial de reproducción.</string>
+    <string name="integrations_trakt_auth_instructions">Escanea el código QR o ve a trakt.tv/activate e introduce el código de abajo.</string>
+    
+    <string name="settings_autoplay_threshold_val">Disparar al %1$d%%</string>
+    <string name="secs">%1$ds</string>
+    <string name="settings_remaining">quedan %1$ds</string>
+    <string name="settings_trigger_at">Disparar al %1$d%%</string>
+    <string name="option_home">Inicio</string>
+
+</resources>

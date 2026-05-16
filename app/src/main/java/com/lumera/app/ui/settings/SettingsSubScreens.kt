@@ -233,7 +233,7 @@ fun PersonalizationSettings(
         // LOCALE
         SettingRow(stringResource(R.string.settings_locale)) {
             VoidSegmentedControl(
-                options = listOf("English" to "en", "Português" to "pt-BR"),
+                options = listOf("English" to "en", "Português" to "pt-BR", "Español" to "es"),
                 selectedOption = currentProfile.appLanguage,
                 onOptionSelected = { viewModel.updateAppLanguage(currentProfile.id, it) },
                 onBack = onGoBack,
