@@ -7,10 +7,10 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import com.lumera.app.BuildConfig
-import com.lumera.app.PlayerState
-import com.lumera.app.PlayerSubtitlePayload
-import com.lumera.app.PendingEpisodeSwitch
-import com.lumera.app.PendingSourceSelection
+import com.lumera.app.data.model.PlayerState
+import com.lumera.app.data.model.PlayerSubtitlePayload
+import com.lumera.app.data.model.PendingEpisodeSwitch
+import com.lumera.app.data.model.PendingSourceSelection
 import com.lumera.app.data.torrent.TorrentService
 import com.lumera.app.data.torrent.TorrentProgress
 import com.lumera.app.ui.player.base.*
@@ -22,10 +22,8 @@ import com.lumera.app.data.repository.IntroRepository
 import com.lumera.app.data.repository.AddonRepository
 import com.lumera.app.data.repository.SubtitleRepository
 import com.lumera.app.data.stream.StreamSortingService
-import com.lumera.app.ui.player.components.PlayerChoiceDialog
-import com.lumera.app.ui.player.components.PlayerScreen
-import com.lumera.app.ui.player.components.SkipSegmentInfo
-import com.lumera.app.ui.player.components.NextEpisodeInfo
+import com.lumera.app.ui.components.dialogs.PlayerChoiceDialog
+import com.lumera.app.ui.player.PlayerScreen
 import com.lumera.app.ui.player.PlayerSessionResult
 import com.lumera.app.domain.AddonSubtitle
 import com.lumera.app.domain.findNextEpisode

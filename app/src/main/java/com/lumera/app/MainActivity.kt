@@ -144,43 +144,17 @@ import com.lumera.app.ui.player.buildAddonSubtitlePayload
 import com.lumera.app.ui.player.buildSubtitlePayload
 import com.lumera.app.ui.player.handlePlayerSessionEnd
 import com.lumera.app.ui.player.fetchAddonSubtitlesAsync
+import com.lumera.app.data.model.PlayerState
+import com.lumera.app.data.model.PlayerSubtitlePayload
+import com.lumera.app.data.model.PendingSourceSelection
+import com.lumera.app.data.model.PendingEpisodeSwitch
+import androidx.compose.runtime.Stable
 
 
 private const val SOURCE_SELECTION_COMMIT_MIN_POSITION_MS = 5_000L
 private const val SOURCE_SELECTION_FAILURE_RESET_MAX_POSITION_MS = 1_000L
 
-data class PlayerSubtitlePayload(
-    val id: String,
-    val url: String,
-    val name: String,
-    val language: String?
-)
 
-data class PendingSourceSelection(
-    val playbackId: String,
-    val launchedStream: Stream,
-    val candidateStreams: List<Stream>
-)
-
-data class PendingEpisodeSwitch(
-    val playbackId: String,
-    val playbackTitle: String,
-    val streams: List<Stream>?,
-    val addonSubs: List<AddonSubtitle>,
-    val playerCurrentSourceUrl: String?
-)
-
-@Stable
-class PlayerState {
-    var selectedPlayerSubtitles by mutableStateOf<List<PlayerSubtitlePayload>>(emptyList())
-    var selectedPlayerSources by mutableStateOf<List<PlayerSourceOption>>(emptyList())
-    var pendingSourceSelection by mutableStateOf<PendingSourceSelection?>(null)
-    var showPlayerChoiceDialog by mutableStateOf(false)
-    var currentEpisodeList by mutableStateOf<List<MetaVideo>>(emptyList())
-    var currentStream by mutableStateOf<Stream?>(null)
-    var pendingEpisodeSwitch by mutableStateOf<PendingEpisodeSwitch?>(null)
-    var isEpisodeSwitchLoading by mutableStateOf(false)
-}
 
 
 

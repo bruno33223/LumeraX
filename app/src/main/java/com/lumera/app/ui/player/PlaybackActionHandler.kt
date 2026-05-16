@@ -7,13 +7,14 @@ import android.widget.Toast
 import com.lumera.app.data.model.stremio.Stream
 import com.lumera.app.data.model.stremio.StreamSubtitle
 import com.lumera.app.domain.AddonSubtitle
-import com.lumera.app.PlayerSubtitlePayload
+import com.lumera.app.data.model.PlayerSubtitlePayload
 import com.lumera.app.ui.player.base.PlayerSourceOption
 import com.lumera.app.ui.player.PlayerSessionResult
 import com.lumera.app.data.player.PlaybackTrackSelectionStore
 import com.lumera.app.data.player.SourceSelectionStore
-import com.lumera.app.PendingSourceSelection
-import com.lumera.app.PlayerState
+import com.lumera.app.data.model.PendingSourceSelection
+import com.lumera.app.data.model.PlayerState
+
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
