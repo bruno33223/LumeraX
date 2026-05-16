@@ -27,7 +27,7 @@ android {
     compileSdk = 36
 
     signingConfigs {
-        create("debug") {
+        getByName("debug") {
             storeFile = file("debug.keystore")
             storePassword = "android"
             keyAlias = "androiddebugkey"
@@ -117,12 +117,10 @@ android {
 
 // Compose Compiler configuration for optimal performance
 composeCompiler {
-    // Enable strong skipping mode for more efficient recomposition
-    // Skips recomposition when parameters are stable even if equals() isn't overridden
-    enableStrongSkippingMode = true
-
-    // Enable intrinsic remember optimization
-    enableIntrinsicRemember = true
+    featureFlags.set(setOf(
+        org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag.StrongSkipping,
+        org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag.IntrinsicRemember
+    ))
 
     // Stability configuration: tells the compiler which classes are effectively immutable
     // so it can skip recomposition when their instances haven't changed
