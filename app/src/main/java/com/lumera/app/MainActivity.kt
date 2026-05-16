@@ -359,8 +359,8 @@ class MainActivity : ComponentActivity() {
                 if (result.resultCode == android.app.Activity.RESULT_OK) {
                     val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
                     try {
-                        task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                        // CRÃTICO: Mudar para Dispatchers.IO para evitar NetworkOnMainThreadException
+                        val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+                        android.util.Log.i("LumeraDrive", "Autenticado com sucesso: ${account.email}")
                         updateScope.launch(kotlinx.coroutines.Dispatchers.IO) {
                             try {
                                 val manager = com.lumera.app.data.backup.DriveBackupManager.getInstance()
@@ -373,14 +373,22 @@ class MainActivity : ComponentActivity() {
                                     driveOnboardingComplete = true
                                 }
                             } catch (e: Exception) {
-                                android.util.Log.e("DriveAuth", "Falha de I/O ou BD no Drive: ${e.message}", e)
                                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                    android.widget.Toast.makeText(this@MainActivity, "Erro de I/O: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
                                     driveOnboardingComplete = true
                                 }
                             }
                         }
                     } catch (e: com.google.android.gms.common.api.ApiException) {
-                        android.util.Log.e("DriveAuth", "Falha de OAuth. CÃ³digo: ${e.statusCode}. Verifique o SHA-1 no Cloud Console.", e)
+                        android.util.Log.e("LumeraDrive", "Falha no Google OAuth. Código: ${e.statusCode}", e)
+                        android.widget.Toast.makeText(
+                            this@MainActivity, 
+                            "Falha Google OAuth! Código: ${e.statusCode} (${com.google.android.gms.common.api.CommonStatusCodes.getStatusCodeString(e.statusCode)})", 
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                        driveOnboardingComplete = true
+                    } catch (e: Exception) {
+                        android.widget.Toast.makeText(this@MainActivity, "Erro inesperado: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
                         driveOnboardingComplete = true
                     }
                 } else {
