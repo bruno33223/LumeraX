@@ -103,7 +103,7 @@ import com.lumera.app.ui.theme.LumeraTheme
 import com.lumera.app.ui.theme.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.async
+
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -117,6 +117,14 @@ import android.content.res.Configuration
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import javax.inject.Inject
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.lumera.app.data.backup.DriveBackupManager
+import kotlinx.coroutines.withContext
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.text.font.FontWeight
 
 
 private const val SOURCE_SELECTION_COMMIT_MIN_POSITION_MS = 5_000L
@@ -930,6 +938,41 @@ class MainActivity : ComponentActivity() {
             var showExitConfirmation by rememberSaveable { mutableStateOf(false) }
             val playerState = remember { PlayerState() }
 
+            // Google Drive onboarding state
+            var hasCheckedStartupBackup by rememberSaveable { mutableStateOf(false) }
+            var driveRestoreInProgress by remember { mutableStateOf(false) }
+            var driveRestoreMessage by remember { mutableStateOf<String?>(null) }
+            val driveOnboardingScope = rememberCoroutineScope()
+
+            val googleDriveAuthLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    // Sign-in succeeded — trigger restore
+                    driveRestoreInProgress = true
+                    driveRestoreMessage = "Restaurando backup do Google Drive..."
+                    driveOnboardingScope.launch {
+                        try {
+                            DriveBackupManager.getInstance().restoreFromDrive(this@MainActivity, addonDao)
+                            driveRestoreMessage = null
+                            driveRestoreInProgress = false
+                            hasCheckedStartupBackup = true
+                        } catch (e: Exception) {
+                            Log.e("LumeraDrive", "Restore failed", e)
+                            driveRestoreMessage = "Falha ao restaurar: ${e.localizedMessage}"
+                            driveRestoreInProgress = false
+                            // Let user proceed even if restore fails
+                            kotlinx.coroutines.delay(2000)
+                            driveRestoreMessage = null
+                            hasCheckedStartupBackup = true
+                        }
+                    }
+                } else {
+                    // User cancelled sign-in — proceed locally
+                    hasCheckedStartupBackup = true
+                }
+            }
+
 
             LaunchedEffect(currentProfile?.id) {
                 val profileId = currentProfile?.id
@@ -985,6 +1028,104 @@ class MainActivity : ComponentActivity() {
 
                         val isRestoringSession = sessionProfileId != null
                         if (!isRestoringSession) {
+                            if (!hasCheckedStartupBackup) {
+                                // DRIVE ONBOARDING — show before profile selection
+                                LumeraTheme(theme = DefaultThemes.VOID) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(480.dp)
+                                                .clip(RoundedCornerShape(16.dp))
+                                                .background(MaterialTheme.colorScheme.background)
+                                                .border(1.dp, Color.White.copy(0.1f), RoundedCornerShape(16.dp))
+                                                .padding(32.dp)
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text(
+                                                    "Bem-vindo ao Lumera",
+                                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = Color.White,
+                                                    textAlign = TextAlign.Center
+                                                )
+                                                Spacer(Modifier.height(8.dp))
+                                                Text(
+                                                    "Restaure seus dados de um backup anterior ou continue com uma configuração local.",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = Color.White.copy(0.7f),
+                                                    textAlign = TextAlign.Center,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                )
+                                                Spacer(Modifier.height(24.dp))
+
+                                                if (driveRestoreInProgress) {
+                                                    CircularProgressIndicator(
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.padding(16.dp)
+                                                    )
+                                                }
+
+                                                driveRestoreMessage?.let { msg ->
+                                                    Text(
+                                                        msg,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = Color.Yellow,
+                                                        textAlign = TextAlign.Center,
+                                                        modifier = Modifier.padding(bottom = 16.dp)
+                                                    )
+                                                }
+
+                                                if (!driveRestoreInProgress) {
+                                                    VoidButton(
+                                                        text = "Sincronizar com Google Drive",
+                                                        onClick = {
+                                                            val account = GoogleSignIn.getLastSignedInAccount(this@MainActivity)
+                                                            if (account != null) {
+                                                                // Already signed in — restore directly
+                                                                driveRestoreInProgress = true
+                                                                driveRestoreMessage = "Restaurando backup do Google Drive..."
+                                                                driveOnboardingScope.launch {
+                                                                    try {
+                                                                        DriveBackupManager.getInstance().restoreFromDrive(this@MainActivity, addonDao)
+                                                                        driveRestoreMessage = null
+                                                                        driveRestoreInProgress = false
+                                                                        hasCheckedStartupBackup = true
+                                                                    } catch (e: Exception) {
+                                                                        Log.e("LumeraDrive", "Restore failed", e)
+                                                                        driveRestoreMessage = "Falha ao restaurar: ${e.localizedMessage}"
+                                                                        driveRestoreInProgress = false
+                                                                        kotlinx.coroutines.delay(2000)
+                                                                        driveRestoreMessage = null
+                                                                        hasCheckedStartupBackup = true
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                // Need sign-in first
+                                                                val gso = DriveBackupManager.getGoogleSignInOptions()
+                                                                val signInClient = GoogleSignIn.getClient(this@MainActivity, gso)
+                                                                googleDriveAuthLauncher.launch(signInClient.signInIntent)
+                                                            }
+                                                        },
+                                                        isPrimary = true,
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    )
+                                                    Spacer(Modifier.height(12.dp))
+                                                    VoidButton(
+                                                        text = "Continuar Local",
+                                                        onClick = { hasCheckedStartupBackup = true },
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
                             // PROFILE SELECTION / CREATION
                             // Always use VOID theme for profile selection (black & white)
                             LumeraTheme(theme = DefaultThemes.VOID) {
@@ -999,6 +1140,7 @@ class MainActivity : ComponentActivity() {
                                         mainViewModel.login(it.id)
                                     }
                                 )
+                            }
                             }
                         }
                     } else {
@@ -1545,8 +1687,6 @@ class MainActivity : ComponentActivity() {
                                 )
                                 if (url.startsWith("magnet:")) {
                                     uiScope.launch {
-                                        val fetchedSubs = try { subtitleRepository.getSubtitles(playbackType, playbackId) } catch (_: Exception) { emptyList() }
-                                        val realSubtitlePayload = buildSubtitlePayload(stream, fetchedSubs)
                                         mainViewModel.persistActiveProfileState()
                                         selectedPlaybackId = playbackId
                                         selectedPlaybackType = playbackType
@@ -1554,11 +1694,25 @@ class MainActivity : ComponentActivity() {
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
 
-                                        playerState.selectedPlayerSubtitles = realSubtitlePayload
+                                        playerState.selectedPlayerSubtitles = buildSubtitlePayload(stream, emptyList())
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = ""
                                         torrentProgress = TorrentProgress("Connecting to peers...")
                                         activeView = "player"
+
+                                        // Async addon subtitle fetch — doesn't block video start
+                                        launch {
+                                            try {
+                                                val addonSubs = subtitleRepository.getSubtitles(playbackType, playbackId)
+                                                if (addonSubs.isNotEmpty()) {
+                                                    playerState.selectedPlayerSubtitles =
+                                                        (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e("LumeraSubtitles", "Async addon subtitle fetch failed", e)
+                                            }
+                                        }
+
                                         TorrentService.onStreamReady = { localUrl ->
                                             torrentProgress = null
                                             selectedVideoUrl = localUrl
@@ -1580,8 +1734,6 @@ class MainActivity : ComponentActivity() {
                                 } else {
                                     stopService(Intent(this@MainActivity, TorrentService::class.java))
                                     uiScope.launch {
-                                        val fetchedSubs = try { subtitleRepository.getSubtitles(playbackType, playbackId) } catch (_: Exception) { emptyList() }
-                                        val realSubtitlePayload = buildSubtitlePayload(stream, fetchedSubs)
                                         mainViewModel.persistActiveProfileState()
                                         selectedPlaybackId = playbackId
                                         selectedPlaybackType = playbackType
@@ -1589,13 +1741,26 @@ class MainActivity : ComponentActivity() {
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
 
-                                        playerState.selectedPlayerSubtitles = realSubtitlePayload
+                                        playerState.selectedPlayerSubtitles = buildSubtitlePayload(stream, emptyList())
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = url
                                         when (currentProfile?.playerPreference) {
                                             "external" -> launchExternalPlayer(this@MainActivity, url)
                                             "ask" -> playerState.showPlayerChoiceDialog = true
                                             else -> activeView = "player"
+                                        }
+
+                                        // Async addon subtitle fetch — doesn't block video start
+                                        launch {
+                                            try {
+                                                val addonSubs = subtitleRepository.getSubtitles(playbackType, playbackId)
+                                                if (addonSubs.isNotEmpty()) {
+                                                    playerState.selectedPlayerSubtitles =
+                                                        (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e("LumeraSubtitles", "Async addon subtitle fetch failed", e)
+                                            }
                                         }
                                     }
                                 }
@@ -1858,11 +2023,7 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             }
 
-                                            val streamsDeferred = async { try { addonRepository.getStreams("series", nextStreamId) } catch (_: Exception) { emptyList() } }
-                                            val subtitlesDeferred = async { try { subtitleRepository.getSubtitles("series", nextStreamId) } catch (_: Exception) { emptyList() } }
-
-                                            val rawStreams = streamsDeferred.await()
-                                            val addonSubs = subtitlesDeferred.await()
+                                            val rawStreams = try { addonRepository.getStreams("series", nextStreamId) } catch (_: Exception) { emptyList() }
 
                                             val streams = if (currentProfile?.sourceSortingEnabled == true) {
                                                 val enabledQ = StreamSortingService.parseEnabledQualities(currentProfile?.sourceEnabledQualities ?: "4k,1080p,720p,unknown")
@@ -1915,7 +2076,7 @@ class MainActivity : ComponentActivity() {
                                                     playbackId = nextPlaybackId,
                                                     playbackTitle = nextPlaybackTitle,
                                                     streams = streams,
-                                                    addonSubs = addonSubs,
+                                                    addonSubs = emptyList(),
                                                     playerCurrentSourceUrl = playerCurrentSourceUrl
                                                 )
                                                 return@launch
@@ -1928,7 +2089,7 @@ class MainActivity : ComponentActivity() {
                                                     playbackId = nextPlaybackId,
                                                     playbackTitle = nextPlaybackTitle,
                                                     streams = streams,
-                                                    addonSubs = addonSubs,
+                                                    addonSubs = emptyList(),
                                                     playerCurrentSourceUrl = playerCurrentSourceUrl
                                                 )
                                                 return@launch
@@ -1938,7 +2099,7 @@ class MainActivity : ComponentActivity() {
                                             playerState.isEpisodeSwitchLoading = false
                                             playerState.pendingEpisodeSwitch = null
 
-                                            val subtitlePayload = buildSubtitlePayload(streamToPlay, addonSubs)
+                                            val subtitlePayload = buildSubtitlePayload(streamToPlay, emptyList())
                                             val sourcePayload = buildSourcePayload(streams, streamToPlay)
 
                                             playerState.pendingSourceSelection = PendingSourceSelection(
@@ -1980,7 +2141,19 @@ class MainActivity : ComponentActivity() {
                                                 playerState.selectedPlayerSubtitles = subtitlePayload
                                                 playerState.selectedPlayerSources = sourcePayload
                                                 selectedVideoUrl = nextUrl
-                                                // PlayerScreen will recompose due to movieId/videoUrl key change
+                                            }
+
+                                            // Async addon subtitle fetch for the new episode
+                                            launch {
+                                                try {
+                                                    val addonSubs = subtitleRepository.getSubtitles("series", nextStreamId)
+                                                    if (addonSubs.isNotEmpty()) {
+                                                        playerState.selectedPlayerSubtitles =
+                                                            (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
+                                                    }
+                                                } catch (e: Exception) {
+                                                    Log.e("LumeraSubtitles", "Async addon subtitle fetch failed", e)
+                                                }
                                             }
                                         }
                                     }
@@ -2011,11 +2184,7 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             }
 
-                                            val streamsDeferred = async { try { addonRepository.getStreams("series", epStreamId) } catch (_: Exception) { emptyList() } }
-                                            val subtitlesDeferred = async { try { subtitleRepository.getSubtitles("series", epStreamId) } catch (_: Exception) { emptyList() } }
-
-                                            val rawStreams2 = streamsDeferred.await()
-                                            val addonSubs = subtitlesDeferred.await()
+                                            val rawStreams2 = try { addonRepository.getStreams("series", epStreamId) } catch (_: Exception) { emptyList() }
 
                                             val streams = if (currentProfile?.sourceSortingEnabled == true) {
                                                 val enabledQ = StreamSortingService.parseEnabledQualities(currentProfile?.sourceEnabledQualities ?: "4k,1080p,720p,unknown")
@@ -2065,7 +2234,7 @@ class MainActivity : ComponentActivity() {
                                                     playbackId = epPlaybackId,
                                                     playbackTitle = epTitle,
                                                     streams = streams,
-                                                    addonSubs = addonSubs,
+                                                    addonSubs = emptyList(),
                                                     playerCurrentSourceUrl = playerCurrentSourceUrl
                                                 )
                                                 return@launch
@@ -2078,7 +2247,7 @@ class MainActivity : ComponentActivity() {
                                                     playbackId = epPlaybackId,
                                                     playbackTitle = epTitle,
                                                     streams = streams,
-                                                    addonSubs = addonSubs,
+                                                    addonSubs = emptyList(),
                                                     playerCurrentSourceUrl = playerCurrentSourceUrl
                                                 )
                                                 return@launch
@@ -2105,7 +2274,7 @@ class MainActivity : ComponentActivity() {
                                                 rememberSourceSelection = currentProfile?.rememberSourceSelection ?: true
                                             )
 
-                                            val subtitlePayload = buildSubtitlePayload(streamToPlay, addonSubs)
+                                            val subtitlePayload = buildSubtitlePayload(streamToPlay, emptyList())
                                             val sourcePayload = buildSourcePayload(streams, streamToPlay)
 
                                             playerState.pendingSourceSelection = PendingSourceSelection(
@@ -2147,6 +2316,19 @@ class MainActivity : ComponentActivity() {
                                                 playerState.selectedPlayerSubtitles = subtitlePayload
                                                 playerState.selectedPlayerSources = sourcePayload
                                                 selectedVideoUrl = epUrl
+                                            }
+
+                                            // Async addon subtitle fetch for the switched episode
+                                            launch {
+                                                try {
+                                                    val addonSubs = subtitleRepository.getSubtitles("series", epStreamId)
+                                                    if (addonSubs.isNotEmpty()) {
+                                                        playerState.selectedPlayerSubtitles =
+                                                            (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
+                                                    }
+                                                } catch (e: Exception) {
+                                                    Log.e("LumeraSubtitles", "Async addon subtitle fetch failed", e)
+                                                }
                                             }
                                         }
                                     }
@@ -2195,7 +2377,7 @@ class MainActivity : ComponentActivity() {
                                             rememberSourceSelection = currentProfile?.rememberSourceSelection ?: true
                                         )
 
-                                        val subtitlePayload = buildSubtitlePayload(streamToPlay, pending.addonSubs)
+                                        val subtitlePayload = buildSubtitlePayload(streamToPlay, emptyList())
                                         val sourcePayload = buildSourcePayload(pending.streams, streamToPlay)
 
                                         playerState.pendingSourceSelection = PendingSourceSelection(
@@ -2238,6 +2420,19 @@ class MainActivity : ComponentActivity() {
                                             playerState.selectedPlayerSubtitles = subtitlePayload
                                             playerState.selectedPlayerSources = sourcePayload
                                             selectedVideoUrl = sourceUrl
+                                        }
+
+                                        // Async addon subtitle fetch for source-switched episode
+                                        uiScope.launch {
+                                            try {
+                                                val addonSubs = subtitleRepository.getSubtitles("series", pending.playbackId)
+                                                if (addonSubs.isNotEmpty()) {
+                                                    playerState.selectedPlayerSubtitles =
+                                                        (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e("LumeraSubtitles", "Async addon subtitle fetch failed", e)
+                                            }
                                         }
                                     }
                                 },
