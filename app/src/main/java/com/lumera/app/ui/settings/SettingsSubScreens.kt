@@ -417,6 +417,7 @@ fun PlaybackSettings(
                     )
                 } else if (currentProfile.autoplayThresholdMode == "time") {
                     Spacer(Modifier.height(4.dp))
+                    val secs = currentProfile.autoplayThresholdSeconds
                     val display = if (secs >= 60) "${secs / 60}m ${secs % 60}s ${stringResource(id = com.lumera.app.R.string.settings_remaining)}" else "${secs}s ${stringResource(id = com.lumera.app.R.string.settings_remaining)}"
                     Text(
                         text = "${stringResource(id = com.lumera.app.R.string.settings_trigger_at)} $display",
