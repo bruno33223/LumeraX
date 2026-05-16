@@ -337,6 +337,31 @@ fun IntegrationsScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(Modifier.height(12.dp))
+
+            var backupStatusMessage by remember { mutableStateOf("") }
+            val statusScope = rememberCoroutineScope()
+
+            VoidButton(
+                text = "Verificar Status do Backup",
+                onClick = {
+                    statusScope.launch {
+                        backupStatusMessage = "Consultando Google Drive..."
+                        backupStatusMessage = DriveBackupManager.getInstance().checkBackupStatus(context)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            if (backupStatusMessage.isNotEmpty()) {
+                Text(
+                    text = backupStatusMessage,
+                    color = Color.Yellow,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
             Spacer(Modifier.height(24.dp))
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {

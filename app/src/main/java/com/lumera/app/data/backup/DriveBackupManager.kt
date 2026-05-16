@@ -140,4 +140,26 @@ class DriveBackupManager private constructor() {
             catalogConfigs = payload.catalogConfigs
         )
     }
+
+    suspend fun checkBackupStatus(context: Context): String = withContext(Dispatchers.IO) {
+        try {
+            val account = GoogleSignIn.getLastSignedInAccount(context)
+                ?: return@withContext "Nenhuma conta Google conectada."
+            val driveService = getDriveService(context, account)
+
+            val result = driveService.files().list()
+                .setSpaces("appDataFolder")
+                .setFields("files(id, name, size, modifiedTime)")
+                .execute()
+
+            val file = result.files?.firstOrNull()
+            if (file != null) {
+                "Backup Encontrado! Tamanho: ${file.getSize()} bytes. Modificado em: ${file.modifiedTime}"
+            } else {
+                "Nenhum backup encontrado na nuvem oculta."
+            }
+        } catch (e: Exception) {
+            "Erro ao consultar Drive: ${e.localizedMessage}"
+        }
+    }
 }
