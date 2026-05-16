@@ -262,23 +262,4 @@ class IntegrationsViewModel @Inject constructor(
         traktAuthManager.resetAuthState()
     }
 
-    fun exportBackup(context: android.content.Context) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = com.lumera.app.data.backup.DriveBackupManager.getInstance().exportToDrive(context, dao)
-            result.onSuccess { _events.send(IntegrationsEvent.BackupSuccess(it)) }
-            result.onFailure { _events.send(IntegrationsEvent.BackupError("Backup failed: ${it.message}")) }
-            _uiState.value = _uiState.value.copy(isLoading = false)
-        }
-    }
-
-    fun restoreBackup(context: android.content.Context) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = com.lumera.app.data.backup.DriveBackupManager.getInstance().restoreFromDrive(context, dao)
-            result.onSuccess { _events.send(IntegrationsEvent.BackupSuccess(it)) }
-            result.onFailure { _events.send(IntegrationsEvent.BackupError("Restore failed: ${it.message}")) }
-            _uiState.value = _uiState.value.copy(isLoading = false)
-        }
-    }
 }
