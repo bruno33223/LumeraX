@@ -120,8 +120,8 @@ import javax.inject.Inject
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.lumera.app.data.backup.DriveBackupManager
+
+
 import kotlinx.coroutines.withContext
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.text.font.FontWeight
@@ -352,59 +352,8 @@ class MainActivity : ComponentActivity() {
             var updateDismissed by rememberSaveable { mutableStateOf(false) }
             val updateScope = rememberCoroutineScope()
             
-            var driveOnboardingComplete by rememberSaveable { mutableStateOf(false) }
-            val driveLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
-            ) { result ->
-                if (result.resultCode == android.app.Activity.RESULT_OK) {
-                    val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                    try {
-                        val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                        android.util.Log.i("LumeraDrive", "Autenticado com sucesso: ${account.email}")
-                        updateScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            try {
-                                val manager = com.lumera.app.data.backup.DriveBackupManager.getInstance()
-                                if (manager.hasBackup(this@MainActivity) != null) {
-                                    manager.restoreFromDrive(this@MainActivity, addonDao)
-                                } else {
-                                    manager.exportToDrive(this@MainActivity, addonDao)
-                                }
-                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                    driveOnboardingComplete = true
-                                }
-                            } catch (e: Exception) {
-                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                    android.widget.Toast.makeText(this@MainActivity, "Erro de I/O: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
-                                    driveOnboardingComplete = true
-                                }
-                            }
-                        }
-                    } catch (e: com.google.android.gms.common.api.ApiException) {
-                        android.util.Log.e("LumeraDrive", "Falha no Google OAuth. Código: ${e.statusCode}", e)
-                        android.widget.Toast.makeText(
-                            this@MainActivity, 
-                            "Falha Google OAuth! Código: ${e.statusCode} (${com.google.android.gms.common.api.CommonStatusCodes.getStatusCodeString(e.statusCode)})", 
-                            android.widget.Toast.LENGTH_LONG
-                        ).show()
-                        driveOnboardingComplete = true
-                    } catch (e: Exception) {
-                        android.widget.Toast.makeText(this@MainActivity, "Erro inesperado: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
-                        driveOnboardingComplete = true
-                    }
-                } else {
-                    driveOnboardingComplete = true
-                }
-            }
-
             LaunchedEffect(Unit) { appUpdateManager.checkForUpdate() }
 
-            // Silent auto-backup to Google Drive (throttled, non-blocking)
-            LaunchedEffect(currentProfile) {
-                if (currentProfile != null && DriveBackupManager.isSignedIn(this@MainActivity)) {
-                    DriveBackupManager.getInstance().autoBackupIfNeeded(this@MainActivity, addonDao)
-                }
-            }
-            
             LocaleWrapper(language = currentProfile?.appLanguage) {
                 LumeraTheme(theme = currentTheme) {
                     CompositionLocalProvider(
@@ -416,40 +365,20 @@ class MainActivity : ComponentActivity() {
                         BackHandler {
                             showExitConfirmation = true
                         }
-                        if (!driveOnboardingComplete) {
-                            // UI de InterceptaÃ§Ã£o Direta e Limpa (KISS)
-                            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Deseja restaurar dados do Google Drive?", color = Color.White, style = MaterialTheme.typography.headlineMedium)
-                                    Spacer(Modifier.height(24.dp))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                        VoidButton(text = "Restaurar Backup", isPrimary = true, onClick = {
-                                            val gso = DriveBackupManager.getGoogleSignInOptions()
-                                            val signInClient = GoogleSignIn.getClient(this@MainActivity, gso)
-                                            driveLauncher.launch(signInClient.signInIntent)
-                                        })
-                                        VoidButton(text = "Continuar Local", onClick = {
-                                            driveOnboardingComplete = true
-                                        })
-                                    }
-                                }
-                            }
-                        } else {
-                            // PROFILE SELECTION / CREATION
-                            // Always use VOID theme for profile selection (black & white)
-                            LumeraTheme(theme = DefaultThemes.VOID) {
-                                val profileViewModel = hiltViewModel<ProfileViewModel>()
-                                val profiles by profileViewModel.profiles.collectAsState()
+                        // PROFILE SELECTION / CREATION
+                        // Always use VOID theme for profile selection (black & white)
+                        LumeraTheme(theme = DefaultThemes.VOID) {
+                            val profileViewModel = hiltViewModel<ProfileViewModel>()
+                            val profiles by profileViewModel.profiles.collectAsState()
 
-                                ProfileScreen(
-                                    profiles = profiles,
-                                    onProfileSelected = {
-                                        sessionProfileId = it.id
-                                        sessionRestoreAttemptedProfileId = null
-                                        mainViewModel.login(it.id)
-                                    }
-                                )
-                            }
+                            ProfileScreen(
+                                profiles = profiles,
+                                onProfileSelected = {
+                                    sessionProfileId = it.id
+                                    sessionRestoreAttemptedProfileId = null
+                                    mainViewModel.login(it.id)
+                                }
+                            )
                         }
                     } else {
                         // MAIN APP CONTENT

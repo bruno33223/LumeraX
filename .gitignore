@@ -43,8 +43,7 @@ Desktop.ini
 
 # Keystore files (never commit signing keys)
 *.jks
-# *.keystore
-!app/debug.keystore
+*.keystore
 
 # Log files
 *.log

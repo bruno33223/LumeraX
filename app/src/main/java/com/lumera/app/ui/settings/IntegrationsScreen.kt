@@ -59,10 +59,10 @@ import com.lumera.app.data.trakt.DeviceAuthState
 import com.lumera.app.remote_input.ServerInfo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.google.android.gms.auth.api.signin.GoogleSignIn
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import com.lumera.app.data.backup.DriveBackupManager
+
 import com.lumera.app.ui.addons.VoidButton
 import com.lumera.app.ui.addons.VoidDialog
 import androidx.compose.material.icons.filled.Storage
@@ -78,35 +78,7 @@ fun IntegrationsScreen(
     var showConnectDialog by remember { mutableStateOf(false) }
     var showManagementDialog by remember { mutableStateOf(false) }
     var showDisconnectConfirm by remember { mutableStateOf(false) }
-    var showDriveDialog by remember { mutableStateOf(false) }
 
-    // Reactive Drive connection state — recomposes when sign-in/out happens
-    var driveConnectedEmail by remember {
-        mutableStateOf(GoogleSignIn.getLastSignedInAccount(context)?.email)
-    }
-    val isDriveConnected = driveConnectedEmail != null
-
-    val driveSignInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK && result.data != null) {
-            try {
-                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                driveConnectedEmail = account.email
-                showDriveDialog = true
-            } catch (e: com.google.android.gms.common.api.ApiException) {
-                android.util.Log.e("IntegrationsDrive", "Falha no Google OAuth. Código: ${e.statusCode}", e)
-                android.widget.Toast.makeText(
-                    context, 
-                    "Falha Google OAuth! Código: ${e.statusCode} (${com.google.android.gms.common.api.CommonStatusCodes.getStatusCodeString(e.statusCode)})", 
-                    android.widget.Toast.LENGTH_LONG
-                ).show()
-            } catch (e: Exception) {
-                android.widget.Toast.makeText(context, "Erro inesperado: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
-            }
-        }
-    }
 
     // Handle events
     LaunchedEffect(Unit) {
@@ -219,22 +191,7 @@ fun IntegrationsScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // Google Drive Integration Item
-        IntegrationItem(
-            title = "Google Drive",
-            subtitle = driveConnectedEmail ?: "Not Connected",
-            isConnected = isDriveConnected,
-            onClick = {
-                if (isDriveConnected) {
-                    showDriveDialog = true
-                } else {
-                    val gso = DriveBackupManager.getGoogleSignInOptions()
-                    val signInClient = GoogleSignIn.getClient(context, gso)
-                    driveSignInLauncher.launch(signInClient.signInIntent)
-                }
-            },
-            modifier = goBackModifier
-        )
+
     }
 
     // Connect Dialog
@@ -311,154 +268,6 @@ fun IntegrationsScreen(
         )
     }
 
-    // Drive Backup Dialog
-    if (showDriveDialog) {
-        val driveScope = rememberCoroutineScope()
-        var driveStatusMessage by remember { mutableStateOf("") }
-        var driveStatusColor by remember { mutableStateOf(Color.Yellow) }
-        var isDriveLoading by remember { mutableStateOf(false) }
-
-        VoidDialog(
-            onDismissRequest = { if (!isDriveLoading) showDriveDialog = false },
-            title = "Google Drive Sync"
-        ) {
-            Text(
-                "Keep your profiles, themes and addons synced across devices using your Google Drive AppData storage.",
-                color = Color.Gray,
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            if (driveConnectedEmail != null) {
-                Text(
-                    driveConnectedEmail ?: "",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            VoidButton(
-                text = if (isDriveLoading) "Aguarde..." else "Backup para Google Drive",
-                onClick = {
-                    if (isDriveLoading) return@VoidButton
-                    driveScope.launch {
-                        isDriveLoading = true
-                        driveStatusMessage = "Salvando backup..."
-                        driveStatusColor = Color.Yellow
-                        val result = DriveBackupManager.getInstance().exportToDrive(context, viewModel.dao)
-                        result.onSuccess {
-                            driveStatusMessage = it
-                            driveStatusColor = Color(0xFF4CAF50) // green
-                        }
-                        result.onFailure {
-                            driveStatusMessage = "Erro: ${it.message}"
-                            driveStatusColor = Color(0xFFFF5252) // red
-                        }
-                        isDriveLoading = false
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                isPrimary = true
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            VoidButton(
-                text = if (isDriveLoading) "Aguarde..." else "Restaurar Backup",
-                onClick = {
-                    if (isDriveLoading) return@VoidButton
-                    driveScope.launch {
-                        isDriveLoading = true
-                        driveStatusMessage = "Restaurando backup..."
-                        driveStatusColor = Color.Yellow
-                        val result = DriveBackupManager.getInstance().restoreFromDrive(context, viewModel.dao)
-                        result.onSuccess {
-                            driveStatusMessage = it
-                            driveStatusColor = if (it.contains("Nenhum")) Color.Yellow else Color(0xFF4CAF50)
-                        }
-                        result.onFailure {
-                            driveStatusMessage = "Erro: ${it.message}"
-                            driveStatusColor = Color(0xFFFF5252)
-                        }
-                        isDriveLoading = false
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            VoidButton(
-                text = "Verificar Status do Backup",
-                onClick = {
-                    if (isDriveLoading) return@VoidButton
-                    driveScope.launch {
-                        isDriveLoading = true
-                        driveStatusMessage = "Consultando Google Drive..."
-                        driveStatusColor = Color.Yellow
-                        driveStatusMessage = DriveBackupManager.getInstance().checkBackupStatus(context)
-                        driveStatusColor = if (driveStatusMessage.contains("encontrado!", ignoreCase = true))
-                            Color(0xFF4CAF50) else Color.Yellow
-                        isDriveLoading = false
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Inline status feedback
-            if (driveStatusMessage.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(driveStatusColor.copy(alpha = 0.1f))
-                        .padding(12.dp)
-                ) {
-                    if (isDriveLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            color = driveStatusColor,
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    Text(
-                        text = driveStatusMessage,
-                        color = driveStatusColor,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                VoidButton(
-                    text = "Logout",
-                    onClick = {
-                        if (isDriveLoading) return@VoidButton
-                        val gso = DriveBackupManager.getGoogleSignInOptions()
-                        GoogleSignIn.getClient(context, gso).signOut().addOnCompleteListener {
-                            driveConnectedEmail = null
-                            showDriveDialog = false
-                        }
-                    },
-                    modifier = Modifier.width(120.dp),
-                    isDestructive = true
-                )
-                Spacer(Modifier.width(12.dp))
-                VoidButton(
-                    text = "Close",
-                    onClick = { if (!isDriveLoading) showDriveDialog = false },
-                    modifier = Modifier.width(120.dp)
-                )
-            }
-        }
-    }
 }
 
 @Composable
