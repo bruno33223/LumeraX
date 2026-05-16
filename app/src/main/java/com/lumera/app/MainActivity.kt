@@ -125,6 +125,25 @@ import com.lumera.app.data.backup.DriveBackupManager
 import kotlinx.coroutines.withContext
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.text.font.FontWeight
+import com.lumera.app.ui.components.dialogs.PlayerChoiceDialog
+import com.lumera.app.ui.components.dialogs.UpdateAvailableDialog
+import com.lumera.app.ui.components.dialogs.UpdateDownloadingDialog
+import com.lumera.app.ui.components.dialogs.UpdateErrorDialog
+import com.lumera.app.ui.player.resolveSubtitleUrl
+import com.lumera.app.ui.player.sanitizeSubtitleSourceName
+import com.lumera.app.ui.player.subtitleNameFromUrl
+import com.lumera.app.ui.player.normalizeSubtitleLanguageTag
+import com.lumera.app.ui.player.TORRENT_TRACKERS
+import com.lumera.app.ui.player.resolvePlayableSourceUrl
+import com.lumera.app.ui.player.sourceDisplayLabel
+import com.lumera.app.ui.player.launchExternalPlayer
+import com.lumera.app.ui.player.buildSourcePayload
+import com.lumera.app.ui.player.buildEmbeddedSubtitlePayload
+import com.lumera.app.ui.player.buildEmbeddedSubtitlePayloadItem
+import com.lumera.app.ui.player.buildAddonSubtitlePayload
+import com.lumera.app.ui.player.buildSubtitlePayload
+import com.lumera.app.ui.player.handlePlayerSessionEnd
+import com.lumera.app.ui.player.fetchAddonSubtitlesAsync
 
 
 private const val SOURCE_SELECTION_COMMIT_MIN_POSITION_MS = 5_000L
@@ -143,7 +162,7 @@ private data class PendingSourceSelection(
     val candidateStreams: List<Stream>
 )
 
-private data class PendingEpisodeSwitch(
+data class PendingEpisodeSwitch(
     val playbackId: String,
     val playbackTitle: String,
     val streams: List<Stream>?,
@@ -152,7 +171,7 @@ private data class PendingEpisodeSwitch(
 )
 
 @Stable
-private class PlayerState {
+class PlayerState {
     var selectedPlayerSubtitles by mutableStateOf<List<PlayerSubtitlePayload>>(emptyList())
     var selectedPlayerSources by mutableStateOf<List<PlayerSourceOption>>(emptyList())
     var pendingSourceSelection by mutableStateOf<PendingSourceSelection?>(null)
@@ -163,526 +182,7 @@ private class PlayerState {
     var isEpisodeSwitchLoading by mutableStateOf(false)
 }
 
-private fun resolveSubtitleUrl(rawUrl: String, addonTransportUrl: String?): String? {
-    val value = rawUrl.trim()
-    if (value.isEmpty()) return null
 
-    val uri = runCatching { Uri.parse(value) }.getOrNull() ?: return null
-    if (uri.isAbsolute) {
-        val scheme = uri.scheme?.lowercase()
-        if (scheme != "http" && scheme != "https") return null
-        return value
-    }
-    if (addonTransportUrl.isNullOrBlank()) return null
-
-    val base = addonTransportUrl.trimEnd('/')
-    val path = value.trimStart('/')
-    if (path.isEmpty()) return null
-    return "$base/$path"
-}
-
-private fun sanitizeSubtitleSourceName(rawName: String?, fallback: String): String {
-    val cleaned = rawName
-        ?.replace("[", "")
-        ?.replace("]", "")
-        ?.trim()
-        .orEmpty()
-    return cleaned.ifEmpty { fallback }
-}
-
-private fun subtitleNameFromUrl(rawUrl: String): String? {
-    val uri = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return null
-    val path = uri.path?.substringBefore('?').orEmpty()
-    val rawName = path.substringAfterLast('/').ifEmpty { return null }
-    val decoded = runCatching { Uri.decode(rawName) }.getOrDefault(rawName)
-    val withoutExtension = decoded.substringBeforeLast('.', decoded).trim()
-    return withoutExtension.ifEmpty { null }
-}
-
-private fun normalizeSubtitleLanguageTag(rawLang: String?): String? {
-    val value = rawLang?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-    return value.replace('_', '-').lowercase(Locale.ROOT)
-}
-
-private val TORRENT_TRACKERS = listOf(
-    // HTTP trackers (TCP — work even when UDP is blocked)
-    "http://tracker.opentrackr.org:1337/announce",
-    "http://tracker.openbittorrent.com:80/announce",
-    "http://tracker1.bt.moack.co.kr:80/announce",
-    "http://tracker.gbitt.info:80/announce",
-    // UDP trackers (fallback)
-    "udp://tracker.opentrackr.org:1337/announce",
-    "udp://open.stealth.si:80/announce",
-    "udp://tracker.openbittorrent.com:6969/announce",
-    "udp://exodus.desync.com:6969/announce"
-)
-
-private fun resolvePlayableSourceUrl(stream: Stream): String? {
-    val directUrl = stream.url?.trim()?.takeIf { it.isNotEmpty() }
-    if (directUrl != null) return directUrl
-
-    val infoHash = stream.infoHash?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-    // Combine hardcoded trackers with addon-provided tracker URLs
-    val addonTrackers = stream.sources
-        ?.filter { it.startsWith("tracker:") }
-        ?.map { it.removePrefix("tracker:") }
-        ?: emptyList()
-    val allTrackers = (addonTrackers + TORRENT_TRACKERS).distinct()
-    val trackerParams = allTrackers.joinToString("") {
-        "&tr=${java.net.URLEncoder.encode(it, "UTF-8")}"
-    }
-    return "magnet:?xt=urn:btih:${infoHash}&dn=Video${trackerParams}"
-}
-
-private fun sourceDisplayLabel(stream: Stream): String {
-    val primary = stream.description
-        ?.trim()
-        ?.takeIf { it.isNotEmpty() }
-        ?: stream.title
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-        ?: stream.name
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-        ?: "Source"
-    return primary.replace('\n', ' ')
-}
-
-private fun launchExternalPlayer(context: android.content.Context, url: String) {
-    try {
-        val scheme = Uri.parse(url).scheme?.lowercase()
-        if (scheme != "http" && scheme != "https") {
-            Toast.makeText(context, "Unsupported URL scheme", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(Uri.parse(url), "video/*")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
-    } catch (e: android.content.ActivityNotFoundException) {
-        Toast.makeText(context, "No external player found", Toast.LENGTH_SHORT).show()
-    }
-}
-
-@Composable
-private fun PlayerChoiceDialog(
-    onInternal: () -> Unit,
-    onExternal: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .width(480.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.background)
-                .border(1.dp, Color.White.copy(0.1f), RoundedCornerShape(16.dp))
-                .padding(24.dp)
-        ) {
-            androidx.compose.foundation.layout.Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    "Choose Player",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(24.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    VoidButton(
-                        text = "Internal Player",
-                        onClick = onInternal,
-                        isPrimary = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    VoidButton(
-                        text = "External Player",
-                        onClick = onExternal,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun UpdateAvailableDialog(
-    info: UpdateInfo,
-    onUpdate: () -> Unit,
-    onDismiss: () -> Unit,
-    onDontShowAgain: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .width(480.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.background)
-                .border(1.dp, Color.White.copy(0.1f), RoundedCornerShape(16.dp))
-                .padding(24.dp)
-        ) {
-            androidx.compose.foundation.layout.Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    "Update Available",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "v${info.versionName}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                if (info.changelog.isNotBlank()) {
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        info.changelog,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(0.7f),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                Spacer(Modifier.height(24.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    VoidButton(
-                        text = "Later",
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
-                    )
-                    VoidButton(
-                        text = "Update",
-                        onClick = onUpdate,
-                        isPrimary = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    "Don't show again",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(0.4f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .clickable { onDontShowAgain() }
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun UpdateDownloadingDialog(progress: Float, downloadedMb: Float, totalMb: Float) {
-    Dialog(onDismissRequest = {}) {
-        Box(
-            modifier = Modifier
-                .width(480.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.background)
-                .border(1.dp, Color.White.copy(0.1f), RoundedCornerShape(16.dp))
-                .padding(24.dp)
-        ) {
-            androidx.compose.foundation.layout.Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    "Downloading Update",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(24.dp))
-                androidx.compose.material3.LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp)),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = Color.White.copy(0.1f),
-                    drawStopIndicator = {}
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    if (totalMb > 0f) "%.1f MB / %.1f MB".format(downloadedMb, totalMb)
-                    else "${(progress * 100).toInt()}%",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(0.7f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun UpdateErrorDialog(
-    message: String,
-    onRetry: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .width(480.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.background)
-                .border(1.dp, Color.White.copy(0.1f), RoundedCornerShape(16.dp))
-                .padding(24.dp)
-        ) {
-            androidx.compose.foundation.layout.Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    "Update Failed",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(0.7f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(24.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    VoidButton(
-                        text = "Dismiss",
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
-                    )
-                    VoidButton(
-                        text = "Retry",
-                        onClick = onRetry,
-                        isPrimary = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun buildSourcePayload(
-    streams: List<Stream>,
-    selectedStream: Stream
-): List<PlayerSourceOption> {
-    val selectedUrl = resolvePlayableSourceUrl(selectedStream)
-    return streams.mapNotNull { stream ->
-        val url = resolvePlayableSourceUrl(stream) ?: return@mapNotNull null
-        PlayerSourceOption(
-            id = url,
-            url = url,
-            label = sourceDisplayLabel(stream),
-            name = stream.name,
-            title = stream.title,
-            description = stream.description,
-            fileIdx = stream.fileIdx ?: -1,
-            fileName = stream.behaviorHints?.filename ?: ""
-        )
-    }
-        .distinctBy { it.url }
-        .sortedByDescending { option -> option.url == selectedUrl }
-}
-
-private fun canonicalSubtitleUrlForId(rawUrl: String): String {
-    val trimmed = rawUrl.trim()
-    if (trimmed.isEmpty()) return rawUrl
-
-    val uri = runCatching { Uri.parse(trimmed) }.getOrNull() ?: return trimmed
-    val noQuery = trimmed.substringBefore('?').substringBefore('#')
-    if (!uri.isAbsolute) return noQuery
-
-    val scheme = uri.scheme?.lowercase(Locale.ROOT)
-    val host = uri.host?.lowercase(Locale.ROOT)
-    val path = uri.encodedPath ?: uri.path
-    if (scheme.isNullOrBlank() || host.isNullOrBlank() || path.isNullOrBlank()) {
-        return noQuery
-    }
-    val port = if (uri.port != -1) ":${uri.port}" else ""
-    return "$scheme://$host$port$path"
-}
-
-private fun buildSubtitleFallbackId(
-    resolvedUrl: String,
-    language: String?,
-    name: String
-): String {
-    val canonicalUrl = canonicalSubtitleUrlForId(resolvedUrl)
-    val canonicalLanguage = language.orEmpty().trim().lowercase(Locale.ROOT)
-    val canonicalName = name.trim().lowercase(Locale.ROOT)
-    return "lumera-sub:$canonicalLanguage|$canonicalName|$canonicalUrl"
-}
-
-private fun buildEmbeddedSubtitlePayload(stream: Stream): List<PlayerSubtitlePayload> {
-    return stream.subtitles
-        .orEmpty()
-        .mapNotNull { subtitle ->
-            buildEmbeddedSubtitlePayloadItem(stream, subtitle)
-        }
-}
-
-private fun buildEmbeddedSubtitlePayloadItem(
-    stream: Stream,
-    subtitle: StreamSubtitle
-): PlayerSubtitlePayload? {
-    val rawUrl = subtitle.url?.trim().orEmpty()
-    if (rawUrl.isEmpty()) return null
-
-    val resolvedUrl = resolveSubtitleUrl(
-        rawUrl = rawUrl,
-        addonTransportUrl = subtitle.transportUrl ?: stream.addonTransportUrl
-    ) ?: return null
-
-    val fallbackName = subtitleNameFromUrl(resolvedUrl) ?: "Embedded subtitle"
-    val name = sanitizeSubtitleSourceName(subtitle.name, fallbackName)
-    val language = normalizeSubtitleLanguageTag(subtitle.lang)
-    val subtitleId = subtitle.id
-        ?.trim()
-        ?.takeIf { it.isNotEmpty() }
-        ?: buildSubtitleFallbackId(
-            resolvedUrl = resolvedUrl,
-            language = language,
-            name = name
-        )
-    return PlayerSubtitlePayload(
-        id = subtitleId,
-        url = resolvedUrl,
-        name = name,
-        language = language
-    )
-}
-
-private fun buildAddonSubtitlePayload(addonSubtitles: List<AddonSubtitle>): List<PlayerSubtitlePayload> {
-    return addonSubtitles.mapNotNull { subtitle ->
-        val resolvedUrl = resolveSubtitleUrl(subtitle.url, addonTransportUrl = null) ?: return@mapNotNull null
-        val name = sanitizeSubtitleSourceName(subtitle.addonName, "Addon subtitle")
-        val language = normalizeSubtitleLanguageTag(subtitle.lang)
-        val subtitleId = subtitle.id
-            .trim()
-            .takeIf { it.isNotEmpty() }
-            ?: buildSubtitleFallbackId(
-                resolvedUrl = resolvedUrl,
-                language = language,
-                name = name
-            )
-        PlayerSubtitlePayload(
-            id = subtitleId,
-            url = resolvedUrl,
-            name = name,
-            language = language
-        )
-    }
-}
-
-private fun buildSubtitlePayload(stream: Stream, addonSubtitles: List<AddonSubtitle>): List<PlayerSubtitlePayload> {
-    return (buildEmbeddedSubtitlePayload(stream) + buildAddonSubtitlePayload(addonSubtitles))
-        .distinctBy { payload ->
-            val url = payload.url.lowercase(Locale.ROOT)
-            val lang = payload.language.orEmpty().lowercase(Locale.ROOT)
-            "$url|$lang"
-        }
-}
-
-private fun handlePlayerSessionEnd(
-    sessionResult: PlayerSessionResult,
-    selectedPlaybackId: String,
-    playbackTrackSelectionStore: PlaybackTrackSelectionStore,
-    sourceSelectionStore: SourceSelectionStore,
-    pendingSourceSelection: PendingSourceSelection?,
-    onConsumePendingSelection: () -> Unit,
-    onResumeHintResolved: (String?) -> Unit,
-    rememberSourceSelection: Boolean = true
-) {
-    val playbackId = selectedPlaybackId.trim()
-    if (playbackId.isBlank()) {
-        onConsumePendingSelection()
-        onResumeHintResolved(null)
-        return
-    }
-
-    onResumeHintResolved(
-        if (!sessionResult.isCompleted && sessionResult.positionMs >= SOURCE_SELECTION_COMMIT_MIN_POSITION_MS) {
-            playbackId
-        } else {
-            null
-        }
-    )
-
-    val hasAudioTrackSelection = !sessionResult.selectedAudioTrackId.isNullOrBlank()
-    val hasSubtitleTrackSelection = !sessionResult.selectedSubtitleTrackId.isNullOrBlank()
-    val hasSubtitleDelayChange = sessionResult.subtitleDelayMs != 0L
-    if (hasAudioTrackSelection || hasSubtitleTrackSelection || hasSubtitleDelayChange) {
-        playbackTrackSelectionStore.updateSelection(
-            playbackId = playbackId,
-            audioTrackId = sessionResult.selectedAudioTrackId,
-            subtitleTrackId = sessionResult.selectedSubtitleTrackId,
-            subtitleDelayMs = sessionResult.subtitleDelayMs,
-            updateAudio = hasAudioTrackSelection,
-            updateSubtitle = hasSubtitleTrackSelection,
-            updateSubtitleDelay = true
-        )
-    }
-
-    pendingSourceSelection?.let { pendingSelection ->
-        val pendingPlaybackId = pendingSelection.playbackId.trim()
-        if (pendingPlaybackId.isNotEmpty()) {
-            val selectedStream = sessionResult.selectedSourceUrl
-                ?.let { selectedSourceUrl ->
-                    pendingSelection.candidateStreams.firstOrNull { candidate ->
-                        resolvePlayableSourceUrl(candidate) == selectedSourceUrl
-                    }
-                }
-                ?: pendingSelection.launchedStream
-
-            val shouldCommitSource = rememberSourceSelection && (sessionResult.isCompleted ||
-                sessionResult.positionMs >= SOURCE_SELECTION_COMMIT_MIN_POSITION_MS)
-            if (shouldCommitSource) {
-                sourceSelectionStore.rememberSelection(pendingPlaybackId, selectedStream)
-            } else if (sessionResult.positionMs <= SOURCE_SELECTION_FAILURE_RESET_MAX_POSITION_MS) {
-                val wasPreferred = sourceSelectionStore.findPreferredStream(
-                    playbackId = pendingPlaybackId,
-                    streams = listOf(selectedStream)
-                ) != null
-                if (wasPreferred) {
-                    sourceSelectionStore.clearSelection(pendingPlaybackId)
-                }
-            }
-        }
-    }
-
-    onConsumePendingSelection()
-}
 
 private class GridRestoreState {
     var focusedIndex: Int? = null
@@ -711,11 +211,7 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var streamSortingService: StreamSortingService
 
-    private var splashPlayer: MediaPlayer? = null
-    private var splashOverlay: android.view.View? = null
-    private var splashIndicator: android.view.View? = null
-    private var splashPausedAtLogo = false
-    private var splashAppReady = false
+    private var splashManager: com.lumera.app.ui.splash.SplashManager? = null
     private val _splashFinished = mutableStateOf(false)
 
     override fun onStop() {
@@ -726,7 +222,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        dismissSplash()
+        splashManager?.dismiss()
         super.onDestroy()
     }
 
@@ -737,95 +233,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun onSplashAppReady() {
-        if (splashAppReady) return
-        splashAppReady = true
-        val player = splashPlayer ?: return
-        if (splashPausedAtLogo) {
-            splashPausedAtLogo = false
-            splashIndicator?.visibility = android.view.View.GONE
-            player.start()
-        }
-    }
 
-    private fun dismissSplash() {
-        splashOverlay?.let { (it.parent as? android.view.ViewGroup)?.removeView(it) }
-        splashOverlay = null
-        splashIndicator = null
-        splashPlayer?.release()
-        splashPlayer = null
-        _splashFinished.value = true
-    }
-
-    private fun attachSplashOverlay() {
-        val player = splashPlayer ?: return
-        val handler = android.os.Handler(android.os.Looper.getMainLooper())
-        val density = resources.displayMetrics.density
-
-        val container = android.widget.FrameLayout(this).apply {
-            setBackgroundColor(android.graphics.Color.BLACK)
-        }
-
-        val surfaceView = android.view.SurfaceView(this)
-        container.addView(surfaceView, android.widget.FrameLayout.LayoutParams(
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-            android.widget.FrameLayout.LayoutParams.MATCH_PARENT
-        ))
-
-        val indicator = android.widget.ProgressBar(this).apply {
-            indeterminateTintList =
-                android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
-            visibility = android.view.View.GONE
-        }
-        container.addView(indicator, android.widget.FrameLayout.LayoutParams(
-            (36 * density).toInt(), (36 * density).toInt()
-        ).apply {
-            gravity = android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
-            bottomMargin = (80 * density).toInt()
-        })
-        splashIndicator = indicator
-
-        player.setOnCompletionListener { dismissSplash() }
-
-        surfaceView.holder.addCallback(object : android.view.SurfaceHolder.Callback {
-            override fun surfaceCreated(holder: android.view.SurfaceHolder) {
-                player.setDisplay(holder)
-                player.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT)
-                player.start()
-
-                val pollRunnable = object : Runnable {
-                    override fun run() {
-                        try {
-                            if (player.isPlaying && player.currentPosition >= SPLASH_PAUSE_MS) {
-                                if (splashAppReady) {
-                                    // App loaded before pause point — let video play through
-                                } else {
-                                    player.pause()
-                                    splashPausedAtLogo = true
-                                    indicator.visibility = android.view.View.VISIBLE
-                                }
-                            } else if (player.isPlaying) {
-                                handler.postDelayed(this, 50)
-                            }
-                        } catch (_: IllegalStateException) { /* released */ }
-                    }
-                }
-                handler.postDelayed(pollRunnable, 50)
-            }
-
-            override fun surfaceChanged(
-                h: android.view.SurfaceHolder, f: Int, w: Int, height: Int
-            ) {}
-
-            override fun surfaceDestroyed(h: android.view.SurfaceHolder) {}
-        })
-
-        addContentView(container, android.view.ViewGroup.LayoutParams(
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT
-        ))
-        splashOverlay = container
-    }
 
     @Composable
     private fun LocaleWrapper(language: String?, content: @Composable () -> Unit) {
@@ -894,18 +302,10 @@ class MainActivity : ComponentActivity() {
         if (!showSplash) _splashFinished.value = true
 
         if (showSplash) {
-            // Pre-prepare splash video — synchronous but near-instant for a small raw resource.
-            splashPlayer = try {
-                MediaPlayer().apply {
-                    resources.openRawResourceFd(R.raw.splash_video).use { afd ->
-                        setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                    }
-                    isLooping = false
-                    prepare()
-                }
-            } catch (_: Exception) {
-                null
+            splashManager = com.lumera.app.ui.splash.SplashManager(this) {
+                _splashFinished.value = true
             }
+            splashManager?.prepare()
         }
 
         setContent {
@@ -971,7 +371,7 @@ class MainActivity : ComponentActivity() {
             }
 
             // Signal native splash to resume once first composition is done
-            LaunchedEffect(Unit) { onSplashAppReady() }
+            LaunchedEffect(Unit) { splashManager?.onAppReady() }
 
             // Auto-check for updates on launch
             val updateState by appUpdateManager.state.collectAsState()
@@ -2658,7 +2058,7 @@ class MainActivity : ComponentActivity() {
 
         // Attach native splash overlay on top of Compose content — renders immediately
         if (showSplash) {
-            attachSplashOverlay()
+            splashManager?.attachOverlay()
         }
     } // closes onCreate
 
@@ -2668,36 +2068,4 @@ class MainActivity : ComponentActivity() {
     }
 } // closes MainActivity
 
-private fun kotlinx.coroutines.CoroutineScope.fetchAddonSubtitlesAsync(
-    repository: com.lumera.app.data.repository.SubtitleRepository,
-    playbackType: String,
-    playbackId: String,
-    stream: com.lumera.app.data.model.stremio.Stream,
-    playerState: PlayerState
-) {
-    launch(kotlinx.coroutines.Dispatchers.IO) {
-        try {
-            val vHash = stream.behaviorHints?.videoHash
-            val vSize = stream.behaviorHints?.videoSize
-            val vFilename = stream.behaviorHints?.filename
 
-            val fetchedSubs = repository.getSubtitles(
-                type = playbackType,
-                playbackId = playbackId,
-                videoHash = vHash,
-                videoSize = vSize,
-                filename = vFilename
-            )
-            
-            if (fetchedSubs.isNotEmpty()) {
-                val newPayload = buildAddonSubtitlePayload(fetchedSubs)
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    playerState.selectedPlayerSubtitles = 
-                        (playerState.selectedPlayerSubtitles + newPayload).distinctBy { it.id }
-                }
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("LumeraSubtitles", "Erro na busca assincrona", e)
-        }
-    }
-}
