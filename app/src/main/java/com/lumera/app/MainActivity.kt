@@ -1145,7 +1145,7 @@ class MainActivity : ComponentActivity() {
                                             themeManager.resetTheme()
                                             mainViewModel.logout()
                                         },
-                                        onExit = { finishAffinity() },
+                                        onExit = { finishAndRemoveTask() },
                                         content = {
                                             when (currentNav) {
                                                 NavDestination.Home, NavDestination.Movies, NavDestination.Series -> {
@@ -1535,7 +1535,7 @@ class MainActivity : ComponentActivity() {
                                 if (logo.isNotBlank()) selectedMovieLogo = logo
                                 playerState.currentEpisodeList = episodes
                                 playerState.currentStream = stream
-                                val subtitlePayload = buildSubtitlePayload(stream, addonSubtitles)
+
                                 val sourcePayloadInput = if (availableStreams.isNotEmpty()) availableStreams else listOf(stream)
                                 val sourcePayload = buildSourcePayload(streams = sourcePayloadInput, selectedStream = stream)
                                 playerState.pendingSourceSelection = PendingSourceSelection(
@@ -1545,6 +1545,8 @@ class MainActivity : ComponentActivity() {
                                 )
                                 if (url.startsWith("magnet:")) {
                                     uiScope.launch {
+                                        val fetchedSubs = try { subtitleRepository.getSubtitles(playbackType, playbackId) } catch (_: Exception) { emptyList() }
+                                        val realSubtitlePayload = buildSubtitlePayload(stream, fetchedSubs)
                                         mainViewModel.persistActiveProfileState()
                                         selectedPlaybackId = playbackId
                                         selectedPlaybackType = playbackType
@@ -1552,8 +1554,7 @@ class MainActivity : ComponentActivity() {
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
 
-                                        // Subtitles handled via buildSubtitlePayload
-                                        playerState.selectedPlayerSubtitles = subtitlePayload
+                                        playerState.selectedPlayerSubtitles = realSubtitlePayload
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = ""
                                         torrentProgress = TorrentProgress("Connecting to peers...")
@@ -1579,15 +1580,16 @@ class MainActivity : ComponentActivity() {
                                 } else {
                                     stopService(Intent(this@MainActivity, TorrentService::class.java))
                                     uiScope.launch {
+                                        val fetchedSubs = try { subtitleRepository.getSubtitles(playbackType, playbackId) } catch (_: Exception) { emptyList() }
+                                        val realSubtitlePayload = buildSubtitlePayload(stream, fetchedSubs)
                                         mainViewModel.persistActiveProfileState()
                                         selectedPlaybackId = playbackId
                                         selectedPlaybackType = playbackType
                                         selectedPlaybackTitle = resolvedPlaybackTitle
                                         selectedPlaybackPoster = selectedMoviePoster
                                         selectedTrailerAudioUrl = ""
-                                        // Subtitles handled via buildSubtitlePayload
 
-                                        playerState.selectedPlayerSubtitles = subtitlePayload
+                                        playerState.selectedPlayerSubtitles = realSubtitlePayload
                                         playerState.selectedPlayerSources = sourcePayload
                                         selectedVideoUrl = url
                                         when (currentProfile?.playerPreference) {
@@ -2390,7 +2392,7 @@ class MainActivity : ComponentActivity() {
                                     ) {
                                         TextButton(onClick = { showExitConfirmation = false }) { Text("Cancelar") }
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        TextButton(onClick = { finishAffinity() }) { Text("Sair") }
+                                        TextButton(onClick = { finishAndRemoveTask() }) { Text("Sair") }
                                     }
                                 }
                             }
