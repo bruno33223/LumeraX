@@ -603,7 +603,13 @@ class DetailsViewModel @Inject constructor(
         prefetchStreamsJob = viewModelScope.launch {
             try {
                 val streamsDeferred = async { repository.getStreams(type, id) }
-                val subtitlesDeferred = async { subtitleRepository.getSubtitles(type, id) }
+                val alternateId = if (type == "movie") {
+                    _state.value.meta?.imdbId
+                } else {
+                    val episode = _state.value.meta?.videos?.find { it.id == id }
+                    episode?.imdbId ?: _state.value.meta?.imdbId?.let { "$it:${episode?.season ?: 1}:${episode?.episode ?: 1}" }
+                }
+                val subtitlesDeferred = async { subtitleRepository.getSubtitles(type, id, alternateId = alternateId) }
                 prefetchedStreams = streamsDeferred.await()
                 prefetchedSubtitles = subtitlesDeferred.await()
             } catch (_: Exception) {
@@ -651,13 +657,15 @@ class DetailsViewModel @Inject constructor(
                         addonSubtitles = prefetchedSubtitles ?: emptyList()
                     } else {
                         val streamsDeferred = async { repository.getStreams(type, id) }
-                        val subtitlesDeferred = async { subtitleRepository.getSubtitles(type, id) }
+                        val altId = resolveAlternateId(type, id, _state.value.meta)
+                        val subtitlesDeferred = async { subtitleRepository.getSubtitles(type, id, alternateId = altId) }
                         rawStreams = streamsDeferred.await()
                         addonSubtitles = subtitlesDeferred.await()
                     }
                 } else {
                     val streamsDeferred = async { repository.getStreams(type, id) }
-                    val subtitlesDeferred = async { subtitleRepository.getSubtitles(type, id) }
+                    val altId = resolveAlternateId(type, id, _state.value.meta)
+                    val subtitlesDeferred = async { subtitleRepository.getSubtitles(type, id, alternateId = altId) }
                     rawStreams = streamsDeferred.await()
                     addonSubtitles = subtitlesDeferred.await()
                 }
@@ -686,6 +694,7 @@ class DetailsViewModel @Inject constructor(
                         subtitleRepository.getSubtitles(
                             type = type,
                             playbackId = sourceSelectionId,
+                            alternateId = resolveAlternateId(type, sourceSelectionId, _state.value.meta),
                             videoHash = preferredStream.behaviorHints?.videoHash,
                             videoSize = preferredStream.behaviorHints?.videoSize,
                             filename = preferredStream.behaviorHints?.filename
@@ -712,6 +721,7 @@ class DetailsViewModel @Inject constructor(
                             subtitleRepository.getSubtitles(
                                 type = type,
                                 playbackId = sourceSelectionId,
+                                alternateId = resolveAlternateId(type, sourceSelectionId, _state.value.meta),
                                 videoHash = firstPlayable.behaviorHints?.videoHash,
                                 videoSize = firstPlayable.behaviorHints?.videoSize,
                                 filename = firstPlayable.behaviorHints?.filename
@@ -756,27 +766,10 @@ class DetailsViewModel @Inject constructor(
 
     fun selectStreamAndPlay(type: String, playbackId: String, stream: Stream) {
         loadStreamsJob?.cancel()
-        loadStreamsJob = viewModelScope.launch {
-            _state.value = _state.value.copy(
-                isLoadingStreams = true, 
-                sidebarState = SidebarState.Closed
-            )
-            val specificSubs = try {
-                subtitleRepository.getSubtitles(
-                    type = type,
-                    playbackId = playbackId,
-                    videoHash = stream.behaviorHints?.videoHash,
-                    videoSize = stream.behaviorHints?.videoSize,
-                    filename = stream.behaviorHints?.filename
-                )
-            } catch (e: Exception) { emptyList() }
-            
-            _state.value = _state.value.copy(
-                isLoadingStreams = false,
-                autoPlayStream = stream,
-                addonSubtitles = specificSubs
-            )
-        }
+        _state.value = _state.value.copy(
+            autoPlayStream = stream,
+            sidebarState = SidebarState.Closed
+        )
     }
 
     // --- Clear Progress (with confirmation dialog) ---
@@ -882,6 +875,15 @@ class DetailsViewModel @Inject constructor(
             openEpisodes()
         } else {
             closeSidebar()
+        }
+    }
+    private fun resolveAlternateId(type: String, id: String, meta: MetaItem?): String? {
+        if (meta == null) return null
+        return if (type == "movie") {
+            meta.imdbId
+        } else {
+            val episode = meta.videos?.find { it.id == id }
+            episode?.imdbId ?: meta.imdbId?.let { "$it:${episode?.season ?: 1}:${episode?.episode ?: 1}" }
         }
     }
 }

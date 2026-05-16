@@ -344,6 +344,14 @@ fun CoroutineScope.fetchAddonSubtitlesAsync(
                     playerState.selectedPlayerSubtitles = 
                         (playerState.selectedPlayerSubtitles + newPayload).distinctBy { it.id }
                 }
+            } else {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        com.lumera.app.LumeraApplication.instance,
+                        "Nenhuma legenda encontrada",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e("LumeraSubtitles", "Erro na busca assincrona", e)

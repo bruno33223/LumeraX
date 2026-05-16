@@ -19,6 +19,7 @@ data class MetaItem(
     val description: String? = null,
     val releaseInfo: String? = null,
     val imdbRating: String? = null,
+    @SerializedName("imdb_id") val imdbId: String? = null,
     val runtime: String? = null,
     val genres: List<String>? = null,
     val videos: List<MetaVideo>? = null,
@@ -30,6 +31,7 @@ data class MetaItem(
 @Immutable
 data class MetaVideo(
     val id: String = "",
+    @SerializedName("imdb_id") val imdbId: String? = null,
 
     @SerializedName(value = "title", alternate = ["name"])
     val title: String = "Episode",

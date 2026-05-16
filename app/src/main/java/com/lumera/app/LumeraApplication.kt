@@ -43,8 +43,14 @@ class LumeraApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         startupOptimizer.warmup()
     }
 
     override fun newImageLoader(): ImageLoader = imageLoader
+
+    companion object {
+        lateinit var instance: LumeraApplication
+            private set
+    }
 }

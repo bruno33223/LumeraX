@@ -52,26 +52,48 @@ class SubtitleRepository @Inject constructor(
     suspend fun getSubtitles(
         type: String,
         playbackId: String,
+        alternateId: String? = null,
         videoHash: String? = null,
         videoSize: Long? = null,
         filename: String? = null
     ): List<AddonSubtitle> = withContext(Dispatchers.IO) {
         val request = buildSubtitleRequest(type, playbackId)
+        val alternateRequest = alternateId?.let { buildSubtitleRequest(type, it) }
+        
         val addons = dao.getAllAddons().firstOrNull()?.filter { it.isEnabled } ?: emptyList()
         if (addons.isEmpty()) return@withContext emptyList()
 
         val jobs = addons.map { addon ->
             async {
-                if (!shouldQueryAddonForSubtitles(addon, request.contentType, request.baseId, videoHash)) {
-                    return@async emptyList()
+                val results = mutableListOf<AddonSubtitle>()
+                
+                // 1. Primary ID Search
+                if (shouldQueryAddonForSubtitles(addon, request.contentType, request.baseId, videoHash)) {
+                    val subs = fetchSubtitlesFromAddon(
+                        addon = addon,
+                        request = request,
+                        videoHash = videoHash,
+                        videoSize = videoSize,
+                        filename = filename
+                    )
+                    results.addAll(subs)
                 }
-                fetchSubtitlesFromAddon(
-                    addon = addon,
-                    request = request,
-                    videoHash = videoHash,
-                    videoSize = videoSize,
-                    filename = filename
-                )
+                
+                // 2. Alternate ID Search (e.g. IMDb fallback for Kitsu/TMDB IDs)
+                if (alternateRequest != null && alternateRequest.requestId != request.requestId) {
+                    if (shouldQueryAddonForSubtitles(addon, alternateRequest.contentType, alternateRequest.baseId, videoHash)) {
+                        val subs = fetchSubtitlesFromAddon(
+                            addon = addon,
+                            request = alternateRequest,
+                            videoHash = videoHash,
+                            videoSize = videoSize,
+                            filename = filename
+                        )
+                        results.addAll(subs)
+                    }
+                }
+                
+                results
             }
         }
 

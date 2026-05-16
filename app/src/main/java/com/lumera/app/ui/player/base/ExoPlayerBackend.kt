@@ -386,6 +386,7 @@ class ExoPlayerBackend(
                             this.player = player
                             useController = false
                             keepScreenOn = true
+                            setKeepContentOnPlayerReset(true)
                             setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)
                             applySubtitleOffset(this, subtitleVerticalOffsetPercent)
                             applySubtitleSize(this, subtitleSizePercent)
@@ -915,6 +916,10 @@ class ExoPlayerBackend(
             player.playWhenReady = wasPlaying
             player.prepare()
             setPlaybackSpeed(currentSpeed)
+            
+            // Force hasRenderedFirstFrame to true after hot-swap to prevent spinner freeze
+            // in case ExoPlayer suppresses the onRenderedFirstFrame callback for the new source.
+            _uiState.update { it.copy(hasRenderedFirstFrame = true) }
         }
     }
 
