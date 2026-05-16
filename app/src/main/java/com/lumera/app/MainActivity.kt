@@ -360,16 +360,27 @@ class MainActivity : ComponentActivity() {
                     val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
                     try {
                         task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                        updateScope.launch {
-                            val manager = com.lumera.app.data.backup.DriveBackupManager.getInstance()
-                            if (manager.hasBackup(this@MainActivity) != null) {
-                                manager.restoreFromDrive(this@MainActivity, addonDao)
-                            } else {
-                                manager.exportToDrive(this@MainActivity, addonDao)
+                        // CRÃTICO: Mudar para Dispatchers.IO para evitar NetworkOnMainThreadException
+                        updateScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            try {
+                                val manager = com.lumera.app.data.backup.DriveBackupManager.getInstance()
+                                if (manager.hasBackup(this@MainActivity) != null) {
+                                    manager.restoreFromDrive(this@MainActivity, addonDao)
+                                } else {
+                                    manager.exportToDrive(this@MainActivity, addonDao)
+                                }
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                    driveOnboardingComplete = true
+                                }
+                            } catch (e: Exception) {
+                                android.util.Log.e("DriveAuth", "Falha de I/O ou BD no Drive: ${e.message}", e)
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                    driveOnboardingComplete = true
+                                }
                             }
-                            driveOnboardingComplete = true
                         }
-                    } catch (e: Exception) {
+                    } catch (e: com.google.android.gms.common.api.ApiException) {
+                        android.util.Log.e("DriveAuth", "Falha de OAuth. CÃ³digo: ${e.statusCode}. Verifique o SHA-1 no Cloud Console.", e)
                         driveOnboardingComplete = true
                     }
                 } else {

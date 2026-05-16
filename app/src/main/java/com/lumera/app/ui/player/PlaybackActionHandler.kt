@@ -210,9 +210,12 @@ fun buildEmbeddedSubtitlePayloadItem(
     )
 }
 
-fun buildAddonSubtitlePayload(addonSubtitles: List<AddonSubtitle>): List<PlayerSubtitlePayload> {
+fun buildAddonSubtitlePayload(
+    addonSubtitles: List<AddonSubtitle>,
+    fallbackTransportUrl: String? = null
+): List<PlayerSubtitlePayload> {
     return addonSubtitles.mapNotNull { subtitle ->
-        val resolvedUrl = resolveSubtitleUrl(subtitle.url, addonTransportUrl = null) ?: return@mapNotNull null
+        val resolvedUrl = resolveSubtitleUrl(subtitle.url, addonTransportUrl = fallbackTransportUrl) ?: return@mapNotNull null
         val name = sanitizeSubtitleSourceName(subtitle.addonName, "Addon subtitle")
         val language = normalizeSubtitleLanguageTag(subtitle.lang)
         val subtitleId = subtitle.id
@@ -233,7 +236,7 @@ fun buildAddonSubtitlePayload(addonSubtitles: List<AddonSubtitle>): List<PlayerS
 }
 
 fun buildSubtitlePayload(stream: Stream, addonSubtitles: List<AddonSubtitle>): List<PlayerSubtitlePayload> {
-    return (buildEmbeddedSubtitlePayload(stream) + buildAddonSubtitlePayload(addonSubtitles))
+    return (buildEmbeddedSubtitlePayload(stream) + buildAddonSubtitlePayload(addonSubtitles, stream.addonTransportUrl))
         .distinctBy { payload ->
             val url = payload.url.lowercase(Locale.ROOT)
             val lang = payload.language.orEmpty().lowercase(Locale.ROOT)
@@ -336,7 +339,7 @@ fun CoroutineScope.fetchAddonSubtitlesAsync(
             )
             
             if (fetchedSubs.isNotEmpty()) {
-                val newPayload = buildAddonSubtitlePayload(fetchedSubs)
+                val newPayload = buildAddonSubtitlePayload(fetchedSubs, stream.addonTransportUrl)
                 withContext(Dispatchers.Main) {
                     playerState.selectedPlayerSubtitles = 
                         (playerState.selectedPlayerSubtitles + newPayload).distinctBy { it.id }

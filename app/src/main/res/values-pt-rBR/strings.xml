@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Lumera</string>
+    <string name="app_name">LumeraX</string>
 
     <!-- ACRA crash reporting -->
     <string name="acra_toast_text">Um relatório de erro foi enviado para nos ajudar a corrigir este problema.</string>
@@ -86,9 +86,9 @@
     <string name="onboarding_language_title">Selecione seu idioma</string>
 
     <!-- Profile Screen -->
-    <string name="profile_welcome_title">BEM-VINDO AO LUMERA</string>
+    <string name="profile_welcome_title">BEM-VINDOS AO LUMERAX</string>
     <string name="profile_welcome_subtitle">Seu universo cinematográfico espera.</string>
-    <string name="profile_create_first">Criar Primeiro Perfil</string>
+    <string name="profile_create_first">Criar Perfil</string>
     <string name="profile_who_is_watching">QUEM ESTÁ ASSISTINDO?</string>
     <string name="profile_setup_title">Configurar \"%1$s\"</string>
     <string name="profile_setup_subtitle">Escolha como este perfil deve começar.</string>

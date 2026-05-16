@@ -23,11 +23,20 @@ val traktClientId: String = localProperties.getProperty("TRAKT_CLIENT_ID", "")
 val traktClientSecret: String = localProperties.getProperty("TRAKT_CLIENT_SECRET", "")
 
 android {
-    namespace = "com.lumera.app"
+    namespace = "com.lumerax.app"
     compileSdk = 36
 
+    signingConfigs {
+        create("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     defaultConfig {
-        applicationId = "com.lumera.app"
+        applicationId = "com.lumerax.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 9
@@ -59,8 +68,9 @@ android {
 
     buildTypes {
         debug {
+            signingConfig = signingConfigs.getByName("debug")
             applicationIdSuffix = ".test"
-            resValue("string", "app_name", "Lumera Test")
+            resValue("string", "app_name", "LumeraX Test")
         }
         release {
             isMinifyEnabled = true
