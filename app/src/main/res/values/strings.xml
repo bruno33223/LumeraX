@@ -256,4 +256,57 @@
     <string name="about_downloading_progress">Downloading… %1$d%%</string>
     <string name="about_installing">Download complete. Installing…</string>
 
+    <string name="addons_import_title">Import Stremio Addons</string>
+    <string name="addons_import_stats">Found %1$d addons • %2$d selected</string>
+    <string name="addons_select_all">Select All</string>
+    <string name="addons_deselect_all">Deselect All</string>
+    <string name="addons_import_action">Import (%1$d)</string>
+    <string name="addons_installed_badge">Installed</string>
+    <string name="addons_selected_desc">Selected</string>
+    <string name="addons_not_selected_desc">Not selected</string>
+    <string name="integrations_stremio_sync_complete">Imported %1$d addon(s)</string>
+    
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_close">Close</string>
+    <string name="dialog_save">Save</string>
+    <string name="dialog_done">Done</string>
+    <string name="dialog_retry">Retry</string>
+    
+    <string name="addons_uninstall_confirm_title">Uninstall Addon?</string>
+    <string name="addons_uninstall_confirm_desc">Are you sure you want to remove %1$s?</string>
+    <string name="addons_sync_config_desc">Select which catalogs to sync for this addon:</string>
+    
+    <string name="keyboard_space">Space</string>
+    <string name="keyboard_back">Backspace</string>
+    <string name="keyboard_system">Keyboard</string>
+    
+    <string name="integrations_stremio_connected">Connected</string>
+    <string name="integrations_stremio_disconnected">Disconnected</string>
+    <string name="integrations_stremio_connect_title">Connect Stremio Account</string>
+    <string name="integrations_stremio_connect_desc">Import your addons and sync configurations.</string>
+    <string name="integrations_stremio_connecting">Connecting…</string>
+    <string name="integrations_qr_title">Connect with Phone</string>
+    <string name="integrations_sync_addons_title">Sync Addons</string>
+    <string name="integrations_sync_addons_desc">Fetch new addons from your account.</string>
+    <string name="integrations_disconnect_title">Disconnect Stremio</string>
+    <string name="integrations_disconnect_desc">Remove your Stremio connection.</string>
+    <string name="integrations_disconnect_confirm_title">Disconnect Account?</string>
+    <string name="integrations_disconnect_confirm_desc">Your installed addons will remain, but you won\'t be able to sync new addons until you reconnect.</string>
+    <string name="integrations_disconnect_confirm_action">Disconnect</string>
+    
+    <string name="integrations_tmdb_settings_title">TMDB Settings</string>
+    <string name="integrations_tmdb_settings_desc">Configure TMDB metadata integration.</string>
+    <string name="integrations_tmdb_enable_title">Enable TMDB Metadata</string>
+    <string name="integrations_tmdb_lang_title">Metadata Language</string>
+    
+    <string name="integrations_trakt_connected">Connected to Trakt</string>
+    <string name="integrations_trakt_connect_desc">Sync your watchlist and playback history.</string>
+    <string name="integrations_trakt_auth_instructions">Scan the QR code or go to trakt.tv/activate and enter the code below.</string>
+    
+    <string name="settings_autoplay_threshold_val">Trigger at %1$d%%</string>
+    <string name="secs">%1$ds</string>
+    <string name="settings_remaining">%1$ds remaining</string>
+    <string name="settings_trigger_at">Trigger at %1$d%%</string>
+    <string name="option_home">Home</string>
+
 </resources>

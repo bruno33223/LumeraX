@@ -86,17 +86,17 @@ fun IntegrationsScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is IntegrationsEvent.LoginSuccess -> {
-                    Toast.makeText(context, stringResource(id = com.lumera.app.R.string.integrations_stremio_connected), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(com.lumera.app.R.string.integrations_stremio_connected), Toast.LENGTH_SHORT).show()
                     showConnectDialog = false
                 }
                 is IntegrationsEvent.LoginError -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                 }
                 is IntegrationsEvent.SyncComplete -> {
-                    Toast.makeText(context, stringResource(id = com.lumera.app.R.string.integrations_stremio_sync_complete, event.count), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(com.lumera.app.R.string.integrations_stremio_sync_complete, event.count), Toast.LENGTH_SHORT).show()
                 }
                 is IntegrationsEvent.Disconnected -> {
-                    Toast.makeText(context, stringResource(id = com.lumera.app.R.string.integrations_stremio_disconnected), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(com.lumera.app.R.string.integrations_stremio_disconnected), Toast.LENGTH_SHORT).show()
                 }
                 is IntegrationsEvent.BackupSuccess -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()

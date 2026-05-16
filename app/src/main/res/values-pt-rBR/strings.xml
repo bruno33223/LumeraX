@@ -265,5 +265,47 @@
     <string name="addons_selected_desc">Selecionado</string>
     <string name="addons_not_selected_desc">Não selecionado</string>
     <string name="integrations_stremio_sync_complete">Importado %1$d addon(s)</string>
-</resources>
 
+    <string name="dialog_cancel">Cancelar</string>
+    <string name="dialog_close">Fechar</string>
+    <string name="dialog_save">Salvar</string>
+    <string name="dialog_done">Concluído</string>
+    <string name="dialog_retry">Tentar Novamente</string>
+    
+    <string name="addons_uninstall_confirm_title">Desinstalar Addon?</string>
+    <string name="addons_uninstall_confirm_desc">Tem certeza que deseja remover %1$s?</string>
+    <string name="addons_sync_config_desc">Selecione quais catálogos sincronizar para este addon:</string>
+    
+    <string name="keyboard_space">Espaço</string>
+    <string name="keyboard_back">Apagar</string>
+    <string name="keyboard_system">Teclado</string>
+    
+    <string name="integrations_stremio_connected">Conectado</string>
+    <string name="integrations_stremio_disconnected">Desconectado</string>
+    <string name="integrations_stremio_connect_title">Conectar Conta Stremio</string>
+    <string name="integrations_stremio_connect_desc">Importe seus addons e configurações de sincronização.</string>
+    <string name="integrations_stremio_connecting">Conectando…</string>
+    <string name="integrations_qr_title">Conectar com o Celular</string>
+    <string name="integrations_sync_addons_title">Sincronizar Addons</string>
+    <string name="integrations_sync_addons_desc">Buscar novos addons da sua conta.</string>
+    <string name="integrations_disconnect_title">Desconectar Stremio</string>
+    <string name="integrations_disconnect_desc">Remover sua conexão com o Stremio.</string>
+    <string name="integrations_disconnect_confirm_title">Desconectar Conta?</string>
+    <string name="integrations_disconnect_confirm_desc">Seus addons instalados permanecerão, mas você não poderá sincronizar novos addons até reconectar.</string>
+    <string name="integrations_disconnect_confirm_action">Desconectar</string>
+    
+    <string name="integrations_tmdb_settings_title">Configurações do TMDB</string>
+    <string name="integrations_tmdb_settings_desc">Configure a integração de metadados do TMDB.</string>
+    <string name="integrations_tmdb_enable_title">Ativar Metadados TMDB</string>
+    <string name="integrations_tmdb_lang_title">Idioma dos Metadados</string>
+    
+    <string name="integrations_trakt_connected">Conectado ao Trakt</string>
+    <string name="integrations_trakt_connect_desc">Sincronize sua lista e histórico de reprodução.</string>
+    <string name="integrations_trakt_auth_instructions">Escaneie o código QR ou acesse trakt.tv/activate e digite o código abaixo.</string>
+    
+    <string name="settings_autoplay_threshold_val">Disparar em %1$d%%</string>
+    <string name="secs">%1$ds</string>
+    <string name="settings_remaining">faltam %1$ds</string>
+    <string name="settings_trigger_at">Disparar em %1$d%%</string>
+    <string name="option_home">Tela Inicial</string>
+</resources>
