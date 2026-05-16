@@ -62,7 +62,7 @@ class SubtitleRepository @Inject constructor(
 
         val jobs = addons.map { addon ->
             async {
-                if (!shouldQueryAddonForSubtitles(addon, request.contentType, request.baseId)) {
+                if (!shouldQueryAddonForSubtitles(addon, request.contentType, request.baseId, videoHash)) {
                     return@async emptyList()
                 }
                 fetchSubtitlesFromAddon(
@@ -117,7 +117,8 @@ class SubtitleRepository @Inject constructor(
     private suspend fun shouldQueryAddonForSubtitles(
         addon: AddonEntity,
         contentType: String,
-        baseId: String
+        baseId: String,
+        videoHash: String?
     ): Boolean {
         val capability = getSubtitleCapability(addon.transportUrl)
         return when (capability) {
@@ -131,7 +132,9 @@ class SubtitleRepository @Inject constructor(
                         val idSupported = rule.idPrefixes.isEmpty() || rule.idPrefixes.any { prefix ->
                             baseId.startsWith(prefix)
                         }
-                        typeSupported && idSupported
+                        // If we have a videoHash, we can query the addon even if the idPrefix doesn't match,
+                        // as many subtitle addons can resolve by hash alone.
+                        typeSupported && (idSupported || !videoHash.isNullOrBlank())
                     }
                 }
             }
@@ -212,7 +215,8 @@ class SubtitleRepository @Inject constructor(
         val pathId = request.requestId
         val extraParams = buildExtraParams(videoHash, videoSize, filename)
         val subtitleUrl = if (extraParams.isNotEmpty()) {
-            "$baseUrl/subtitles/$pathType/$pathId/$extraParams.json"
+            val encodedExtra = URLEncoder.encode(extraParams, Charsets.UTF_8.name())
+            "$baseUrl/subtitles/$pathType/$pathId/$encodedExtra.json"
         } else {
             "$baseUrl/subtitles/$pathType/$pathId.json"
         }
@@ -264,13 +268,13 @@ class SubtitleRepository @Inject constructor(
     ): String {
         val params = mutableListOf<String>()
         videoHash?.trim()?.takeIf { it.isNotEmpty() }?.let {
-            params.add("videoHash=${encodeQueryValue(it)}")
+            params.add("videoHash=$it")
         }
         videoSize?.takeIf { it > 0L }?.let {
             params.add("videoSize=$it")
         }
         filename?.trim()?.takeIf { it.isNotEmpty() }?.let {
-            params.add("filename=${encodeQueryValue(it)}")
+            params.add("filename=$it")
         }
         return params.joinToString("&")
     }
