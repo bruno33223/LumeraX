@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.lumera.app.data.model.ProfileEntity
@@ -89,7 +90,7 @@ fun WatchlistScreen(
         if (movies.isEmpty() && series.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Your watchlist is empty",
+                    text = stringResource(id = com.lumera.app.R.string.watchlist_empty),
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White.copy(alpha = 0.5f)
                 )
@@ -108,7 +109,7 @@ fun WatchlistScreen(
                         startPadding = startPadding,
                         isTopNav = isTopNav,
                         rowIndex = 0,
-                        title = "Movies",
+                        title = stringResource(id = com.lumera.app.R.string.search_tab_movies),
                         items = movies,
                         onMovieClick = onMovieClick,
                         onViewMore = {},
@@ -133,7 +134,7 @@ fun WatchlistScreen(
                         startPadding = startPadding,
                         isTopNav = isTopNav,
                         rowIndex = 1,
-                        title = "Series",
+                        title = stringResource(id = com.lumera.app.R.string.search_tab_series),
                         items = series,
                         onMovieClick = onMovieClick,
                         onViewMore = {},

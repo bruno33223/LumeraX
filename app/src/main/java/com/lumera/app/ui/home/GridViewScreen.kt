@@ -429,7 +429,7 @@ fun GridViewScreen(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_view_more_arrow),
-                        contentDescription = "Back",
+                        contentDescription = androidx.compose.ui.res.stringResource(id = com.lumera.app.R.string.go_back),
                         tint = if (isBackIconFocused) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.5f),
                         modifier = Modifier.fillMaxSize()
                     )

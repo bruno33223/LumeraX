@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalTextInputService
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
@@ -208,7 +209,7 @@ fun SearchScreen(
                             .focusProperties { canFocus = isDiscoverActive }
                     ) {
                         Text(
-                            text = "Discover",
+                            text = stringResource(id = com.lumera.app.R.string.search_trending),
                             style = TvMaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),
@@ -244,7 +245,7 @@ fun SearchScreen(
                         // Genre dropdown (only if genres exist)
                         if (state.availableGenres.size > 1) {
                             FilterDropdown(
-                                currentValue = state.selectedGenre ?: "All",
+                                currentValue = state.selectedGenre ?: stringResource(id = com.lumera.app.R.string.none),
                                 options = state.availableGenres,
                                 modifier = Modifier.fillMaxWidth().then(filterRightInterceptor),
                                 onSelect = { viewModel.selectGenre(it) }
@@ -271,13 +272,13 @@ fun SearchScreen(
                     }
                 } else if (state.results.isEmpty() && state.query.length >= 3) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No results for \"${state.query}\"", color = Color.White.copy(0.5f))
+                        Text(stringResource(id = com.lumera.app.R.string.search_no_results, state.query), color = Color.White.copy(0.5f))
                     }
                 } else if (state.query.length < 3) {
                     // DISCOVER MODE
                     if (state.discoverCatalogs.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Search for movies, series, and more", color = Color.White.copy(0.3f))
+                            Text(stringResource(id = com.lumera.app.R.string.search_placeholder), color = Color.White.copy(0.3f))
                         }
                     } else if (state.isDiscoverLoading && state.discoverItems.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -285,7 +286,7 @@ fun SearchScreen(
                         }
                     } else if (state.discoverItems.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No content available", color = Color.White.copy(0.3f))
+                            Text(stringResource(id = com.lumera.app.R.string.none), color = Color.White.copy(0.3f))
                         }
                     } else {
                         DiscoverGrid(
@@ -328,7 +329,7 @@ fun SearchScreen(
                         if (state.movies.isNotEmpty()) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Movies",
+                                    text = stringResource(id = com.lumera.app.R.string.search_tab_movies),
                                     style = TvMaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.SemiBold
                                     ),
@@ -383,7 +384,7 @@ fun SearchScreen(
                         if (state.series.isNotEmpty()) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Series",
+                                    text = stringResource(id = com.lumera.app.R.string.search_tab_series),
                                     style = TvMaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.SemiBold
                                     ),
@@ -526,7 +527,7 @@ fun SearchScreen(
                                     Box(contentAlignment = Alignment.CenterStart) {
                                         if (state.query.isEmpty()) {
                                             Text(
-                                                text = "Type to search...",
+                                                text = stringResource(id = com.lumera.app.R.string.search_placeholder),
                                                 style = MaterialTheme.typography.headlineMedium.copy(
                                                     fontSize = 20.sp,
                                                     fontWeight = FontWeight.Normal
@@ -861,7 +862,7 @@ fun TvKeyboard(
             KeyButton(
                 icon = Icons.Default.SpaceBar,
                 onClick = onSpace,
-                label = "Space",
+                label = stringResource(id = com.lumera.app.R.string.keyboard_space),
                 modifier = Modifier
                     .onFocusChanged { if (it.isFocused) lastFocusedIndex = spaceIndex }
                     .then(if (isRemembered) Modifier.focusRequester(entryRequester) else Modifier)
@@ -880,7 +881,7 @@ fun TvKeyboard(
             KeyButton(
                 icon = Icons.AutoMirrored.Filled.Backspace,
                 onClick = onBackspace,
-                label = "Back",
+                label = stringResource(id = com.lumera.app.R.string.keyboard_back),
                 modifier = Modifier
                     .onFocusChanged { if (it.isFocused) lastFocusedIndex = backIndex }
                     .then(if (isRemembered) Modifier.focusRequester(entryRequester) else Modifier)
@@ -893,7 +894,7 @@ fun TvKeyboard(
             KeyButton(
                 icon = Icons.Default.Keyboard,
                 onClick = onOpenSystemKeyboard,
-                label = "Keyboard",
+                label = stringResource(id = com.lumera.app.R.string.keyboard_system),
                 modifier = Modifier
                     .onFocusChanged { if (it.isFocused) lastFocusedIndex = hideIndex }
                     .then(if (isRemembered) Modifier.focusRequester(entryRequester) else Modifier)

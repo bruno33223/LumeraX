@@ -404,7 +404,7 @@ fun PlaybackSettings(
                 if (currentProfile.autoplayThresholdMode == "percentage") {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Trigger at ${currentProfile.autoplayThresholdPercent}%",
+                        text = stringResource(id = com.lumera.app.R.string.settings_autoplay_threshold_val, currentProfile.autoplayThresholdPercent),
                         color = Color.White.copy(0.6f),
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                         modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
@@ -417,10 +417,9 @@ fun PlaybackSettings(
                     )
                 } else if (currentProfile.autoplayThresholdMode == "time") {
                     Spacer(Modifier.height(4.dp))
-                    val secs = currentProfile.autoplayThresholdSeconds
-                    val display = if (secs >= 60) "${secs / 60}m ${secs % 60}s remaining" else "${secs}s remaining"
+                    val display = if (secs >= 60) "${secs / 60}m ${secs % 60}s ${stringResource(id = com.lumera.app.R.string.settings_remaining)}" else "${secs}s ${stringResource(id = com.lumera.app.R.string.settings_remaining)}"
                     Text(
-                        text = "Trigger with $display",
+                        text = "${stringResource(id = com.lumera.app.R.string.settings_trigger_at)} $display",
                         color = Color.White.copy(0.6f),
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                         modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
@@ -561,10 +560,10 @@ fun PlaybackSettings(
             null -> ""
         }
         val sidebarTitle = when (activeLanguageField) {
-            LanguageField.AUDIO_PRIMARY -> "Audio Language"
-            LanguageField.AUDIO_SECONDARY -> "Audio Language (Secondary)"
-            LanguageField.SUBTITLE_PRIMARY -> "Subtitle Language"
-            LanguageField.SUBTITLE_SECONDARY -> "Subtitle Language (Secondary)"
+            LanguageField.AUDIO_PRIMARY -> stringResource(id = com.lumera.app.R.string.settings_audio_lang)
+            LanguageField.AUDIO_SECONDARY -> stringResource(id = com.lumera.app.R.string.settings_audio_lang_secondary)
+            LanguageField.SUBTITLE_PRIMARY -> stringResource(id = com.lumera.app.R.string.settings_subtitle_lang)
+            LanguageField.SUBTITLE_SECONDARY -> stringResource(id = com.lumera.app.R.string.settings_subtitle_lang_secondary)
             null -> ""
         }
 

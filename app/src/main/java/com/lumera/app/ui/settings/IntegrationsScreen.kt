@@ -57,6 +57,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import com.lumera.app.data.auth.StremioConnectionState
 import com.lumera.app.data.trakt.DeviceAuthState
 import com.lumera.app.remote_input.ServerInfo
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -85,17 +86,17 @@ fun IntegrationsScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is IntegrationsEvent.LoginSuccess -> {
-                    Toast.makeText(context, "Connected to Stremio!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, stringResource(id = com.lumera.app.R.string.integrations_stremio_connected), Toast.LENGTH_SHORT).show()
                     showConnectDialog = false
                 }
                 is IntegrationsEvent.LoginError -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                 }
                 is IntegrationsEvent.SyncComplete -> {
-                    Toast.makeText(context, "Imported ${event.count} addon(s)", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, stringResource(id = com.lumera.app.R.string.integrations_stremio_sync_complete, event.count), Toast.LENGTH_SHORT).show()
                 }
                 is IntegrationsEvent.Disconnected -> {
-                    Toast.makeText(context, "Disconnected from Stremio", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, stringResource(id = com.lumera.app.R.string.integrations_stremio_disconnected), Toast.LENGTH_SHORT).show()
                 }
                 is IntegrationsEvent.BackupSuccess -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
@@ -134,12 +135,12 @@ fun IntegrationsScreen(
     ) {
         // Header
         Text(
-            "Integrations",
+            stringResource(id = com.lumera.app.R.string.integrations_header),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 20.sp),
             color = Color.White
         )
         Text(
-            "Connect external services to enhance your experience.",
+            stringResource(id = com.lumera.app.R.string.integrations_desc),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
             color = Color.White.copy(0.6f),
             modifier = Modifier.padding(top = 4.dp)
@@ -150,7 +151,7 @@ fun IntegrationsScreen(
         // Stremio Integration Item
         IntegrationItem(
             title = "Stremio",
-            subtitle = if (stremioConnected) stremioEmail ?: "Connected" else "Not Connected",
+            subtitle = if (stremioConnected) stremioEmail ?: stringResource(id = com.lumera.app.R.string.integrations_connected) else stringResource(id = com.lumera.app.R.string.integrations_not_connected),
             isConnected = stremioConnected,
             onClick = {
                 if (stremioConnected) {
@@ -170,9 +171,9 @@ fun IntegrationsScreen(
             subtitle = if (state.tmdbEnabled) {
                 val langName = TMDB_LANGUAGE_OPTIONS
                     .firstOrNull { it.second == state.tmdbLanguage }?.first
-                    ?: "Device Language"
-                "Enabled · $langName"
-            } else "Disabled",
+                    ?: stringResource(id = com.lumera.app.R.string.integrations_tmdb_device_lang)
+                "${stringResource(id = com.lumera.app.R.string.option_on)} · $langName"
+            } else stringResource(id = com.lumera.app.R.string.option_off),
             isConnected = state.tmdbEnabled,
             onClick = { showTmdbSettings = true },
             modifier = goBackModifier
@@ -183,7 +184,7 @@ fun IntegrationsScreen(
         // Trakt Integration Item
         IntegrationItem(
             title = "Trakt",
-            subtitle = if (state.traktConnected) "Connected" else "Not Connected",
+            subtitle = if (state.traktConnected) stringResource(id = com.lumera.app.R.string.integrations_connected) else stringResource(id = com.lumera.app.R.string.integrations_not_connected),
             isConnected = state.traktConnected,
             onClick = { showTraktDialog = true },
             modifier = goBackModifier
@@ -328,7 +329,7 @@ private fun IntegrationItem(
         // Status indicator
         if (isFocused) {
             Text(
-                if (isConnected) "Manage" else "Connect",
+                if (isConnected) stringResource(id = com.lumera.app.R.string.addons_manage_title) else stringResource(id = com.lumera.app.R.string.integrations_connect),
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelMedium
             )
@@ -407,7 +408,7 @@ private fun ConnectStremioDialog(
                     ) {
                         // Header
                         Text(
-                            "Connect your Stremio account",
+                            stringResource(id = com.lumera.app.R.string.integrations_stremio_connect_title),
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                             color = Color.White,
                             maxLines = 1,
@@ -415,7 +416,7 @@ private fun ConnectStremioDialog(
                             softWrap = false
                         )
                         Text(
-                            "Import your existing addons from Stremio",
+                            stringResource(id = com.lumera.app.R.string.integrations_stremio_connect_desc),
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.Gray,
                             modifier = Modifier.padding(top = 4.dp, bottom = 20.dp),
@@ -460,7 +461,7 @@ private fun ConnectStremioDialog(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             IntegrationButton(
-                                text = if (isLoading) "Connecting..." else "Connect",
+                                text = if (isLoading) stringResource(id = com.lumera.app.R.string.integrations_stremio_connecting) else stringResource(id = com.lumera.app.R.string.integrations_connect),
                                 onClick = { onLogin(email, password) },
                                 enabled = email.isNotBlank() && password.isNotBlank() && !isLoading,
                                 isPrimary = true,
@@ -484,7 +485,7 @@ private fun ConnectStremioDialog(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            "Or Scan with Phone",
+                            stringResource(id = com.lumera.app.R.string.integrations_qr_title),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
                             color = Color.White,
                             maxLines = 1,
@@ -576,7 +577,7 @@ private fun StremioManagementDialog(
         ) {
             Column {
                 Text(
-                    "Stremio Account",
+                    stringResource(id = com.lumera.app.R.string.integrations_stremio_account_title),
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = Color.White
                 )
@@ -593,8 +594,8 @@ private fun StremioManagementDialog(
                 // Sync Addons
                 ManagementMenuItem(
                     icon = Icons.Default.Sync,
-                    title = "Add New Addons",
-                    subtitle = "Import addons from your Stremio account",
+                    title = stringResource(id = com.lumera.app.R.string.integrations_sync_addons_title),
+                    subtitle = stringResource(id = com.lumera.app.R.string.integrations_sync_addons_desc),
                     onClick = onSyncAddons,
                     focusRequester = syncFocusRequester
                 )
@@ -604,8 +605,8 @@ private fun StremioManagementDialog(
                 // Disconnect
                 ManagementMenuItem(
                     icon = Icons.Default.Logout,
-                    title = "Disconnect Account",
-                    subtitle = "Remove Stremio connection",
+                    title = stringResource(id = com.lumera.app.R.string.integrations_disconnect_title),
+                    subtitle = stringResource(id = com.lumera.app.R.string.integrations_disconnect_desc),
                     onClick = onDisconnect,
                     isDestructive = true
                 )
@@ -617,7 +618,7 @@ private fun StremioManagementDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     IntegrationButton(
-                        text = "Close",
+                        text = stringResource(id = com.lumera.app.R.string.dialog_close),
                         onClick = onDismiss,
                         modifier = Modifier.width(100.dp)
                     )
@@ -706,7 +707,7 @@ private fun DisconnectConfirmDialog(
         ) {
             Column {
                 Text(
-                    "Disconnect Stremio?",
+                    stringResource(id = com.lumera.app.R.string.integrations_disconnect_confirm_title),
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = Color.White
                 )
@@ -714,7 +715,7 @@ private fun DisconnectConfirmDialog(
                 Spacer(Modifier.height(12.dp))
 
                 Text(
-                    "Your installed addons will remain, but you won't be able to sync new addons until you reconnect.",
+                    stringResource(id = com.lumera.app.R.string.integrations_disconnect_confirm_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
@@ -726,13 +727,13 @@ private fun DisconnectConfirmDialog(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     IntegrationButton(
-                        text = "Cancel",
+                        text = stringResource(id = com.lumera.app.R.string.dialog_cancel),
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f)
                     )
 
                     IntegrationButton(
-                        text = "Disconnect",
+                        text = stringResource(id = com.lumera.app.R.string.integrations_disconnect_confirm_action),
                         onClick = onConfirm,
                         isDestructive = true,
                         modifier = Modifier.weight(1f),
@@ -858,13 +859,13 @@ private fun TmdbSettingsDialog(
             ) {
                 Column {
                     Text(
-                        "TMDB Settings",
+                        stringResource(id = com.lumera.app.R.string.integrations_tmdb_settings_title),
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                         color = Color.White
                     )
 
                     Text(
-                        "Enrich metadata with localized info, cast, ratings, and more.",
+                        stringResource(id = com.lumera.app.R.string.integrations_tmdb_settings_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
                         modifier = Modifier.padding(top = 4.dp)
@@ -874,8 +875,8 @@ private fun TmdbSettingsDialog(
 
                     // Enable/Disable toggle
                     TmdbToggleItem(
-                        title = "Enable TMDB",
-                        subtitle = "Fetch enhanced metadata from The Movie Database",
+                        title = stringResource(id = com.lumera.app.R.string.integrations_tmdb_enable_title),
+                        subtitle = stringResource(id = com.lumera.app.R.string.integrations_tmdb_enable_desc),
                         isEnabled = enabled,
                         onToggle = { onEnabledChange(!enabled) },
                         focusRequester = toggleFocusRequester
@@ -885,12 +886,12 @@ private fun TmdbSettingsDialog(
 
                     // Language section header
                     Text(
-                        "Metadata Language",
+                        stringResource(id = com.lumera.app.R.string.integrations_tmdb_lang_title),
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                         color = if (enabled) Color.White else Color.White.copy(0.4f)
                     )
                     Text(
-                        "Titles, descriptions, and logos will use this language when available.",
+                        stringResource(id = com.lumera.app.R.string.integrations_tmdb_lang_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (enabled) Color.Gray else Color.Gray.copy(0.5f),
                         modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
@@ -968,7 +969,7 @@ private fun TmdbSettingsDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         IntegrationButton(
-                            text = "Close",
+                            text = stringResource(id = com.lumera.app.R.string.dialog_close),
                             onClick = onDismiss,
                             modifier = Modifier.width(100.dp)
                         )
@@ -1191,7 +1192,7 @@ private fun TraktAuthDialog(
                     color = Color.White
                 )
                 Text(
-                    "Track what you watch automatically across all your apps.",
+                    stringResource(id = com.lumera.app.R.string.integrations_trakt_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     modifier = Modifier.padding(top = 4.dp)
@@ -1203,7 +1204,7 @@ private fun TraktAuthDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Connected to Trakt", color = Color.White, style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(id = com.lumera.app.R.string.integrations_trakt_connected), color = Color.White, style = MaterialTheme.typography.bodyLarge)
                     }
 
                     Spacer(Modifier.height(24.dp))
@@ -1213,14 +1214,14 @@ private fun TraktAuthDialog(
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                     ) {
                         IntegrationButton(
-                            text = "Disconnect",
+                            text = stringResource(id = com.lumera.app.R.string.integrations_disconnect_confirm_action),
                             onClick = onDisconnect,
                             isDestructive = true,
                             modifier = Modifier.width(130.dp),
                             focusRequester = focusRequester
                         )
                         IntegrationButton(
-                            text = "Close",
+                            text = stringResource(id = com.lumera.app.R.string.dialog_close),
                             onClick = onDismiss,
                             modifier = Modifier.width(100.dp)
                         )
@@ -1229,7 +1230,7 @@ private fun TraktAuthDialog(
                     when (authState) {
                         is DeviceAuthState.Idle -> {
                             Text(
-                                "Connect your Trakt account to sync your watchlist, watch history, and scrobble playback.",
+                                stringResource(id = com.lumera.app.R.string.integrations_trakt_connect_desc),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White.copy(0.7f)
                             )
@@ -1241,14 +1242,14 @@ private fun TraktAuthDialog(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                             ) {
                                 IntegrationButton(
-                                    text = "Connect",
+                                    text = stringResource(id = com.lumera.app.R.string.integrations_connect),
                                     onClick = onConnect,
                                     isPrimary = true,
                                     modifier = Modifier.width(130.dp),
                                     focusRequester = focusRequester
                                 )
                                 IntegrationButton(
-                                    text = "Close",
+                                    text = stringResource(id = com.lumera.app.R.string.dialog_close),
                                     onClick = onDismiss,
                                     modifier = Modifier.width(100.dp)
                                 )
@@ -1257,7 +1258,7 @@ private fun TraktAuthDialog(
 
                         is DeviceAuthState.WaitingForUser -> {
                             Text(
-                                "Go to the URL below and enter the code:",
+                                stringResource(id = com.lumera.app.R.string.integrations_trakt_auth_instructions),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White.copy(0.7f)
                             )
@@ -1310,7 +1311,7 @@ private fun TraktAuthDialog(
                             }
 
                             Text(
-                                "Waiting for authorization...",
+                                stringResource(id = com.lumera.app.R.string.integrations_trakt_waiting),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(0.5f)
                             )
@@ -1322,7 +1323,7 @@ private fun TraktAuthDialog(
                                 horizontalArrangement = Arrangement.End
                             ) {
                                 IntegrationButton(
-                                    text = "Cancel",
+                                    text = stringResource(id = com.lumera.app.R.string.dialog_cancel),
                                     onClick = onDismiss,
                                     modifier = Modifier.width(100.dp),
                                     focusRequester = focusRequester
@@ -1334,7 +1335,7 @@ private fun TraktAuthDialog(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Successfully connected!", color = Color.White, style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(id = com.lumera.app.R.string.integrations_trakt_success), color = Color.White, style = MaterialTheme.typography.bodyLarge)
                             }
 
                             Spacer(Modifier.height(24.dp))
@@ -1344,7 +1345,7 @@ private fun TraktAuthDialog(
                                 horizontalArrangement = Arrangement.End
                             ) {
                                 IntegrationButton(
-                                    text = "Done",
+                                    text = stringResource(id = com.lumera.app.R.string.dialog_done),
                                     onClick = onDismiss,
                                     isPrimary = true,
                                     modifier = Modifier.width(100.dp),
@@ -1362,13 +1363,13 @@ private fun TraktAuthDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                             ) {
-                                IntegrationButton(text = "Retry", onClick = onConnect, isPrimary = true, modifier = Modifier.width(100.dp), focusRequester = focusRequester)
-                                IntegrationButton(text = "Close", onClick = onDismiss, modifier = Modifier.width(100.dp))
+                                IntegrationButton(text = stringResource(id = com.lumera.app.R.string.dialog_retry), onClick = onConnect, isPrimary = true, modifier = Modifier.width(100.dp), focusRequester = focusRequester)
+                                IntegrationButton(text = stringResource(id = com.lumera.app.R.string.dialog_close), onClick = onDismiss, modifier = Modifier.width(100.dp))
                             }
                         }
 
                         is DeviceAuthState.Expired -> {
-                            Text("The authorization code has expired. Please try again.", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(0.7f))
+                            Text(stringResource(id = com.lumera.app.R.string.integrations_trakt_expired), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(0.7f))
 
                             Spacer(Modifier.height(24.dp))
 
@@ -1376,8 +1377,8 @@ private fun TraktAuthDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
                             ) {
-                                IntegrationButton(text = "Retry", onClick = onConnect, isPrimary = true, modifier = Modifier.width(100.dp), focusRequester = focusRequester)
-                                IntegrationButton(text = "Close", onClick = onDismiss, modifier = Modifier.width(100.dp))
+                                IntegrationButton(text = stringResource(id = com.lumera.app.R.string.dialog_retry), onClick = onConnect, isPrimary = true, modifier = Modifier.width(100.dp), focusRequester = focusRequester)
+                                IntegrationButton(text = stringResource(id = com.lumera.app.R.string.dialog_close), onClick = onDismiss, modifier = Modifier.width(100.dp))
                             }
                         }
                     }

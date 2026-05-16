@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.lumera.app.data.model.StremioAddonItem
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.delay
 
 /**
@@ -82,13 +83,13 @@ fun AddonImportDialog(
             Column {
                 // Header
                 Text(
-                    "Import Stremio Addons",
+                    stringResource(id = com.lumera.app.R.string.addons_import_title),
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = Color.White
                 )
                 
                 Text(
-                    "Found ${addonItems.size} addons • $selectedCount selected",
+                    stringResource(id = com.lumera.app.R.string.addons_import_stats, addonItems.size, selectedCount),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     modifier = Modifier.padding(top = 8.dp)
@@ -102,7 +103,7 @@ fun AddonImportDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     SmallActionButton(
-                        text = "Select All",
+                        text = stringResource(id = com.lumera.app.R.string.addons_select_all),
                         onClick = {
                             addonItems = addonItems.map { 
                                 if (!it.isAlreadyInstalled) it.copy(isSelected = true) else it 
@@ -113,7 +114,7 @@ fun AddonImportDialog(
                     )
                     
                     SmallActionButton(
-                        text = "Deselect All",
+                        text = stringResource(id = com.lumera.app.R.string.addons_deselect_all),
                         onClick = {
                             addonItems = addonItems.map { 
                                 if (!it.isAlreadyInstalled) it.copy(isSelected = false) else it 
@@ -160,13 +161,13 @@ fun AddonImportDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     VoidButton(
-                        text = "Cancel",
+                        text = stringResource(id = com.lumera.app.R.string.dialog_cancel),
                         onClick = onDismissRequest,
                         modifier = Modifier.weight(1f)
                     )
                     
                     VoidButton(
-                        text = "Import ($selectedCount)",
+                        text = stringResource(id = com.lumera.app.R.string.addons_import_action, selectedCount),
                         onClick = {
                             val selectedAddons = addonItems.filter { it.isSelected && !it.isAlreadyInstalled }
                             onConfirmImport(selectedAddons)
@@ -256,7 +257,7 @@ private fun AddonImportRow(
         
         Icon(
             imageVector = checkboxIcon,
-            contentDescription = if (addon.isSelected) "Selected" else "Not selected",
+            contentDescription = if (addon.isSelected) stringResource(id = com.lumera.app.R.string.addons_selected_desc) else stringResource(id = com.lumera.app.R.string.addons_not_selected_desc),
             tint = checkboxColor,
             modifier = Modifier.size(24.dp)
         )
@@ -293,7 +294,7 @@ private fun AddonImportRow(
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
-                    "Installed",
+                    stringResource(id = com.lumera.app.R.string.addons_installed_badge),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray
                 )

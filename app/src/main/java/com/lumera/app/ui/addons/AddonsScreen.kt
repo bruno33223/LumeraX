@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -119,12 +120,12 @@ fun AddonsScreen(
     ) {
         // HEADER
         Text(
-            "Addon Manager",
+            stringResource(id = com.lumera.app.R.string.addons_header),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 20.sp),
             color = Color.White
         )
         Text(
-            "Install and manage your Stremio addons.",
+            stringResource(id = com.lumera.app.R.string.addons_desc),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
             color = Color.White.copy(0.6f),
             modifier = Modifier.padding(top = 4.dp)
@@ -136,7 +137,7 @@ fun AddonsScreen(
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             VoidIconButton(
                 icon = Icons.Default.QrCode2,
-                contentDescription = "Remote Paste",
+                contentDescription = stringResource(id = com.lumera.app.R.string.addons_remote_paste),
                 onClick = { showRemotePaste = true },
                 modifier = goBackModifier.then(upBlockModifier)
             )
@@ -154,7 +155,7 @@ fun AddonsScreen(
             )
             Spacer(modifier = Modifier.width(12.dp))
             VoidButton(
-                text = "INSTALL",
+                text = stringResource(id = com.lumera.app.R.string.addons_install),
                 onClick = { viewModel.prepareInstall(urlInput) },
                 modifier = Modifier.width(140.dp).then(upBlockModifier),
                 enabled = urlInput.isNotBlank(),
@@ -191,7 +192,7 @@ fun AddonsScreen(
                     .padding(horizontal = 16.dp, vertical = 10.dp)
             ) {
                 Text(
-                    "Reorder mode  ·  ▲▼ move  ·  OK done  ·  Back cancel",
+                    stringResource(id = com.lumera.app.R.string.addons_reorder_mode),
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                 )
@@ -199,7 +200,7 @@ fun AddonsScreen(
             Spacer(modifier = Modifier.height(12.dp))
         } else {
             Text(
-                "INSTALLED ADDONS",
+                stringResource(id = com.lumera.app.R.string.addons_installed_header),
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                 color = Color.White.copy(0.6f)
             )
@@ -281,7 +282,7 @@ fun AddonsScreen(
 
         VoidDialog(
             onDismissRequest = { selectedAddon = null },
-            title = "Manage Addon"
+            title = stringResource(id = com.lumera.app.R.string.addons_manage_title)
         ) {
             Text(
                 selectedAddon!!.nickname ?: selectedAddon!!.name,
@@ -291,7 +292,7 @@ fun AddonsScreen(
             Spacer(Modifier.height(24.dp))
 
             VoidButton(
-                text = "Rename",
+                text = stringResource(id = com.lumera.app.R.string.addons_rename),
                 onClick = {
                     renameOp = RenameOperation(selectedAddon!!.transportUrl, selectedAddon!!.nickname ?: selectedAddon!!.name)
                     selectedAddon = null
@@ -303,7 +304,7 @@ fun AddonsScreen(
             Spacer(Modifier.height(12.dp))
 
             VoidButton(
-                text = "Move",
+                text = stringResource(id = com.lumera.app.R.string.addons_move),
                 onClick = {
                     reorderingAddon = selectedAddon
                     selectedAddon = null
@@ -314,7 +315,7 @@ fun AddonsScreen(
             Spacer(Modifier.height(12.dp))
 
             VoidButton(
-                text = "Uninstall",
+                text = stringResource(id = com.lumera.app.R.string.addons_uninstall),
                 onClick = {
                     addonToDelete = selectedAddon
                     selectedAddon = null
@@ -325,7 +326,7 @@ fun AddonsScreen(
 
             Spacer(Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                VoidButton(text = "Close", onClick = { selectedAddon = null }, modifier = Modifier.width(120.dp))
+                VoidButton(text = stringResource(id = com.lumera.app.R.string.dialog_close), onClick = { selectedAddon = null }, modifier = Modifier.width(120.dp))
             }
         }
     }
@@ -336,12 +337,12 @@ fun AddonsScreen(
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) { delay(100); focusRequester.requestFocus() }
 
-        VoidDialog(onDismissRequest = { renameOp = null }, title = "Rename") {
-            VoidInput(value = newName, onValueChange = { newName = it }, placeholder = "Name")
+        VoidDialog(onDismissRequest = { renameOp = null }, title = stringResource(id = com.lumera.app.R.string.addons_rename)) {
+            VoidInput(value = newName, onValueChange = { newName = it }, placeholder = stringResource(id = com.lumera.app.R.string.none))
             Spacer(Modifier.height(24.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                VoidButton(text = "Cancel", onClick = { renameOp = null }, modifier = Modifier.weight(1f))
-                VoidButton(text = "Save", onClick = { viewModel.renameAddon(op.transportUrl, newName); renameOp = null }, isPrimary = true, modifier = Modifier.weight(1f), focusRequester = focusRequester)
+                VoidButton(text = stringResource(id = com.lumera.app.R.string.dialog_cancel), onClick = { renameOp = null }, modifier = Modifier.weight(1f))
+                VoidButton(text = stringResource(id = com.lumera.app.R.string.dialog_save), onClick = { viewModel.renameAddon(op.transportUrl, newName); renameOp = null }, isPrimary = true, modifier = Modifier.weight(1f), focusRequester = focusRequester)
             }
         }
     }
@@ -351,13 +352,13 @@ fun AddonsScreen(
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) { delay(100); focusRequester.requestFocus() }
 
-        VoidDialog(onDismissRequest = { addonToDelete = null }, title = "Uninstall?") {
-            Text("Are you sure you want to remove ${addon.name}?", color = Color.Gray)
+        VoidDialog(onDismissRequest = { addonToDelete = null }, title = stringResource(id = com.lumera.app.R.string.addons_uninstall_confirm_title)) {
+            Text(stringResource(id = com.lumera.app.R.string.addons_uninstall_confirm_desc, addon.name), color = Color.Gray)
             Spacer(Modifier.height(24.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                VoidButton(text = "Cancel", onClick = { addonToDelete = null }, modifier = Modifier.weight(1f))
+                VoidButton(text = stringResource(id = com.lumera.app.R.string.dialog_cancel), onClick = { addonToDelete = null }, modifier = Modifier.weight(1f))
                 VoidButton(
-                    text = "Uninstall",
+                    text = stringResource(id = com.lumera.app.R.string.addons_uninstall),
                     onClick = {
                         val addons = state.addons
                         val idx = addons.indexOfFirst { it.transportUrl == addon.transportUrl }
@@ -391,19 +392,19 @@ fun AddonsScreen(
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) { delay(100); focusRequester.requestFocus() }
 
-        VoidDialog(onDismissRequest = { viewModel.cancelInstall() }, title = "Configure Sync") {
-            Text("Select which catalogs to sync:", color = Color.Gray, modifier = Modifier.padding(bottom = 16.dp))
+        VoidDialog(onDismissRequest = { viewModel.cancelInstall() }, title = stringResource(id = com.lumera.app.R.string.addons_sync_config_title)) {
+            Text(stringResource(id = com.lumera.app.R.string.addons_sync_config_desc), color = Color.Gray, modifier = Modifier.padding(bottom = 16.dp))
 
-            VoidToggleRow("Home Screen", home, { home = !home }, focusRequester)
+            VoidToggleRow(stringResource(id = com.lumera.app.R.string.option_home), home, { home = !home }, focusRequester)
             Spacer(Modifier.height(8.dp))
-            VoidToggleRow("Movies Tab", movies, { movies = !movies })
+            VoidToggleRow(stringResource(id = com.lumera.app.R.string.search_tab_movies), movies, { movies = !movies })
             Spacer(Modifier.height(8.dp))
-            VoidToggleRow("Series Tab", series, { series = !series })
+            VoidToggleRow(stringResource(id = com.lumera.app.R.string.search_tab_series), series, { series = !series })
 
             Spacer(Modifier.height(32.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                VoidButton(text = "Cancel", onClick = { viewModel.cancelInstall() }, modifier = Modifier.weight(1f))
-                VoidButton(text = "Install", onClick = { viewModel.confirmInstall(item.url, home, movies, series) }, isPrimary = true, modifier = Modifier.weight(1f))
+                VoidButton(text = stringResource(id = com.lumera.app.R.string.dialog_cancel), onClick = { viewModel.cancelInstall() }, modifier = Modifier.weight(1f))
+                VoidButton(text = stringResource(id = com.lumera.app.R.string.addons_install), onClick = { viewModel.confirmInstall(item.url, home, movies, series) }, isPrimary = true, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -483,7 +484,7 @@ fun VoidAddonItem(
         if (isReordering) {
             Text("▲▼", color = accentColor, style = MaterialTheme.typography.labelMedium)
         } else if (isFocused) {
-            Text("Manage", color = accentColor, style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(id = com.lumera.app.R.string.addons_manage_title), color = accentColor, style = MaterialTheme.typography.labelMedium)
         }
     }
 }

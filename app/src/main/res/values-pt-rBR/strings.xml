@@ -163,4 +163,107 @@
     <string name="about_downloading">Baixando %1$d%%</string>
     <string name="about_update_available">Atualização Disponível</string>
     <string name="about_up_to_date">O app está atualizado</string>
+
+    <!-- Busca -->
+    <string name="search_placeholder">Digite para buscar…</string>
+    <string name="search_tab_movies">Filmes</string>
+    <string name="search_tab_series">Séries</string>
+    <string name="searching">Buscando…</string>
+    <string name="search_no_results">Nenhum resultado encontrado para \"%1$s\"</string>
+    <string name="search_try_different">Tente uma palavra-chave diferente ou verifique a ortografia.</string>
+    <string name="search_trending">Buscas Populares</string>
+
+    <!-- Watchlist -->
+    <string name="watchlist_title">Minha Lista</string>
+    <string name="watchlist_empty">Sua lista está vazia</string>
+    <string name="watchlist_empty_desc">Adicione filmes e séries à sua lista para acompanhar o que você deseja assistir.</string>
+
+    <!-- Interface Geral -->
+    <string name="go_back">Voltar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="save">Salvar</string>
+    <string name="close">Fechar</string>
+    <string name="selected">Selecionado</string>
+    <string name="default_label">Padrão</string>
+    <string name="off">Desligado</string>
+    <string name="none">Nenhum</string>
+
+    <!-- Addons -->
+    <string name="addons_header">Gerenciador de Addons</string>
+    <string name="addons_desc">Instale e gerencie seus addons do Stremio.</string>
+    <string name="addons_remote_paste">Colar Remoto</string>
+    <string name="addons_install">Instalar</string>
+    <string name="addons_installed_header">Addons Instalados</string>
+    <string name="addons_reorder_mode">Modo de reordenação  ·  ▲▼ mover  ·  OK salvar  ·  Voltar cancelar</string>
+    <string name="addons_manage_title">Gerenciar Addon</string>
+    <string name="addons_rename">Renomear</string>
+    <string name="addons_move">Mover</string>
+    <string name="addons_uninstall">Desinstalar</string>
+    <string name="addons_uninstall_confirm">Tem certeza que deseja remover %1$s?</string>
+    <string name="addons_sync_config_title">Configurar Sincronização</string>
+    <string name="addons_sync_catalogs_desc">Selecione quais catálogos sincronizar:</string>
+    <string name="addons_sync_home">Tela Inicial</string>
+    <string name="addons_sync_movies">Aba de Filmes</string>
+    <string name="addons_sync_series">Aba de Séries</string>
+    <string name="addons_manage_short">Gerenciar</string>
+
+    <!-- Integrações -->
+    <string name="integrations_header">Integrações</string>
+    <string name="integrations_desc">Conecte serviços externos para melhorar sua experiência.</string>
+    <string name="integrations_connected">Conectado</string>
+    <string name="integrations_not_connected">Não Conectado</string>
+    <string name="integrations_connect">Conectar</string>
+    <string name="integrations_manage">Gerenciar</string>
+    <string name="integrations_stremio_connected_toast">Conectado ao Stremio!</string>
+    <string name="integrations_stremio_disconnected_toast">Desconectado do Stremio</string>
+    <string name="integrations_stremio_import_toast">%1$d addon(s) importado(s)</string>
+    <string name="integrations_stremio_dialog_title">Conecte sua conta do Stremio</string>
+    <string name="integrations_stremio_dialog_desc">Importe seus addons existentes do Stremio</string>
+    <string name="integrations_stremio_qr_desc">Ou Escaneie com o Celular</string>
+    <string name="integrations_stremio_qr_content_desc">Código QR</string>
+    <string name="integrations_stremio_account_title">Conta Stremio</string>
+    <string name="integrations_stremio_sync_title">Adicionar Novos Addons</string>
+    <string name="integrations_stremio_sync_desc">Importe addons da sua conta do Stremio</string>
+    <string name="integrations_stremio_disconnect_title">Desconectar Conta</string>
+    <string name="integrations_stremio_disconnect_desc">Remover conexão com o Stremio</string>
+    <string name="integrations_stremio_disconnect_confirm_title">Desconectar Stremio?</string>
+    <string name="integrations_stremio_disconnect_confirm_desc">Seus addons instalados permanecerão, mas você não poderá sincronizar novos addons até reconectar.</string>
+    
+    <string name="integrations_tmdb_header">Configurações do TMDB</string>
+    <string name="integrations_tmdb_desc">Enriqueça os metadados com informações localizadas, elenco, notas e muito mais.</string>
+    <string name="integrations_tmdb_enable">Ativar TMDB</string>
+    <string name="integrations_tmdb_enable_desc">Buscar metadados aprimorados do The Movie Database</string>
+    <string name="integrations_tmdb_lang_header">Idioma dos Metadados</string>
+    <string name="integrations_tmdb_lang_desc">Títulos, descrições e logos usarão este idioma quando disponível.</string>
+    <string name="integrations_tmdb_device_lang">Idioma do Dispositivo</string>
+
+    <string name="integrations_trakt_header">Trakt</string>
+    <string name="integrations_trakt_desc">Acompanhe o que você assiste automaticamente em todos os seus apps.</string>
+    <string name="integrations_trakt_connected_msg">Conectado ao Trakt</string>
+    <string name="integrations_trakt_auth_desc">Conecte sua conta Trakt para sincronizar sua lista, histórico e progresso de reprodução.</string>
+    <string name="integrations_trakt_auth_step">Acesse a URL abaixo e digite o código:</string>
+    <string name="integrations_trakt_waiting">Aguardando autorização…</string>
+    <string name="integrations_trakt_success">Conectado com sucesso!</string>
+    <string name="integrations_trakt_expired">O código de autorização expirou. Por favor, tente novamente.</string>
+
+    <!-- Player Settings Sub -->
+    <string name="autoplay_trigger_at">Disparar em %1$d%%</string>
+    <string name="autoplay_remaining_min_sec">faltam %1$dm %2$ds</string>
+    <string name="autoplay_remaining_sec">faltam %1$ds</string>
+    <string name="autoplay_trigger_with">Disparar com %1$s</string>
+    <string name="subtitle_preview_text">Suas legendas ficarão assim</string>
+    <string name="about_download_install">Baixar e Instalar</string>
+    <string name="about_downloading_progress">Baixando… %1$d%%</string>
+    <string name="about_installing">Download concluído. Instalando…</string>
+
+    <string name="addons_import_title">Importar Addons do Stremio</string>
+    <string name="addons_import_stats">Encontrados %1$d addons • %2$d selecionados</string>
+    <string name="addons_select_all">Selecionar Todos</string>
+    <string name="addons_deselect_all">Desmarcar Todos</string>
+    <string name="addons_import_action">Importar (%1$d)</string>
+    <string name="addons_installed_badge">Instalado</string>
+    <string name="addons_selected_desc">Selecionado</string>
+    <string name="addons_not_selected_desc">Não selecionado</string>
+    <string name="integrations_stremio_sync_complete">Importado %1$d addon(s)</string>
 </resources>
+

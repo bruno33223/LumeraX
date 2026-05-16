@@ -163,4 +163,97 @@
     <string name="about_downloading">Downloading %1$d%%</string>
     <string name="about_update_available">Update Available</string>
     <string name="about_up_to_date">App is up to date</string>
-</resources>
+
+    <!-- Search -->
+    <string name="search_placeholder">Type to search…</string>
+    <string name="search_tab_movies">Movies</string>
+    <string name="search_tab_series">Series</string>
+    <string name="searching">Searching…</string>
+    <string name="search_no_results">No results found for \"%1$s\"</string>
+    <string name="search_try_different">Try a different keyword or check your spelling.</string>
+    <string name="search_trending">Trending Searches</string>
+
+    <!-- Watchlist -->
+    <string name="watchlist_title">Watchlist</string>
+    <string name="watchlist_empty">Your watchlist is empty</string>
+    <string name="watchlist_empty_desc">Add movies and series to your watchlist to keep track of what you want to watch.</string>
+
+    <!-- General UI -->
+    <string name="go_back">Go Back</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="close">Close</string>
+    <string name="selected">Selected</string>
+    <string name="default_label">Default</string>
+    <string name="off">Off</string>
+    <string name="none">None</string>
+
+    <!-- Addons -->
+    <string name="addons_header">Addon Manager</string>
+    <string name="addons_desc">Install and manage your Stremio addons.</string>
+    <string name="addons_remote_paste">Remote Paste</string>
+    <string name="addons_install">Install</string>
+    <string name="addons_installed_header">Installed Addons</string>
+    <string name="addons_reorder_mode">Reorder mode  ·  ▲▼ move  ·  OK done  ·  Back cancel</string>
+    <string name="addons_manage_title">Manage Addon</string>
+    <string name="addons_rename">Rename</string>
+    <string name="addons_move">Move</string>
+    <string name="addons_uninstall">Uninstall</string>
+    <string name="addons_uninstall_confirm">Are you sure you want to remove %1$s?</string>
+    <string name="addons_sync_config_title">Configure Sync</string>
+    <string name="addons_sync_catalogs_desc">Select which catalogs to sync:</string>
+    <string name="addons_sync_home">Home Screen</string>
+    <string name="addons_sync_movies">Movies Tab</string>
+    <string name="addons_sync_series">Series Tab</string>
+    <string name="addons_manage_short">Manage</string>
+
+    <!-- Integrations -->
+    <string name="integrations_header">Integrations</string>
+    <string name="integrations_desc">Connect external services to enhance your experience.</string>
+    <string name="integrations_connected">Connected</string>
+    <string name="integrations_not_connected">Not Connected</string>
+    <string name="integrations_connect">Connect</string>
+    <string name="integrations_manage">Manage</string>
+    <string name="integrations_stremio_connected_toast">Connected to Stremio!</string>
+    <string name="integrations_stremio_disconnected_toast">Disconnected from Stremio</string>
+    <string name="integrations_stremio_import_toast">Imported %1$d addon(s)</string>
+    <string name="integrations_stremio_dialog_title">Connect your Stremio account</string>
+    <string name="integrations_stremio_dialog_desc">Import your existing addons from Stremio</string>
+    <string name="integrations_stremio_qr_desc">Or Scan with Phone</string>
+    <string name="integrations_stremio_qr_content_desc">QR Code</string>
+    <string name="integrations_stremio_account_title">Stremio Account</string>
+    <string name="integrations_stremio_sync_title">Add New Addons</string>
+    <string name="integrations_stremio_sync_desc">Import addons from your Stremio account</string>
+    <string name="integrations_stremio_disconnect_title">Disconnect Account</string>
+    <string name="integrations_stremio_disconnect_desc">Remove Stremio connection</string>
+    <string name="integrations_stremio_disconnect_confirm_title">Disconnect Stremio?</string>
+    <string name="integrations_stremio_disconnect_confirm_desc">Your installed addons will remain, but you won\'t be able to sync new addons until you reconnect.</string>
+    
+    <string name="integrations_tmdb_header">TMDB Settings</string>
+    <string name="integrations_tmdb_desc">Enrich metadata with localized info, cast, ratings, and more.</string>
+    <string name="integrations_tmdb_enable">Enable TMDB</string>
+    <string name="integrations_tmdb_enable_desc">Fetch enhanced metadata from The Movie Database</string>
+    <string name="integrations_tmdb_lang_header">Metadata Language</string>
+    <string name="integrations_tmdb_lang_desc">Titles, descriptions, and logos will use this language when available.</string>
+    <string name="integrations_tmdb_device_lang">Device Language</string>
+
+    <string name="integrations_trakt_header">Trakt</string>
+    <string name="integrations_trakt_desc">Track what you watch automatically across all your apps.</string>
+    <string name="integrations_trakt_connected_msg">Connected to Trakt</string>
+    <string name="integrations_trakt_auth_desc">Connect your Trakt account to sync your watchlist, watch history, and scrobble playback.</string>
+    <string name="integrations_trakt_auth_step">Go to the URL below and enter the code:</string>
+    <string name="integrations_trakt_waiting">Waiting for authorization…</string>
+    <string name="integrations_trakt_success">Successfully connected!</string>
+    <string name="integrations_trakt_expired">The authorization code has expired. Please try again.</string>
+
+    <!-- Player Settings Sub -->
+    <string name="autoplay_trigger_at">Trigger at %1$d%%</string>
+    <string name="autoplay_remaining_min_sec">%1$dm %2$ds remaining</string>
+    <string name="autoplay_remaining_sec">%1$ds remaining</string>
+    <string name="autoplay_trigger_with">Trigger with %1$s</string>
+    <string name="subtitle_preview_text">Your subtitles will look like this</string>
+    <string name="about_download_install">Download &amp; Install</string>
+    <string name="about_downloading_progress">Downloading… %1$d%%</string>
+    <string name="about_installing">Download complete. Installing…</string>
+
+</resources>
