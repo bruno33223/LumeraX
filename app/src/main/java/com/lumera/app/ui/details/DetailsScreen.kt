@@ -161,8 +161,14 @@ fun DetailsScreen(
     val addonSubtitles = state.addonSubtitles
     val availableStreams = state.availableStreams
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(autoPlayStream) {
         val stream = autoPlayStream ?: return@LaunchedEffect
+        
+        if (addonSubtitles.isEmpty()) {
+            android.widget.Toast.makeText(context, "Nenhuma legenda encontrada", android.widget.Toast.LENGTH_LONG).show()
+        }
+        
         val urlToPlay = resolvePlayableUrl(stream)
         if (!urlToPlay.isNullOrEmpty()) {
             val playbackId = pendingPlaybackId.ifBlank { movie?.id ?: id }
@@ -789,25 +795,9 @@ fun DetailsScreen(
                 viewModel.loadStreams(type, epStreamId, epTitle, sourceSelectionId = trackId, autoSelectSource = autoSelectSource, rememberSourceSelection = rememberSourceSelection)
             },
             onSourceSelected = { stream ->
-                viewModel.closeSidebar()
                 val playbackId = pendingPlaybackId.ifBlank { movie?.id ?: id }
-                val urlToPlay = resolvePlayableUrl(stream)
-                if (!urlToPlay.isNullOrEmpty()) {
-                    val playbackType = pendingPlaybackType.ifBlank { movie?.type ?: type }
-                    val playbackTitle = pendingPlaybackTitle.ifBlank { movie?.name ?: "" }
-                    onPlayClick(
-                        urlToPlay,
-                        playbackId,
-                        playbackType,
-                        playbackTitle,
-                        movie?.name ?: "",
-                        movie?.logo ?: "",
-                        stream,
-                        addonSubtitles,
-                        availableStreams,
-                        movie?.videos ?: emptyList()
-                    )
-                }
+                val playbackType = pendingPlaybackType.ifBlank { movie?.type ?: type }
+                viewModel.selectStreamAndPlay(playbackType, playbackId, stream)
             }
         )
 

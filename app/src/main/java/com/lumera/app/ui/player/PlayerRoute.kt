@@ -545,46 +545,12 @@ fun PlayerRoute(
                                             candidateStreams = pending.streams
                                         )
                                         playerState.currentStream = streamToPlay
-                                        playerState.pendingEpisodeSwitch = null
-
-                                        if (sourceUrl.startsWith("magnet:")) {
-                                            onSelectedPlaybackIdChange(pending.playbackId)
-                                            onSelectedPlaybackTypeChange("series")
-                                            onSelectedPlaybackTitleChange(pending.playbackTitle)
-                                            playerState.selectedPlayerSubtitles = subtitlePayload
-                                            playerState.selectedPlayerSources = sourcePayload
-                                            onTorrentProgressChange(TorrentProgress("Connecting to peers..."))
-                                            TorrentService.onStreamReady = { localUrl ->
-                                                    onTorrentProgressChange(null)
-                                                onSelectedVideoUrlChange(localUrl)
-                                            }
-                                            TorrentService.onStreamError = { error ->
-                                                    onTorrentProgressChange(null)
-                                                if (BuildConfig.DEBUG) Log.e("LumeraTorrent", "Stream error: $error")
-                                            }
-                                            TorrentService.onStreamProgress = { progress ->
-                                                    onTorrentProgressChange(progress)
-                                            }
-                                            val intent = Intent(context, TorrentService::class.java).apply {
-                                                putExtra("MAGNET_LINK", sourceUrl)
-                                                putExtra("FILE_IDX", streamToPlay.fileIdx ?: -1)
-                                                putExtra("FILE_NAME", streamToPlay.behaviorHints?.filename ?: "")
-                                            }
-                                            context.startService(intent)
-                                        } else {
-                                            context.stopService(Intent(context, TorrentService::class.java))
-                                            onSelectedPlaybackIdChange(pending.playbackId)
-                                            onSelectedPlaybackTypeChange("series")
-                                            onSelectedPlaybackTitleChange(pending.playbackTitle)
-                                            playerState.selectedPlayerSubtitles = subtitlePayload
-                                            playerState.selectedPlayerSources = sourcePayload
-                                            onSelectedVideoUrlChange(sourceUrl)
-                                        }
-
-                                        // Async addon subtitle fetch for source-switched episode
                                         val vHash = streamToPlay.behaviorHints?.videoHash
                                         val vSize = streamToPlay.behaviorHints?.videoSize
                                         val vFilename = streamToPlay.behaviorHints?.filename
+                                        
+                                        playerState.isEpisodeSwitchLoading = true
+                                        
                                         uiScope.launch {
                                             try {
                                                 val addonSubs = subtitleRepository.getSubtitles(
@@ -594,12 +560,60 @@ fun PlayerRoute(
                                                     videoSize = vSize,
                                                     filename = vFilename
                                                 )
-                                                if (addonSubs.isNotEmpty()) {
-                                                    playerState.selectedPlayerSubtitles =
-                                                        (playerState.selectedPlayerSubtitles + buildAddonSubtitlePayload(addonSubs)).distinctBy { it.id }
+                                                
+                                                if (addonSubs.isEmpty()) {
+                                                    android.widget.Toast.makeText(context, "Nenhuma legenda encontrada", android.widget.Toast.LENGTH_LONG).show()
+                                                }
+                                                
+                                                val mergedSubtitles = subtitlePayload + buildAddonSubtitlePayload(addonSubs, streamToPlay.addonTransportUrl)
+                                                playerState.selectedPlayerSubtitles = mergedSubtitles.distinctBy { it.id }
+                                                playerState.selectedPlayerSources = sourcePayload
+                                                playerState.isEpisodeSwitchLoading = false
+                                                playerState.pendingEpisodeSwitch = null
+
+                                                if (sourceUrl.startsWith("magnet:")) {
+                                                    onSelectedPlaybackIdChange(pending.playbackId)
+                                                    onSelectedPlaybackTypeChange("series")
+                                                    onSelectedPlaybackTitleChange(pending.playbackTitle)
+                                                    onTorrentProgressChange(TorrentProgress("Connecting to peers..."))
+                                                    TorrentService.onStreamReady = { localUrl ->
+                                                            onTorrentProgressChange(null)
+                                                        onSelectedVideoUrlChange(localUrl)
+                                                    }
+                                                    TorrentService.onStreamError = { error ->
+                                                            onTorrentProgressChange(null)
+                                                        if (com.lumera.app.BuildConfig.DEBUG) android.util.Log.e("LumeraTorrent", "Stream error: $error")
+                                                    }
+                                                    TorrentService.onStreamProgress = { progress ->
+                                                            onTorrentProgressChange(progress)
+                                                    }
+                                                    val intent = Intent(context, TorrentService::class.java).apply {
+                                                        putExtra("MAGNET_LINK", sourceUrl)
+                                                        putExtra("FILE_IDX", streamToPlay.fileIdx ?: -1)
+                                                        putExtra("FILE_NAME", streamToPlay.behaviorHints?.filename ?: "")
+                                                    }
+                                                    context.startService(intent)
+                                                } else {
+                                                    context.stopService(Intent(context, TorrentService::class.java))
+                                                    onSelectedPlaybackIdChange(pending.playbackId)
+                                                    onSelectedPlaybackTypeChange("series")
+                                                    onSelectedPlaybackTitleChange(pending.playbackTitle)
+                                                    onSelectedVideoUrlChange(sourceUrl)
                                                 }
                                             } catch (e: Exception) {
-                                                Log.e("LumeraSubtitles", "Async addon subtitle fetch failed", e)
+                                                android.util.Log.e("LumeraSubtitles", "Addon subtitle fetch failed", e)
+                                                playerState.isEpisodeSwitchLoading = false
+                                                playerState.pendingEpisodeSwitch = null
+                                                // Start anyway on error
+                                                if (!sourceUrl.startsWith("magnet:")) {
+                                                    context.stopService(Intent(context, TorrentService::class.java))
+                                                    onSelectedPlaybackIdChange(pending.playbackId)
+                                                    onSelectedPlaybackTypeChange("series")
+                                                    onSelectedPlaybackTitleChange(pending.playbackTitle)
+                                                    playerState.selectedPlayerSubtitles = subtitlePayload
+                                                    playerState.selectedPlayerSources = sourcePayload
+                                                    onSelectedVideoUrlChange(sourceUrl)
+                                                }
                                             }
                                         }
                                     }

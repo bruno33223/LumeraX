@@ -682,11 +682,21 @@ class DetailsViewModel @Inject constructor(
                 }
 
                 if (preferredStream != null) {
+                    val specificSubs = try {
+                        subtitleRepository.getSubtitles(
+                            type = type,
+                            playbackId = sourceSelectionId,
+                            videoHash = preferredStream.behaviorHints?.videoHash,
+                            videoSize = preferredStream.behaviorHints?.videoSize,
+                            filename = preferredStream.behaviorHints?.filename
+                        )
+                    } catch (e: Exception) { addonSubtitles }
+                    
                     _state.value = _state.value.copy(
                         isLoadingStreams = false,
                         sidebarState = SidebarState.Closed,
                         autoPlayStream = preferredStream,
-                        addonSubtitles = addonSubtitles,
+                        addonSubtitles = specificSubs,
                         availableStreams = streams
                     )
                     return@launch
@@ -698,11 +708,21 @@ class DetailsViewModel @Inject constructor(
                         !it.url.isNullOrBlank() || !it.infoHash.isNullOrBlank()
                     }
                     if (firstPlayable != null) {
+                        val specificSubs = try {
+                            subtitleRepository.getSubtitles(
+                                type = type,
+                                playbackId = sourceSelectionId,
+                                videoHash = firstPlayable.behaviorHints?.videoHash,
+                                videoSize = firstPlayable.behaviorHints?.videoSize,
+                                filename = firstPlayable.behaviorHints?.filename
+                            )
+                        } catch (e: Exception) { addonSubtitles }
+                        
                         _state.value = _state.value.copy(
                             isLoadingStreams = false,
                             sidebarState = SidebarState.Closed,
                             autoPlayStream = firstPlayable,
-                            addonSubtitles = addonSubtitles,
+                            addonSubtitles = specificSubs,
                             availableStreams = streams
                         )
                         return@launch
@@ -732,6 +752,31 @@ class DetailsViewModel @Inject constructor(
     fun consumeAutoPlayStream() {
         if (_state.value.autoPlayStream == null) return
         _state.value = _state.value.copy(autoPlayStream = null)
+    }
+
+    fun selectStreamAndPlay(type: String, playbackId: String, stream: Stream) {
+        loadStreamsJob?.cancel()
+        loadStreamsJob = viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isLoadingStreams = true, 
+                sidebarState = SidebarState.Closed
+            )
+            val specificSubs = try {
+                subtitleRepository.getSubtitles(
+                    type = type,
+                    playbackId = playbackId,
+                    videoHash = stream.behaviorHints?.videoHash,
+                    videoSize = stream.behaviorHints?.videoSize,
+                    filename = stream.behaviorHints?.filename
+                )
+            } catch (e: Exception) { emptyList() }
+            
+            _state.value = _state.value.copy(
+                isLoadingStreams = false,
+                autoPlayStream = stream,
+                addonSubtitles = specificSubs
+            )
+        }
     }
 
     // --- Clear Progress (with confirmation dialog) ---
