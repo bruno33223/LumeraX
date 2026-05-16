@@ -6,12 +6,12 @@ import android.net.Uri
 import android.widget.Toast
 import com.lumera.app.data.model.stremio.Stream
 import com.lumera.app.data.model.stremio.StreamSubtitle
-import com.lumera.app.data.model.stremio.AddonSubtitle
-import com.lumera.app.ui.player.base.PlayerSubtitlePayload
+import com.lumera.app.domain.AddonSubtitle
+import com.lumera.app.PlayerSubtitlePayload
 import com.lumera.app.ui.player.base.PlayerSourceOption
-import com.lumera.app.ui.player.base.PlayerSessionResult
-import com.lumera.app.data.store.PlaybackTrackSelectionStore
-import com.lumera.app.data.store.SourceSelectionStore
+import com.lumera.app.ui.player.PlayerSessionResult
+import com.lumera.app.data.player.PlaybackTrackSelectionStore
+import com.lumera.app.data.player.SourceSelectionStore
 import com.lumera.app.PendingSourceSelection
 import com.lumera.app.PlayerState
 import java.util.Locale

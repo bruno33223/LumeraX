@@ -7,13 +7,14 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.lumera.app.data.model.ProfileEntity
-import com.lumera.app.ui.components.NavDestination
+import com.lumera.app.ui.navigation.NavDestination
 import com.lumera.app.ui.home.HomeScreen
 import com.lumera.app.ui.home.HomeViewModel
-import com.lumera.app.ui.home.SearchScreen
-import com.lumera.app.ui.home.WatchlistScreen
+import com.lumera.app.ui.search.SearchScreen
+import com.lumera.app.ui.watchlist.WatchlistScreen
 import com.lumera.app.ui.settings.SettingsScreen
 import com.lumera.app.domain.DashboardTab
+import com.lumera.app.data.model.stremio.MetaItem
 
 @Composable
 fun MainDashboardContent(
@@ -24,9 +25,9 @@ fun MainDashboardContent(
     watchlistEntryRequester: FocusRequester,
     settingsEntryRequester: FocusRequester,
     drawerRequesters: Map<NavDestination, FocusRequester>,
-    onMovieClick: (com.lumera.app.data.model.stremio.MetaItem) -> Unit,
-    onViewMore: (String, List<com.lumera.app.data.model.stremio.MetaItem>, String) -> Unit,
-    onSearchDiscoverClick: (com.lumera.app.data.model.stremio.MetaItem) -> Unit,
+    onMovieClick: (MetaItem) -> Unit,
+    onViewMore: (String, List<MetaItem>, String) -> Unit,
+    onSearchDiscoverClick: (MetaItem) -> Unit,
     searchFocusTarget: String?,
     onSearchFocusTargetChange: (String?) -> Unit,
     searchLastFocusedId: String?,

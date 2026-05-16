@@ -1,4 +1,4 @@
-﻿package com.lumera.app.ui.player
+package com.lumera.app.ui.player
 
 import android.content.Intent
 import android.util.Log
@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import com.lumera.app.BuildConfig
 import com.lumera.app.PlayerState
+import com.lumera.app.PlayerSubtitlePayload
 import com.lumera.app.PendingEpisodeSwitch
 import com.lumera.app.PendingSourceSelection
 import com.lumera.app.data.torrent.TorrentService
@@ -25,17 +26,13 @@ import com.lumera.app.ui.player.components.PlayerChoiceDialog
 import com.lumera.app.ui.player.components.PlayerScreen
 import com.lumera.app.ui.player.components.SkipSegmentInfo
 import com.lumera.app.ui.player.components.NextEpisodeInfo
-import com.lumera.app.ui.player.base.PlayerSessionResult
-import com.lumera.app.buildSubtitlePayload
-import com.lumera.app.buildSourcePayload
-import com.lumera.app.buildAddonSubtitlePayload
-import com.lumera.app.resolvePlayableSourceUrl
-import com.lumera.app.sourceDisplayLabel
-import com.lumera.app.findNextEpisode
-import com.lumera.app.episodeDisplayTitle
-import com.lumera.app.episodePlaybackId
-import com.lumera.app.episodeStreamId
-import com.lumera.app.handlePlayerSessionEnd
+import com.lumera.app.ui.player.PlayerSessionResult
+import com.lumera.app.domain.AddonSubtitle
+import com.lumera.app.domain.findNextEpisode
+import com.lumera.app.domain.episodeDisplayTitle
+import com.lumera.app.domain.episodePlaybackId
+import com.lumera.app.domain.episodeStreamId
+import com.lumera.app.ui.player.*
 
 @Composable
 fun PlayerRoute(
@@ -318,9 +315,9 @@ fun PlayerRoute(
                                                     putExtra("FILE_IDX", streamToPlay.fileIdx ?: -1)
                                                     putExtra("FILE_NAME", streamToPlay.behaviorHints?.filename ?: "")
                                                 }
-                                                startService(intent)
+                                                context.startService(intent)
                                             } else {
-                                                stopService(Intent(context, TorrentService::class.java))
+                                                context.stopService(Intent(context, TorrentService::class.java))
                                                 onSelectedPlaybackIdChange(nextPlaybackId)
                                                 onSelectedPlaybackTypeChange("series")
                                                 onSelectedPlaybackTitleChange(nextPlaybackTitle)
@@ -482,9 +479,9 @@ fun PlayerRoute(
                                                     putExtra("FILE_IDX", streamToPlay.fileIdx ?: -1)
                                                     putExtra("FILE_NAME", streamToPlay.behaviorHints?.filename ?: "")
                                                 }
-                                                startService(intent)
+                                                context.startService(intent)
                                             } else {
-                                                stopService(Intent(context, TorrentService::class.java))
+                                                context.stopService(Intent(context, TorrentService::class.java))
                                                 onSelectedPlaybackIdChange(epPlaybackId)
                                                 onSelectedPlaybackTypeChange("series")
                                                 onSelectedPlaybackTitleChange(epTitle)
@@ -575,9 +572,9 @@ fun PlayerRoute(
                                                 putExtra("FILE_IDX", streamToPlay.fileIdx ?: -1)
                                                 putExtra("FILE_NAME", streamToPlay.behaviorHints?.filename ?: "")
                                             }
-                                            startService(intent)
+                                            context.startService(intent)
                                         } else {
-                                            stopService(Intent(context, TorrentService::class.java))
+                                            context.stopService(Intent(context, TorrentService::class.java))
                                             onSelectedPlaybackIdChange(pending.playbackId)
                                             onSelectedPlaybackTypeChange("series")
                                             onSelectedPlaybackTitleChange(pending.playbackTitle)
@@ -628,7 +625,7 @@ fun PlayerRoute(
                                         putExtra("FILE_IDX", sourceFileIdx)
                                         putExtra("FILE_NAME", sourceFileName)
                                     }
-                                    startService(intent)
+                                    context.startService(intent)
                                 },
                                 torrentProgress = torrentProgress,
                                 onBack = { sessionResult ->
@@ -643,7 +640,7 @@ fun PlayerRoute(
                                         onResumeHintResolved = { onDetailsResumePlaybackHintChange(it) },
                                         rememberSourceSelection = currentProfile?.rememberSourceSelection ?: true
                                     )
-                                    stopService(Intent(context, TorrentService::class.java))
+                                    context.stopService(Intent(context, TorrentService::class.java))
                                     if (selectedPlaybackId.startsWith("trailer_")) {
                                         onTrailerReturnTokenIncrement()
                                     }

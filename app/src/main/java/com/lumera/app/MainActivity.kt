@@ -149,14 +149,14 @@ import com.lumera.app.ui.player.fetchAddonSubtitlesAsync
 private const val SOURCE_SELECTION_COMMIT_MIN_POSITION_MS = 5_000L
 private const val SOURCE_SELECTION_FAILURE_RESET_MAX_POSITION_MS = 1_000L
 
-private data class PlayerSubtitlePayload(
+data class PlayerSubtitlePayload(
     val id: String,
     val url: String,
     val name: String,
     val language: String?
 )
 
-private data class PendingSourceSelection(
+data class PendingSourceSelection(
     val playbackId: String,
     val launchedStream: Stream,
     val candidateStreams: List<Stream>
@@ -228,7 +228,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        if (splashOverlay == null) {
+        if (splashManager == null) {
             outState.putBoolean(KEY_SPLASH_SHOWN, true)
         }
     }

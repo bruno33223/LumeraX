@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.lumera.app.ui.components.VoidButton
-import com.lumera.app.data.model.update.UpdateInfo
+import com.lumera.app.ui.addons.VoidButton
+import com.lumera.app.data.update.UpdateInfo
 
 @Composable
 fun PlayerChoiceDialog(
