@@ -301,7 +301,7 @@ fun PlayerRoute(
                                                 onSelectedPlaybackTitleChange(nextPlaybackTitle)
                                                 playerState.selectedPlayerSubtitles = subtitlePayload
                                                 playerState.selectedPlayerSources = sourcePayload
-                                                onTorrentProgressChange(TorrentProgress("Connecting to peers...")
+                                                onTorrentProgressChange(TorrentProgress("Connecting to peers..."))
                                                 TorrentService.onStreamReady = { localUrl ->
                                                     onTorrentProgressChange(null)
                                                     onSelectedVideoUrlChange(localUrl)
@@ -465,7 +465,7 @@ fun PlayerRoute(
                                                 onSelectedPlaybackTitleChange(epTitle)
                                                 playerState.selectedPlayerSubtitles = subtitlePayload
                                                 playerState.selectedPlayerSources = sourcePayload
-                                                onTorrentProgressChange(TorrentProgress("Connecting to peers...")
+                                                onTorrentProgressChange(TorrentProgress("Connecting to peers..."))
                                                 TorrentService.onStreamReady = { localUrl ->
                                                     onTorrentProgressChange(null)
                                                     onSelectedVideoUrlChange(localUrl)
@@ -558,7 +558,7 @@ fun PlayerRoute(
                                             onSelectedPlaybackTitleChange(pending.playbackTitle)
                                             playerState.selectedPlayerSubtitles = subtitlePayload
                                             playerState.selectedPlayerSources = sourcePayload
-                                            onTorrentProgressChange(TorrentProgress("Connecting to peers...")
+                                            onTorrentProgressChange(TorrentProgress("Connecting to peers..."))
                                             TorrentService.onStreamReady = { localUrl ->
                                                     onTorrentProgressChange(null)
                                                 onSelectedVideoUrlChange(localUrl)
@@ -611,7 +611,7 @@ fun PlayerRoute(
                                 },
                                 onEpisodeSwitchDismissed = { playerState.pendingEpisodeSwitch = null; playerState.isEpisodeSwitchLoading = false },
                                 onMagnetSourceSelected = { magnetUrl, sourceFileIdx, sourceFileName, onReady ->
-                                    onTorrentProgressChange(TorrentProgress("Connecting to peers...")
+                                    onTorrentProgressChange(TorrentProgress("Connecting to peers..."))
                                     TorrentService.onStreamReady = { localUrl ->
                                                     onTorrentProgressChange(null)
                                         onReady(localUrl)
@@ -630,7 +630,7 @@ fun PlayerRoute(
                                     }
                                     startService(intent)
                                 },
-                                onTorrentProgressChange(TorrentProgress,
+                                torrentProgress = torrentProgress,
                                 onBack = { sessionResult ->
                                                     onTorrentProgressChange(null)
                                     handlePlayerSessionEnd(
@@ -650,5 +650,4 @@ fun PlayerRoute(
                                     onNavigateBack()
                                 }
                             )
-                            }
 }
