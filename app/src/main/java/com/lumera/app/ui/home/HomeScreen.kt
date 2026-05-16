@@ -264,41 +264,30 @@ fun CinematicLayout(
     var hasRequestedFocus by remember { mutableStateOf(false) }
     val previewUpdateGate = remember { PreviewUpdateGate() }
 
-    // Cache the history items transformation to avoid allocating new list on every recomposition
-    // Stable key: only rebuild when items/order/watched-state change, not when images update
-    val historyKey = remember(state.history) {
-        state.history.map { "${it.id}:${it.watched}:${it.lastWatched}:${it.poster != null}" }
-    }
-    val nextUpKey = remember(state.seriesNextUp) {
-        state.seriesNextUp.map { "${it.seriesId}:${it.isComplete}:${it.nextSeason}:${it.nextEpisode}:${it.updatedAt}:${it.poster != null}" }
-    }
-    val historyItems = remember(historyKey, nextUpKey) {
-        buildContinueWatchingItems(state.history, state.seriesNextUp)
-    }
 
     // Proactive metadata fetch for continue watching cards (posters + landscape)
-    LaunchedEffect(historyItems) {
-        historyItems.take(15).forEach { item -> onPreviewItemVisible(item) }
+    LaunchedEffect(state.historyItems) {
+        state.historyItems.take(15).forEach { item -> onPreviewItemVisible(item) }
     }
 
     // Redirect stale continue-watching focus key after progress was cleared
-    val effectiveLastFocusedKey = remember(lastFocusedKey, historyItems) {
-        resolveEffectiveFocusKey(lastFocusedKey, historyItems)
+    val effectiveLastFocusedKey = remember(lastFocusedKey, state.historyItems) {
+        viewModel.resolveEffectiveFocusKey(lastFocusedKey, state.historyItems)
     }
     val historyFocusRedirected = effectiveLastFocusedKey != lastFocusedKey
 
-    val restoredPreviewItem = remember(effectiveLastFocusedKey, state.mixedRows, historyItems) {
-        resolveCinematicPreviewItem(
+    val restoredPreviewItem = remember(effectiveLastFocusedKey, state.mixedRows, state.historyItems) {
+        viewModel.resolveCinematicPreviewItem(
             lastFocusedKey = effectiveLastFocusedKey,
             mixedRows = state.mixedRows,
-            historyItems = historyItems
+            historyItems = state.historyItems
         )
     }
-    val renderedPreviewItem = remember(displayedItem, state.mixedRows, state.heroRow, historyItems, state.enrichedMeta) {
-        resolveLatestPreviewItem(
+    val renderedPreviewItem = remember(displayedItem, state.mixedRows, state.heroRow, state.historyItems, state.enrichedMeta) {
+        viewModel.resolveLatestPreviewItem(
             current = displayedItem,
             state = state,
-            historyItems = historyItems
+            historyItems = state.historyItems
         )
     }
 
@@ -309,7 +298,7 @@ fun CinematicLayout(
                 // Returning from details with a saved focus key: avoid showing the wrong
                 // poster while focus restoration is still in progress.
                 effectiveLastFocusedKey != null -> null
-                else -> historyItems.firstOrNull() ?: state.rows.firstOrNull()?.items?.firstOrNull()
+                else -> state.historyItems.firstOrNull() ?: state.rows.firstOrNull()?.items?.firstOrNull()
             }
             instantFocusItem = first
             displayedItem = first
@@ -320,7 +309,7 @@ fun CinematicLayout(
 
         // SMART FOCUS:
         // We are now safe to request focus because HomeScreen ensures we only reach here when data is ready.
-        if (!hasRequestedFocus && (historyItems.isNotEmpty() || state.mixedRows.isNotEmpty())) {
+        if (!hasRequestedFocus && (state.historyItems.isNotEmpty() || state.mixedRows.isNotEmpty())) {
             delay(100)
             entryRequester.requestFocus()
             hasRequestedFocus = true
@@ -415,15 +404,21 @@ fun CinematicLayout(
                                 contentAlignment = Alignment.BottomStart
                             ) {
                                 if (!item.logo.isNullOrEmpty()) {
-                                    SubcomposeAsyncImage(
-                                        model = item.logo,
-                                        contentDescription = item.name,
-                                        contentScale = ContentScale.Fit,
-                                        alignment = Alignment.BottomStart,
-                                        modifier = Modifier
-                                            .widthIn(max = 500.dp)
-                                            .heightIn(max = 90.dp),
-                                        error = {
+                                    var isError by remember(item.logo) { mutableStateOf(false) }
+                                    Box {
+                                        AsyncImage(
+                                            model = item.logo,
+                                            contentDescription = item.name,
+                                            contentScale = ContentScale.Fit,
+                                            alignment = Alignment.BottomStart,
+                                            onState = { state ->
+                                                isError = state is coil.compose.AsyncImagePainter.State.Error
+                                            },
+                                            modifier = Modifier
+                                                .widthIn(max = 500.dp)
+                                                .heightIn(max = 90.dp)
+                                        )
+                                        if (isError) {
                                             Text(
                                                 text = item.name,
                                                 style = MaterialTheme.typography.displaySmall.copy(
@@ -438,7 +433,7 @@ fun CinematicLayout(
                                                 modifier = Modifier.fillMaxWidth()
                                             )
                                         }
-                                    )
+                                    }
                                 } else {
                                     Text(
                                         text = item.name,
@@ -515,31 +510,14 @@ fun CinematicLayout(
                         contentPadding = PaddingValues(top = 5.dp, bottom = 400.dp),
                         verticalArrangement = Arrangement.spacedBy((-12).dp)
                     ) {
-                        if (historyItems.isNotEmpty()) {
-                            item(key = "history_header", contentType = "row") {
-                                // Reset scroll position when focus was redirected (cleared item removed)
-                                val savedPosition = if (historyFocusRedirected) Pair(0, 0)
-                                    else rowScrollPositions["history"] ?: Pair(0, 0)
-                                val historyRowState = rememberLazyListState(
-                                    initialFirstVisibleItemIndex = savedPosition.first,
-                                    initialFirstVisibleItemScrollOffset = savedPosition.second
-                                )
-
-                                PersistLazyListPosition(
-                                    listState = historyRowState,
-                                    key = "cinematic_history",
-                                    minOffsetDeltaPx = 36,
-                                    onPositionChanged = { onScrollPositionChange("history", it) }
-                                )
-
                                 InfiniteLoopRow(
                                     startPadding = startPadding,
                                     isTopNav = isTopNav,
                                     rowIndex = -1,
                                     title = "Continue Watching",
-                                    items = historyItems,
+                                    items = state.historyItems,
                                     onMovieClick = onMovieClick,
-                                    onViewMore = { onViewMore("Continue Watching", historyItems, "") },
+                                    onViewMore = { onViewMore("Continue Watching", state.historyItems, "") },
                                     onFocused = remember(wrappedOnFocusChange) {
                                         { item: MetaItem?, key: String ->
                                             updatePreviewItem(item)
@@ -561,8 +539,6 @@ fun CinematicLayout(
                                     enrichedItems = state.enrichedMeta,
                                     rowHeight = if (isLandscapeContinueWatching) 140.dp else 210.dp
                                 )
-                            }
-                        }
 
                         itemsIndexed(
                             items = state.mixedRows,
@@ -587,7 +563,7 @@ fun CinematicLayout(
                                     // Create list state with saved scroll position for this hub row
                                     // Reset when focus was redirected from a removed history item to this first row
                                     val hubKey = "hub_${item.id}"
-                                    val resetScroll = historyFocusRedirected && historyItems.isEmpty() && index == 0
+                                    val resetScroll = historyFocusRedirected && state.historyItems.isEmpty() && index == 0
                                     val savedHubPosition = if (resetScroll) null else rowScrollPositions[hubKey]
                                     val hubListState = rememberLazyListState(
                                         initialFirstVisibleItemIndex = savedHubPosition?.first ?: 0,
@@ -618,7 +594,7 @@ fun CinematicLayout(
                                         upKeyDebouncer = upKeyDebouncer,
                                         repeatGate = dpadRepeatGate,
                                         isLastRow = index == state.mixedRows.lastIndex,
-                                        isFirstRow = historyItems.isEmpty() && index == 0,
+                                        isFirstRow = state.historyItems.isEmpty() && index == 0,
                                         isGlobalFocusPresent = effectiveLastFocusedKey != null
                                     )
                                 }
@@ -626,7 +602,7 @@ fun CinematicLayout(
                                     // Create list state with saved scroll position for this row
                                     // Reset when focus was redirected from a removed history item to this first row
                                     val rowKey = item.id
-                                    val resetScroll = historyFocusRedirected && historyItems.isEmpty() && index == 0
+                                    val resetScroll = historyFocusRedirected && state.historyItems.isEmpty() && index == 0
                                     val savedPosition = if (resetScroll) null else rowScrollPositions[rowKey]
 
                                     val initialIndex = savedPosition?.first ?: 0
@@ -678,7 +654,7 @@ fun CinematicLayout(
                                         drawerRequester = drawerRequester,
                                         locallyFocusedItemId = if (effectiveLastFocusedKey?.startsWith("${index}_") == true) effectiveLastFocusedKey else null,
                                         isGlobalFocusPresent = effectiveLastFocusedKey != null,
-                                        isFirstRow = historyItems.isEmpty() && index == 0,
+                                        isFirstRow = state.historyItems.isEmpty() && index == 0,
                                         isInfiniteLoopEnabled = item.isInfiniteLoopEnabled,
                                         visibleItemCount = item.visibleItemCount,
                                         isInfiniteScrollingEnabled = item.isInfiniteScrollingEnabled,
@@ -696,193 +672,7 @@ fun CinematicLayout(
     }
 }
 
-/**
- * Redirect the saved continue-watching focus key when the row has changed since navigation:
- * 1. Item removed (progress cleared) → focus first remaining item, or first regular row
- * 2. Item reordered (e.g. resumed playback bumped it to front) → update to new index
- */
-private fun resolveEffectiveFocusKey(
-    lastFocusedKey: String?,
-    historyItems: List<MetaItem>
-): String? {
-    if (lastFocusedKey == null || !lastFocusedKey.startsWith("-1_")) return lastFocusedKey
 
-    val firstSep = lastFocusedKey.indexOf('_')
-    if (firstSep < 0) return lastFocusedKey
-    val remainder = lastFocusedKey.substring(firstSep + 1)
-    val itemId = remainder.substringBeforeLast("_")
-    val savedIndex = remainder.substringAfterLast("_").toIntOrNull()
-
-    val currentIndex = historyItems.indexOfFirst { it.id == itemId }
-
-    if (currentIndex < 0) {
-        // Item was removed: redirect to first remaining item, or null (first regular row gets focus)
-        return if (historyItems.isNotEmpty()) {
-            "-1_${historyItems.first().id}_0"
-        } else {
-            null
-        }
-    }
-
-    // Item exists but moved position (e.g. became most-recently-watched after playback)
-    if (savedIndex != null && currentIndex != savedIndex) {
-        return "-1_${itemId}_${currentIndex}"
-    }
-
-    return lastFocusedKey
-}
-
-private fun resolveCinematicPreviewItem(
-    lastFocusedKey: String?,
-    mixedRows: List<HomeRowItem>,
-    historyItems: List<MetaItem>
-): MetaItem? {
-    if (lastFocusedKey.isNullOrEmpty()) return null
-    if (lastFocusedKey.startsWith("hub_") || lastFocusedKey.startsWith("hero_")) return null
-
-    val firstSeparator = lastFocusedKey.indexOf('_')
-    if (firstSeparator <= 0) return null
-
-    val rowToken = lastFocusedKey.substring(0, firstSeparator)
-    val itemToken = lastFocusedKey.substring(firstSeparator + 1).substringBeforeLast("_")
-    if (itemToken.isEmpty() || itemToken == "viewmore") return null
-
-    if (rowToken == "-1") {
-        return historyItems.firstOrNull { it.id == itemToken }
-    }
-
-    val rowIndex = rowToken.toIntOrNull() ?: return null
-    val row = mixedRows.getOrNull(rowIndex) as? CategoryRow ?: return null
-    return row.items.firstOrNull { it.id == itemToken }
-}
-
-private fun buildContinueWatchingItems(
-    history: List<WatchHistoryEntity>,
-    seriesNextUp: List<com.lumera.app.data.model.SeriesNextUpEntity> = emptyList()
-): List<MetaItem> {
-    val result = mutableListOf<Pair<Long, MetaItem>>()
-    val seriesIdsIncluded = mutableSetOf<String>()
-
-    // 1. In-progress items (partially watched, not completed)
-    val inProgress = history.filter { !it.watched }
-
-    val seriesByCanonicalId = mutableMapOf<String, MutableList<WatchHistoryEntity>>()
-    val movieById = mutableMapOf<String, WatchHistoryEntity>()
-
-    inProgress.forEach { entry ->
-        if (entry.type == "series") {
-            val canonicalId = canonicalSeriesId(entry.id)
-            seriesByCanonicalId.getOrPut(canonicalId) { mutableListOf() }.add(entry)
-        } else {
-            movieById.putIfAbsent(entry.id, entry)
-        }
-    }
-
-    val chosenSeries = mutableMapOf<String, WatchHistoryEntity>()
-    seriesByCanonicalId.forEach { (canonicalId, entries) ->
-        val preferred = entries.firstOrNull { isEpisodePlaybackId(it.id) } ?: entries.firstOrNull()
-        if (preferred != null) {
-            chosenSeries[canonicalId] = preferred
-        }
-    }
-
-    inProgress.forEach { entry ->
-        if (entry.type == "series") {
-            val canonicalId = canonicalSeriesId(entry.id)
-            val chosen = chosenSeries[canonicalId] ?: return@forEach
-            if (chosen.id != entry.id) return@forEach
-            seriesIdsIncluded.add(canonicalId)
-            result.add(chosen.lastWatched to MetaItem(
-                id = canonicalId,
-                type = entry.type,
-                name = entry.title,
-                poster = entry.poster,
-                background = chosen.background,
-                logo = chosen.logo,
-                progress = chosen.progress()
-            ))
-        } else {
-            val chosen = movieById[entry.id] ?: return@forEach
-            if (chosen.id != entry.id) return@forEach
-            result.add(entry.lastWatched to MetaItem(
-                id = entry.id,
-                type = entry.type,
-                name = entry.title,
-                poster = entry.poster,
-                background = entry.background,
-                logo = entry.logo,
-                progress = entry.progress()
-            ))
-        }
-    }
-
-    // 2. Next-up entries: series where all in-progress episodes are watched,
-    //    but there's a next episode available. Only include if the episode has aired.
-    val today = java.time.LocalDate.now().toString() // "2026-04-06"
-    for (nextUp in seriesNextUp) {
-        if (nextUp.seriesId in seriesIdsIncluded) continue // already shown as in-progress
-
-        // Check if the next episode has aired (null = assume aired)
-        val released = nextUp.nextReleased
-        if (released != null && released > today) continue
-
-        // Complete with no next episode date = truly done, skip
-        if (nextUp.isComplete && released == null) continue
-
-        // +1 badge: show was complete (user was caught up) and episode has now aired
-        val isReturning = nextUp.isComplete || nextUp.isNewEpisode
-
-        result.add(nextUp.updatedAt to MetaItem(
-            id = nextUp.seriesId,
-            type = "series",
-            name = nextUp.title,
-            poster = nextUp.poster,
-            hasNewEpisode = isReturning
-        ))
-    }
-
-    // Sort all items by most recent activity
-    return result.sortedByDescending { it.first }.map { it.second }
-}
-
-private fun canonicalSeriesId(playbackId: String): String {
-    if (!isEpisodePlaybackId(playbackId)) return playbackId
-    val parts = playbackId.split(":")
-    return parts.dropLast(2).joinToString(":")
-}
-
-private fun isEpisodePlaybackId(playbackId: String): Boolean {
-    val parts = playbackId.split(":")
-    if (parts.size < 3) return false
-    return parts[parts.lastIndex - 1].toIntOrNull() != null && parts.last().toIntOrNull() != null
-}
-
-private fun resolveLatestPreviewItem(
-    current: MetaItem?,
-    state: HomeViewModel.HomeState,
-    historyItems: List<MetaItem>
-): MetaItem? {
-    val item = current ?: return null
-
-    // Check enriched metadata cache (handles items not in any category row, e.g. from search)
-    val enriched = state.enrichedMeta["${item.type}:${item.id}"]
-    if (enriched != null && !enriched.logo.isNullOrEmpty()) return enriched
-
-    val fromHistory = historyItems.firstOrNull { it.type == item.type && it.id == item.id }
-    if (fromHistory != null && !fromHistory.logo.isNullOrEmpty()) return fromHistory
-
-    val fromHero = state.heroRow?.items?.firstOrNull { it.type == item.type && it.id == item.id }
-    if (fromHero != null && !fromHero.logo.isNullOrEmpty()) return fromHero
-
-    val fromRows = state.mixedRows
-        .asSequence()
-        .filterIsInstance<CategoryRow>()
-        .flatMap { row -> row.items.asSequence() }
-        .firstOrNull { it.type == item.type && it.id == item.id }
-    if (fromRows != null && !fromRows.logo.isNullOrEmpty()) return fromRows
-
-    return item
-}
 
 @OptIn(ExperimentalTvMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -909,25 +699,14 @@ fun SimpleLayout(
     isLandscapeContinueWatching: Boolean = false
 ) {
     var hasRequestedFocus by remember { mutableStateOf(false) }
-    // Stable key: only rebuild when items/order/watched-state change, not when images update
-    val historyKey = remember(state.history) {
-        state.history.map { "${it.id}:${it.watched}:${it.lastWatched}:${it.poster != null}" }
-    }
-    val nextUpKey = remember(state.seriesNextUp) {
-        state.seriesNextUp.map { "${it.seriesId}:${it.isComplete}:${it.nextSeason}:${it.nextEpisode}:${it.updatedAt}:${it.poster != null}" }
-    }
-    val historyItems = remember(historyKey, nextUpKey) {
-        buildContinueWatchingItems(state.history, state.seriesNextUp)
-    }
-
     // Proactive metadata fetch for continue watching cards (posters + landscape)
-    LaunchedEffect(historyItems) {
-        historyItems.take(15).forEach { item -> onHeroItemVisible(item) }
+    LaunchedEffect(state.historyItems) {
+        state.historyItems.take(15).forEach { item -> onHeroItemVisible(item) }
     }
 
     // Redirect stale continue-watching focus key after progress was cleared
-    val effectiveLastFocusedKey = remember(lastFocusedKey, historyItems) {
-        resolveEffectiveFocusKey(lastFocusedKey, historyItems)
+    val effectiveLastFocusedKey = remember(lastFocusedKey, state.historyItems) {
+        viewModel.resolveEffectiveFocusKey(lastFocusedKey, state.historyItems)
     }
     val historyFocusRedirected = effectiveLastFocusedKey != lastFocusedKey
 
@@ -942,8 +721,8 @@ fun SimpleLayout(
     // Focus requester for the first row's pivot item (used by hero carousel DOWN key)
     val firstRowPivotRequester = remember { FocusRequester() }
 
-    LaunchedEffect(state.rows, historyItems) {
-        if (!hasRequestedFocus && (state.rows.isNotEmpty() || historyItems.isNotEmpty())) {
+    LaunchedEffect(state.rows, state.historyItems) {
+        if (!hasRequestedFocus && (state.rows.isNotEmpty() || state.historyItems.isNotEmpty())) {
             delay(100)
             entryRequester.requestFocus()
             hasRequestedFocus = true
@@ -1036,31 +815,14 @@ fun SimpleLayout(
                 }
             }
 
-            if (historyItems.isNotEmpty()) {
-                item(key = "simple_history_header", contentType = "row") {
-                    // Reset scroll position when focus was redirected (cleared item removed)
-                    val savedPosition = if (historyFocusRedirected) Pair(0, 0)
-                        else rowScrollPositions["history"] ?: Pair(0, 0)
-                    val historyRowState = rememberLazyListState(
-                        initialFirstVisibleItemIndex = savedPosition.first,
-                        initialFirstVisibleItemScrollOffset = savedPosition.second
-                    )
-
-                    PersistLazyListPosition(
-                        listState = historyRowState,
-                        key = "simple_history",
-                        minOffsetDeltaPx = 36,
-                        onPositionChanged = { onScrollPositionChange("history", it) }
-                    )
-
                     InfiniteLoopRow(
                         startPadding = startPadding,
                         isTopNav = isTopNav,
                         rowIndex = -1,
                         title = "Continue Watching",
-                        items = historyItems,
+                        items = state.historyItems,
                         onMovieClick = onMovieClick,
-                        onViewMore = { onViewMore("Continue Watching", historyItems, "") },
+                        onViewMore = { onViewMore("Continue Watching", state.historyItems, "") },
                         onFocused = remember(wrappedOnFocusChange) {
                             { _: MetaItem?, key: String -> wrappedOnFocusChange(key) }
                         },
@@ -1080,8 +842,6 @@ fun SimpleLayout(
                         enrichedItems = state.enrichedMeta,
                         rowHeight = if (isLandscapeContinueWatching) 140.dp else 210.dp
                     )
-                }
-            }
 
             itemsIndexed(
                 items = state.mixedRows,
@@ -1106,7 +866,7 @@ fun SimpleLayout(
                         // Create list state with saved scroll position for this hub row
                         // Reset when focus was redirected from a removed history item to this first row
                         val hubKey = "hub_${item.id}"
-                        val resetScroll = historyFocusRedirected && historyItems.isEmpty() && rowIndex == 0
+                        val resetScroll = historyFocusRedirected && state.historyItems.isEmpty() && rowIndex == 0
                         val savedHubPosition = if (resetScroll) null else rowScrollPositions[hubKey]
                         val hubListState = rememberLazyListState(
                             initialFirstVisibleItemIndex = savedHubPosition?.first ?: 0,
@@ -1132,12 +892,12 @@ fun SimpleLayout(
                             locallyFocusedItemId = if (effectiveLastFocusedKey?.startsWith("hub_") == true) effectiveLastFocusedKey else null,
                             isTopNav = isTopNav,
                             rowIndex = rowIndex,
-                            isFirstRow = heroItems.isEmpty() && historyItems.isEmpty() && rowIndex == 0, // Only steal focus if no hero/history row
+                            isFirstRow = heroItems.isEmpty() && state.historyItems.isEmpty() && rowIndex == 0, // Only steal focus if no hero/history row
                             externalListState = hubListState,
                             upKeyDebouncer = upKeyDebouncer,
                             repeatGate = dpadRepeatGate,
                             isLastRow = rowIndex == state.mixedRows.lastIndex,
-                            pivotFocusRequester = if (heroItems.isNotEmpty() && historyItems.isEmpty() && rowIndex == 0) firstRowPivotRequester else null,
+                            pivotFocusRequester = if (heroItems.isNotEmpty() && state.historyItems.isEmpty() && rowIndex == 0) firstRowPivotRequester else null,
                             isGlobalFocusPresent = effectiveLastFocusedKey != null
                         )
                     }
@@ -1145,7 +905,7 @@ fun SimpleLayout(
                         // Create list state with saved scroll position for this row
                         // Reset when focus was redirected from a removed history item to this first row
                         val rowKey = item.id
-                        val resetScroll = historyFocusRedirected && historyItems.isEmpty() && rowIndex == 0
+                        val resetScroll = historyFocusRedirected && state.historyItems.isEmpty() && rowIndex == 0
                         val savedPosition = if (resetScroll) null else rowScrollPositions[rowKey]
 
                         val initialIndex = savedPosition?.first ?: 0
@@ -1204,7 +964,7 @@ fun SimpleLayout(
                             drawerRequester = drawerRequester,
                             locallyFocusedItemId = if (effectiveLastFocusedKey?.startsWith("${rowIndex}_") == true) effectiveLastFocusedKey else null,
                             isGlobalFocusPresent = effectiveLastFocusedKey != null,
-                            isFirstRow = heroItems.isEmpty() && historyItems.isEmpty() && rowIndex == 0,
+                            isFirstRow = heroItems.isEmpty() && state.historyItems.isEmpty() && rowIndex == 0,
                             isInfiniteLoopEnabled = item.isInfiniteLoopEnabled,
                             visibleItemCount = item.visibleItemCount,
                             isInfiniteScrollingEnabled = item.isInfiniteScrollingEnabled,
@@ -1212,7 +972,7 @@ fun SimpleLayout(
                             rowHeight = rowHeight,
                             upKeyDebouncer = upKeyDebouncer,
                             repeatGate = dpadRepeatGate,
-                            pivotFocusRequester = if (heroItems.isNotEmpty() && historyItems.isEmpty() && rowIndex == 0) firstRowPivotRequester else null
+                            pivotFocusRequester = if (heroItems.isNotEmpty() && state.historyItems.isEmpty() && rowIndex == 0) firstRowPivotRequester else null
                         )
                     }
                 }
@@ -1404,5 +1164,6 @@ private fun HomeImdbBadge() {
 
 private fun extractHomePrimaryYear(releaseInfo: String?): String {
     if (releaseInfo.isNullOrBlank()) return "----"
-    return Regex("\\d{4}").find(releaseInfo)?.value ?: releaseInfo.take(4)
+    val year = releaseInfo.take(4)
+    return if (year.all { it.isDigit() }) year else "----"
 }

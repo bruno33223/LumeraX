@@ -61,6 +61,7 @@ class HomeViewModel @Inject constructor(
         val loadedProfileId: Int? = null,
         val watchedIds: Set<String> = emptySet(), // IMDb IDs of watched items (movies + series)
         val enrichedMeta: Map<String, MetaItem> = emptyMap(),
+        val historyItems: List<MetaItem> = emptyList(),
         val tmdbEnabled: Boolean = false,
         val tmdbEnrichedIds: Set<String> = emptySet()
     )
@@ -368,58 +369,14 @@ class HomeViewModel @Inject constructor(
 
     private fun applyMetadataFallbackToState(type: String, id: String, fallback: MetadataFallback, sourceItem: MetaItem? = null) {
         _state.update { current ->
-            var stateChanged = false
-
-            val updatedRows = current.rows.map { row ->
-                val (patchedItems, changed) = patchMetaListWithFallback(row.items, type, id, fallback)
-                if (changed) {
-                    stateChanged = true
-                    row.copy(items = patchedItems)
-                } else {
-                    row
-                }
-            }
-
-            val updatedMixedRows = current.mixedRows.map { rowItem ->
-                if (rowItem is CategoryRow) {
-                    val (patchedItems, changed) = patchMetaListWithFallback(rowItem.items, type, id, fallback)
-                    if (changed) {
-                        stateChanged = true
-                        rowItem.copy(items = patchedItems)
-                    } else {
-                        rowItem
-                    }
-                } else {
-                    rowItem
-                }
-            }
-
-            val updatedHeroRow = current.heroRow?.let { hero ->
-                val (patchedItems, changed) = patchMetaListWithFallback(hero.items, type, id, fallback)
-                if (changed) {
-                    stateChanged = true
-                    hero.copy(items = patchedItems)
-                } else {
-                    hero
-                }
-            }
-
             val enrichedKey = "$type:$id"
-            val updatedEnrichedMeta = if (sourceItem != null && !current.enrichedMeta.containsKey(enrichedKey)) {
-                val enriched = applyFallbackToMeta(sourceItem, fallback)
-                if (enriched != sourceItem) {
-                    stateChanged = true
-                    current.enrichedMeta + (enrichedKey to enriched)
-                } else current.enrichedMeta
-            } else current.enrichedMeta
-
-            if (!stateChanged) return@update current
+            val itemToEnrich = current.enrichedMeta[enrichedKey] ?: sourceItem ?: return@update current
+            
+            val enriched = applyFallbackToMeta(itemToEnrich, fallback)
+            if (enriched == itemToEnrich && current.enrichedMeta.containsKey(enrichedKey)) return@update current
 
             current.copy(
-                rows = updatedRows,
-                mixedRows = updatedMixedRows,
-                heroRow = updatedHeroRow,
-                enrichedMeta = updatedEnrichedMeta
+                enrichedMeta = current.enrichedMeta + (enrichedKey to enriched)
             )
         }
     }
@@ -487,42 +444,6 @@ class HomeViewModel @Inject constructor(
      */
     private fun applyTmdbEnrichmentToState(type: String, id: String, fallback: MetadataFallback, sourceItem: MetaItem) {
         _state.update { current ->
-            var rowsChanged = false
-
-            fun overwriteMeta(meta: MetaItem): MetaItem {
-                if (meta.type != type || meta.id != id) return meta
-                val updated = meta.copy(
-                    background = fallback.background ?: meta.background,
-                    logo = fallback.logo ?: meta.logo,
-                    description = fallback.description ?: meta.description,
-                    releaseInfo = fallback.releaseInfo ?: meta.releaseInfo,
-                    imdbRating = fallback.imdbRating ?: meta.imdbRating,
-                    runtime = fallback.runtime ?: meta.runtime,
-                    genres = fallback.genres ?: meta.genres
-                )
-                if (updated != meta) rowsChanged = true
-                return updated
-            }
-
-            val updatedRows = current.rows.map { row ->
-                val patched = row.items.map { overwriteMeta(it) }
-                if (rowsChanged) row.copy(items = patched) else row
-            }
-
-            val updatedMixedRows = current.mixedRows.map { rowItem ->
-                if (rowItem is CategoryRow) {
-                    val patched = rowItem.items.map { overwriteMeta(it) }
-                    if (rowsChanged) rowItem.copy(items = patched) else rowItem
-                } else rowItem
-            }
-
-            val updatedHeroRow = current.heroRow?.let { hero ->
-                val patched = hero.items.map { overwriteMeta(it) }
-                if (rowsChanged) hero.copy(items = patched) else hero
-            }
-
-            // Always store enriched preview in enrichedMeta so continue watching
-            // items (which aren't in category rows) can pick up TMDB metadata.
             val enrichedKey = "$type:$id"
             val base = current.enrichedMeta[enrichedKey] ?: sourceItem
             val enriched = base.copy(
@@ -534,15 +455,9 @@ class HomeViewModel @Inject constructor(
                 runtime = fallback.runtime ?: base.runtime,
                 genres = fallback.genres ?: base.genres
             )
-            val updatedEnrichedMeta = if (enriched != base || !current.enrichedMeta.containsKey(enrichedKey)) {
-                current.enrichedMeta + (enrichedKey to enriched)
-            } else current.enrichedMeta
 
             current.copy(
-                rows = if (rowsChanged) updatedRows else current.rows,
-                mixedRows = if (rowsChanged) updatedMixedRows else current.mixedRows,
-                heroRow = if (rowsChanged) updatedHeroRow else current.heroRow,
-                enrichedMeta = updatedEnrichedMeta,
+                enrichedMeta = current.enrichedMeta + (enrichedKey to enriched),
                 tmdbEnrichedIds = current.tmdbEnrichedIds + "$type:$id"
             )
         }
@@ -589,17 +504,26 @@ class HomeViewModel @Inject constructor(
             // Load History + Series Next Up only for Home
             if (screenName == "home") {
                 launch {
-                    dao.getWatchHistory().collect { history ->
-                        _state.update { it.copy(history = history) }
-                    }
-                }
-                launch {
-                    dao.getActiveSeriesNextUp().collect { nextUp ->
-                        _state.update { it.copy(seriesNextUp = nextUp) }
+                    val historyFlow = dao.getWatchHistory()
+                    val nextUpFlow = dao.getActiveSeriesNextUp()
+                    
+                    kotlinx.coroutines.flow.combine(historyFlow, nextUpFlow) { history, nextUp ->
+                        Pair(history, nextUp)
+                    }.collect { (history, nextUp) ->
+                        val historyItems = buildContinueWatchingItems(history, nextUp)
+                        _state.update { it.copy(
+                            history = history, 
+                            seriesNextUp = nextUp,
+                            historyItems = historyItems
+                        ) }
                     }
                 }
             } else {
-                _state.value = _state.value.copy(history = emptyList(), seriesNextUp = emptyList())
+                _state.value = _state.value.copy(
+                    history = emptyList(), 
+                    seriesNextUp = emptyList(),
+                    historyItems = emptyList()
+                )
             }
 
             // Load watched IDs for all tabs (watched indicator on posters)
@@ -746,5 +670,173 @@ class HomeViewModel @Inject constructor(
                 // Ignore error
             }
         }
+    }
+
+    private fun buildContinueWatchingItems(
+        history: List<WatchHistoryEntity>,
+        seriesNextUp: List<com.lumera.app.data.model.SeriesNextUpEntity> = emptyList()
+    ): List<MetaItem> {
+        val result = mutableListOf<Pair<Long, MetaItem>>()
+        val seriesIdsIncluded = mutableSetOf<String>()
+
+        val inProgress = history.filter { !it.watched }
+        val seriesByCanonicalId = mutableMapOf<String, MutableList<WatchHistoryEntity>>()
+        val movieById = mutableMapOf<String, WatchHistoryEntity>()
+
+        inProgress.forEach { entry ->
+            if (entry.type == "series") {
+                val canonicalId = canonicalSeriesId(entry.id)
+                seriesByCanonicalId.getOrPut(canonicalId) { mutableListOf() }.add(entry)
+            } else {
+                movieById.putIfAbsent(entry.id, entry)
+            }
+        }
+
+        val chosenSeries = mutableMapOf<String, WatchHistoryEntity>()
+        seriesByCanonicalId.forEach { (canonicalId, entries) ->
+            val preferred = entries.firstOrNull { isEpisodePlaybackId(it.id) } ?: entries.firstOrNull()
+            if (preferred != null) {
+                chosenSeries[canonicalId] = preferred
+            }
+        }
+
+        inProgress.forEach { entry ->
+            if (entry.type == "series") {
+                val canonicalId = canonicalSeriesId(entry.id)
+                val chosen = chosenSeries[canonicalId] ?: return@forEach
+                if (chosen.id != entry.id) return@forEach
+                seriesIdsIncluded.add(canonicalId)
+                result.add(chosen.lastWatched to MetaItem(
+                    id = canonicalId,
+                    type = entry.type,
+                    name = entry.title,
+                    poster = entry.poster,
+                    background = chosen.background,
+                    logo = chosen.logo,
+                    progress = chosen.progress()
+                ))
+            } else {
+                val chosen = movieById[entry.id] ?: return@forEach
+                if (chosen.id != entry.id) return@forEach
+                result.add(entry.lastWatched to MetaItem(
+                    id = entry.id,
+                    type = entry.type,
+                    name = entry.title,
+                    poster = entry.poster,
+                    background = entry.background,
+                    logo = entry.logo,
+                    progress = entry.progress()
+                ))
+            }
+        }
+
+        val today = java.time.LocalDate.now().toString()
+        for (nextUp in seriesNextUp) {
+            if (nextUp.seriesId in seriesIdsIncluded) continue
+            val released = nextUp.nextReleased
+            if (released != null && released > today) continue
+            if (nextUp.isComplete && released == null) continue
+            val isReturning = nextUp.isComplete || nextUp.isNewEpisode
+            result.add(nextUp.updatedAt to MetaItem(
+                id = nextUp.seriesId,
+                type = "series",
+                name = nextUp.title,
+                poster = nextUp.poster,
+                hasNewEpisode = isReturning
+            ))
+        }
+
+        return result.sortedByDescending { it.first }.map { it.second }
+    }
+
+    private fun canonicalSeriesId(playbackId: String): String {
+        if (!isEpisodePlaybackId(playbackId)) return playbackId
+        val parts = playbackId.split(":")
+        return parts.dropLast(2).joinToString(":")
+    }
+
+    private fun isEpisodePlaybackId(playbackId: String): Boolean {
+        val parts = playbackId.split(":")
+        if (parts.size < 3) return false
+        return parts[parts.lastIndex - 1].toIntOrNull() != null && parts.last().toIntOrNull() != null
+    }
+
+    fun resolveEffectiveFocusKey(
+        lastFocusedKey: String?,
+        historyItems: List<MetaItem>
+    ): String? {
+        if (lastFocusedKey == null || !lastFocusedKey.startsWith("-1_")) return lastFocusedKey
+
+        val firstSep = lastFocusedKey.indexOf('_')
+        if (firstSep < 0) return lastFocusedKey
+        val remainder = lastFocusedKey.substring(firstSep + 1)
+        val itemId = remainder.substringBeforeLast("_")
+        val savedIndex = remainder.substringAfterLast("_").toIntOrNull()
+
+        val currentIndex = historyItems.indexOfFirst { it.id == itemId }
+
+        if (currentIndex < 0) {
+            return if (historyItems.isNotEmpty()) {
+                "-1_${historyItems.first().id}_0"
+            } else {
+                null
+            }
+        }
+
+        if (savedIndex != null && currentIndex != savedIndex) {
+            return "-1_${itemId}_${currentIndex}"
+        }
+
+        return lastFocusedKey
+    }
+
+    fun resolveLatestPreviewItem(
+        current: MetaItem?,
+        state: HomeState,
+        historyItems: List<MetaItem>
+    ): MetaItem? {
+        val item = current ?: return null
+
+        val enriched = state.enrichedMeta["${item.type}:${item.id}"]
+        if (enriched != null && !enriched.logo.isNullOrEmpty()) return enriched
+
+        val fromHistory = historyItems.firstOrNull { it.type == item.type && it.id == item.id }
+        if (fromHistory != null && !fromHistory.logo.isNullOrEmpty()) return fromHistory
+
+        val fromHero = state.heroRow?.items?.firstOrNull { it.type == item.type && it.id == item.id }
+        if (fromHero != null && !fromHero.logo.isNullOrEmpty()) return fromHero
+
+        val fromRows = state.mixedRows
+            .asSequence()
+            .filterIsInstance<CategoryRow>()
+            .flatMap { row -> row.items.asSequence() }
+            .firstOrNull { it.type == item.type && it.id == item.id }
+        if (fromRows != null && !fromRows.logo.isNullOrEmpty()) return fromRows
+
+        return item
+    }
+
+    fun resolveCinematicPreviewItem(
+        lastFocusedKey: String?,
+        mixedRows: List<HomeRowItem>,
+        historyItems: List<MetaItem>
+    ): MetaItem? {
+        if (lastFocusedKey.isNullOrEmpty()) return null
+        if (lastFocusedKey.startsWith("hub_") || lastFocusedKey.startsWith("hero_")) return null
+
+        val firstSeparator = lastFocusedKey.indexOf('_')
+        if (firstSeparator <= 0) return null
+
+        val rowToken = lastFocusedKey.substring(0, firstSeparator)
+        val itemToken = lastFocusedKey.substring(firstSeparator + 1).substringBeforeLast("_")
+        if (itemToken.isEmpty() || itemToken == "viewmore") return null
+
+        if (rowToken == "-1") {
+            return historyItems.firstOrNull { it.id == itemToken }
+        }
+
+        val rowIndex = rowToken.toIntOrNull() ?: return null
+        val row = mixedRows.getOrNull(rowIndex) as? CategoryRow ?: return null
+        return row.items.firstOrNull { it.id == itemToken }
     }
 }
