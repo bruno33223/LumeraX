@@ -89,10 +89,22 @@ fun IntegrationsScreen(
     val driveSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val account = GoogleSignIn.getLastSignedInAccount(context)
-        if (result.resultCode == android.app.Activity.RESULT_OK && account != null) {
-            driveConnectedEmail = account.email
-            showDriveDialog = true
+        if (result.resultCode == android.app.Activity.RESULT_OK && result.data != null) {
+            try {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+                driveConnectedEmail = account.email
+                showDriveDialog = true
+            } catch (e: com.google.android.gms.common.api.ApiException) {
+                android.util.Log.e("IntegrationsDrive", "Falha no Google OAuth. Código: ${e.statusCode}", e)
+                android.widget.Toast.makeText(
+                    context, 
+                    "Falha Google OAuth! Código: ${e.statusCode} (${com.google.android.gms.common.api.CommonStatusCodes.getStatusCodeString(e.statusCode)})", 
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(context, "Erro inesperado: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+            }
         }
     }
 
