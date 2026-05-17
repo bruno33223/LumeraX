@@ -51,7 +51,7 @@ jobs:
           cat <<EOF > Lumera/local.properties
           acra.url=https://dummy.acra.url/
           acra.token=dummy_token
-          tmdb.api_key=dummy_tmdb_key
+          tmdb.api_key=${{ secrets.TMDB_API_KEY }}
           TRAKT_CLIENT_ID=dummy_trakt_id
           TRAKT_CLIENT_SECRET=dummy_trakt_secret
           EOF
