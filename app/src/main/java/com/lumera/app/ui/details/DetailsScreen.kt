@@ -112,6 +112,7 @@ import com.lumera.app.data.tmdb.TmdbCastInfo
 import com.lumera.app.data.tmdb.TmdbCompanyInfo
 import com.lumera.app.data.tmdb.TmdbMetaPreview
 import com.lumera.app.data.tmdb.TmdbVideoInfo
+import com.lumera.app.ui.components.LumeraLandscapeCard
 
 @Composable
 fun DetailsScreen(
@@ -767,6 +768,28 @@ fun DetailsScreen(
                     }
                 }
 
+                val similarItems = state.similarItems
+                if (similarItems.isNotEmpty()) {
+                    item(key = "tmdb_similar") {
+                        Column(modifier = Modifier.padding(top = 28.dp)) {
+                            SectionHeader("Similares", textColor, Modifier.padding(start = 48.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
+                            SimilarRow(
+                                            items = similarItems,
+                                            accentColor = accentColor,
+                                            rowKey = "tmdb_similar",
+                                            onItemClick = { navType, navId, rowKey, index ->
+                                                restoreRowKey = rowKey
+                                                restoreIndex = index
+                                                onNavigateToDetails(navType, navId)
+                                            },
+                                            restoreIndex = if (restoreRowKey == "tmdb_similar") restoreIndex else -1,
+                                            restoreFocusRequester = if (restoreRowKey == "tmdb_similar") restoreFocusRequester else null
+                                        )
+                        }
+                    }
+                }
+
                 item(key = "tmdb_spacer") { Spacer(modifier = Modifier.height(48.dp)) }
             }
             } // LazyColumn
@@ -1377,6 +1400,60 @@ private fun RecommendationCard(item: TmdbMetaPreview, accentColor: Color, modifi
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().clip(cardShape)
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SimilarRow(
+    items: List<TmdbMetaPreview>,
+    accentColor: Color,
+    rowKey: String = "",
+    onItemClick: (type: String, id: String, rowKey: String, index: Int) -> Unit = { _, _, _, _ -> },
+    restoreIndex: Int = -1,
+    restoreFocusRequester: FocusRequester? = null
+) {
+    val rowState = rememberLazyListState()
+    val repeatGate = remember { DpadRepeatGate(horizontalRepeatIntervalMs = 150L) }
+    val density = LocalDensity.current
+    val startPad = 48.dp
+    val paddingPx = remember(density) { with(density) { startPad.toPx() } }
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val endPadding = (screenWidth - startPad - 190.dp).coerceAtLeast(120.dp)
+
+    val pivotSpec = remember(paddingPx) {
+        FocusPivotSpec(
+            customOffset = paddingPx,
+            stiffnessProvider = { Spring.StiffnessLow }
+        )
+    }
+
+    CompositionLocalProvider(LocalBringIntoViewSpec provides pivotSpec) {
+        LazyRow(
+            state = rowState,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(start = startPad, end = endPadding)
+        ) {
+            itemsIndexed(items, key = { _, it -> it.tmdbId }) { index, item ->
+                Box(modifier = Modifier.onPreviewKeyEvent {
+                    if (repeatGate.shouldConsume(it)) return@onPreviewKeyEvent true
+                    if (it.type == KeyEventType.KeyDown && it.key == Key.DirectionLeft && index == 0) true else false
+                }) {
+                    val cardModifier = if (restoreFocusRequester != null && index == restoreIndex) Modifier.focusRequester(restoreFocusRequester) else Modifier
+                    LumeraLandscapeCard(
+                        title = item.name ?: "",
+                        backdropUrl = item.backdrop,
+                        logoUrl = null,
+                        posterUrl = item.poster,
+                        onClick = {
+                            val stremioType = if (item.type == "tv") "series" else item.type
+                            onItemClick(stremioType, "tmdb:${item.tmdbId}", rowKey, index)
+                        },
+                        modifier = cardModifier
+                    )
+                }
+            }
         }
     }
 }
