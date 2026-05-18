@@ -85,8 +85,7 @@ class DetailsViewModel @Inject constructor(
         val tmdbRecommendations: List<TmdbMetaPreview> = emptyList(),
         val tmdbTrailer: TmdbVideoInfo? = null,
         val tmdbCollection: List<TmdbMetaPreview> = emptyList(),
-        val tmdbCollectionName: String? = null,
-        val similarItems: List<TmdbMetaPreview> = emptyList()
+        val tmdbCollectionName: String? = null
     )
 
     private val _state = MutableStateFlow(DetailsState())
@@ -201,7 +200,6 @@ class DetailsViewModel @Inject constructor(
                     tmdbTrailer = null,
                     tmdbCollection = emptyList(),
                     tmdbCollectionName = null,
-                    similarItems = emptyList(),
                     tmdbEnabled = isTmdbEnabled,
                     tmdbLoading = isTmdbEnabled
                 )
@@ -492,7 +490,6 @@ class DetailsViewModel @Inject constructor(
                     tmdbLoading = false,
                     tmdbEnrichment = enrichment,
                     tmdbRecommendations = recommendations,
-                    similarItems = recommendations,
                     tmdbTrailer = trailer,
                     tmdbCollection = collection,
                     tmdbCollectionName = enrichment?.collectionName,
