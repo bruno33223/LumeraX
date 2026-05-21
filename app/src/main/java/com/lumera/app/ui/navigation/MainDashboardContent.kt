@@ -88,34 +88,6 @@ fun MainDashboardContent(
                 drawerRequester = drawerRequesters[NavDestination.Search]!!
             )
         }
-        NavDestination.Discover -> {
-            val searchHomeVm = hiltViewModel<HomeViewModel>()
-            SearchScreen(
-                currentProfile = currentProfile,
-                watchedIds = searchHomeVm.state.collectAsState().value.watchedIds,
-                onMovieClick = { movie ->
-                    onSearchFocusTargetChange("poster")
-                    onMovieClick(movie)
-                },
-                onViewMore = { title, items ->
-                    onSearchFocusTargetChange(if (title == "Movies") "movies" else "series")
-                    onViewMore(title, items, "")
-                },
-                moviesViewMoreRequester = searchMoviesViewMoreRequester,
-                seriesViewMoreRequester = searchSeriesViewMoreRequester,
-                resultsRequester = searchResultsRequester,
-                discoverRequester = searchDiscoverRequester,
-                lastFocusedId = searchLastFocusedId,
-                onFocusedIdChange = onSearchLastFocusedIdChange,
-                onDiscoverClick = { movie ->
-                    onSearchFocusTargetChange("discover")
-                    onSearchDiscoverClick(movie)
-                },
-                entryRequester = discoverEntryRequester,
-                drawerRequester = drawerRequesters[NavDestination.Discover]!!,
-                isDiscoverOnly = true
-            )
-        }
         NavDestination.Profile -> {
             onLogout()
         }

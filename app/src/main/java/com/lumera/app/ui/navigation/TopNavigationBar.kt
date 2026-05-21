@@ -73,9 +73,6 @@ fun TopNavigationBar(
         val list = mutableListOf<NavDestination>()
         list.add(NavDestination.Search)
         list.add(NavDestination.Home)
-        if (currentProfile?.menuDiscoverEnabled != false) {
-            list.add(NavDestination.Discover)
-        }
         if (currentProfile?.menuMoviesEnabled != false) {
             list.add(NavDestination.Movies)
         }
@@ -112,7 +109,6 @@ fun TopNavigationBar(
     val backgroundColor = MaterialTheme.colorScheme.background
     val showStaticMask = currentDestination in listOf(
         NavDestination.Home,
-        NavDestination.Discover,
         NavDestination.Movies,
         NavDestination.Series
     )

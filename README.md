@@ -1,11 +1,11 @@
-# Lumera
+# LumeraX
 
 A feature-rich Android TV streaming application built with Kotlin and Jetpack Compose for TV.
 
 Browse, discover, and stream content from Stremio-compatible addons.
 Connect your Stremio account to instantly import your existing addon collection.
 
-![Lumera](screenshots/banner.png)
+![LumeraX](newlogo.png)
 
 ## Screenshots
 
@@ -76,6 +76,20 @@ Connect your Stremio account to instantly import your existing addon collection.
 - One-click APK download and installation
 - Changelog display before updating
 
+### Multilingual & Localization
+- Built-in support for Spanish, English, and Portuguese (BR)
+
+### Performance & Fluidity
+- Render optimizations for fluid list scrolling and transition animations on TV hardware
+- High-efficiency caching policy for posters and backdrop images
+- Hardware-accelerated graphics layer operations
+- Dynamic shadow/overlay masks disabled when navigation menus are inactive to prevent screen dimming
+
+### Subtitles
+- Seamless subtitle fetching directly from Stremio subtitle addons
+- Complete support for subtitle source lookups across movies, series, and anime
+
+
 ## Tech Stack
 
 - **Language:** Kotlin
@@ -98,7 +112,7 @@ Connect your Stremio account to instantly import your existing addon collection.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/LumeraD3v/Lumera.git
+   git clone https://github.com/bruno33223/LumeraX.git
    ```
 
 2. Open the project in Android Studio
@@ -111,7 +125,7 @@ Connect your Stremio account to instantly import your existing addon collection.
 ## Project Structure
 
 ```
-Lumera/
+LumeraX/
 ├── app/                    # Main application module
 │   └── src/main/java/com/lumera/app/
 │       ├── data/           # Room database, repositories, API services

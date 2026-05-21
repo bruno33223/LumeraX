@@ -417,10 +417,6 @@ class MainActivity : ComponentActivity() {
                                 // Avoid requesting early into the loading placeholder, which can
                                 // cause a brief nav -> content -> nav -> content flicker.
                                 NavDestination.Home, NavDestination.Movies, NavDestination.Series -> Unit
-                                NavDestination.Discover -> {
-                                    delay(200)
-                                    discoverEntryRequester.requestFocus()
-                                }
                                 NavDestination.Search -> {
                                     delay(200) // Increased for stability
                                     val target = searchFocusTarget
@@ -476,7 +472,6 @@ class MainActivity : ComponentActivity() {
                                         when(destination) {
                                             NavDestination.Home, NavDestination.Movies, NavDestination.Series -> homeEntryRequester.requestFocus()
                                             NavDestination.Search -> searchEntryRequester.requestFocus()
-                                            NavDestination.Discover -> discoverEntryRequester.requestFocus()
                                             NavDestination.Settings -> settingsEntryRequester.requestFocus()
                                             NavDestination.Watchlist -> watchlistEntryRequester.requestFocus()
                                             else -> {}
@@ -493,7 +488,6 @@ class MainActivity : ComponentActivity() {
                                     when(currentNav) {
                                         NavDestination.Home, NavDestination.Movies, NavDestination.Series -> homeEntryRequester.requestFocus()
                                         NavDestination.Search -> searchEntryRequester.requestFocus()
-                                        NavDestination.Discover -> discoverEntryRequester.requestFocus()
                                         NavDestination.Settings -> settingsEntryRequester.requestFocus()
                                         NavDestination.Watchlist -> watchlistEntryRequester.requestFocus()
                                         else -> {}

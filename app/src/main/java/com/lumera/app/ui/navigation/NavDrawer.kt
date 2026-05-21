@@ -55,7 +55,6 @@ enum class NavDestination(
     val iconSize: Dp = 20.dp
 ) {
     Home(R.drawable.home_icon, R.string.nav_home, iconSize = 21.dp),
-    Discover(R.drawable.discover_icon, R.string.nav_discover),
     Movies(R.drawable.movies_icon, R.string.nav_movies),
     Series(R.drawable.series_icon, R.string.nav_series),
     Watchlist(R.drawable.watchlist_icon, R.string.nav_watchlist),
@@ -95,7 +94,6 @@ fun NavDrawer(
 
     val showStaticMask = currentDestination in listOf(
         NavDestination.Home,
-        NavDestination.Discover,
         NavDestination.Movies,
         NavDestination.Series,
         NavDestination.Watchlist
@@ -247,10 +245,6 @@ fun NavDrawer(
 
                 // Middle Items
                 DrawerItem(NavDestination.Home)
-                if (currentProfile?.menuDiscoverEnabled != false) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    DrawerItem(NavDestination.Discover)
-                }
                 if (currentProfile?.menuMoviesEnabled != false) {
                     Spacer(modifier = Modifier.height(4.dp))
                     DrawerItem(NavDestination.Movies)
