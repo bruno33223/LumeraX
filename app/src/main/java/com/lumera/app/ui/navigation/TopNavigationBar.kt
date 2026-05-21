@@ -69,13 +69,24 @@ fun TopNavigationBar(
 ) {
     // 1. Define groups
     // Center: Search + Main Tabs
-    val centerItems = listOf(
-        NavDestination.Search,
-        NavDestination.Home,
-        NavDestination.Movies,
-        NavDestination.Series,
-        NavDestination.Watchlist
-    )
+    val centerItems = remember(currentProfile) {
+        val list = mutableListOf<NavDestination>()
+        list.add(NavDestination.Search)
+        list.add(NavDestination.Home)
+        if (currentProfile?.menuDiscoverEnabled != false) {
+            list.add(NavDestination.Discover)
+        }
+        if (currentProfile?.menuMoviesEnabled != false) {
+            list.add(NavDestination.Movies)
+        }
+        if (currentProfile?.menuSeriesEnabled != false) {
+            list.add(NavDestination.Series)
+        }
+        if (currentProfile?.menuWatchlistEnabled != false) {
+            list.add(NavDestination.Watchlist)
+        }
+        list
+    }
 
     // Left Logic (Settings + Menu)
     val settingsItem = NavDestination.Settings
@@ -103,6 +114,7 @@ fun TopNavigationBar(
     val backgroundColor = MaterialTheme.colorScheme.background
     val showStaticMask = currentDestination in listOf(
         NavDestination.Home,
+        NavDestination.Discover,
         NavDestination.Movies,
         NavDestination.Series
     )

@@ -78,7 +78,7 @@ private val RESULT_POSTER_HEIGHT_TOP_NAV = 150.dp
 
 @Composable
 fun SearchScreen(
-    entryRequester: FocusRequester, // Drawer -> Keyboard
+    entryRequester: FocusRequester, // Drawer -> Keyboard (or filters in discover mode)
     drawerRequester: FocusRequester, // Left -> Drawer
     viewModel: SearchViewModel = hiltViewModel(),
     currentProfile: ProfileEntity?,
@@ -91,7 +91,8 @@ fun SearchScreen(
     lastFocusedId: String? = null,
     onFocusedIdChange: (String?) -> Unit = {},
     onDiscoverClick: (MetaItem) -> Unit = onMovieClick,
-    watchedIds: Set<String> = emptySet()
+    watchedIds: Set<String> = emptySet(),
+    isDiscoverOnly: Boolean = false
 ) {
     val state by viewModel.state.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -121,7 +122,7 @@ fun SearchScreen(
 
     // Continuously maintain focus when system keyboard is active
     LaunchedEffect(keepFocused) {
-        while (keepFocused) {
+        while (keepFocused && !isDiscoverOnly) {
             delay(100)
             searchInputFocusRequester.requestFocus()
         }
@@ -146,7 +147,7 @@ fun SearchScreen(
             horizontalArrangement = Arrangement.spacedBy(40.dp)
         ) {
 
-            // --- LEFT PANE: KEYBOARD ---
+            // --- LEFT PANE: KEYBOARD / FILTERS ---
             Column(
                 modifier = Modifier
                     .width(240.dp)
@@ -154,36 +155,38 @@ fun SearchScreen(
                     .padding(top = 20.dp + topPadding),
                 verticalArrangement = Arrangement.Top
             ) {
-                TvKeyboard(
-                    onKeyPress = { char ->
-                        viewModel.appendCharacter(char)
-                        keepFocused = false
-                    },
-                    onBackspace = {
-                        viewModel.removeCharacter()
-                        keepFocused = false
-                    },
-                    onSpace = {
-                        viewModel.appendCharacter(" ")
-                        keepFocused = false
-                    },
-                    onOpenSystemKeyboard = {
-                        keepFocused = true
-                        searchInputFocusRequester.requestFocus()
-                        try { keyboardController?.show() } catch (_: Exception) { }
-                    },
-                    entryRequester = entryRequester,
-                    drawerRequester = drawerRequester,
-                    isTopNav = isTopNav,
-                    hasResults = state.results.isNotEmpty() || state.discoverItems.isNotEmpty(),
-                    contentEntryRequester = if (state.query.length < 3 && state.discoverItems.isNotEmpty()) {
-                        discoverGridEntryRequester
-                    } else null
-                )
+                if (!isDiscoverOnly) {
+                    TvKeyboard(
+                        onKeyPress = { char ->
+                            viewModel.appendCharacter(char)
+                            keepFocused = false
+                        },
+                        onBackspace = {
+                            viewModel.removeCharacter()
+                            keepFocused = false
+                        },
+                        onSpace = {
+                            viewModel.appendCharacter(" ")
+                            keepFocused = false
+                        },
+                        onOpenSystemKeyboard = {
+                            keepFocused = true
+                            searchInputFocusRequester.requestFocus()
+                            try { keyboardController?.show() } catch (_: Exception) { }
+                        },
+                        entryRequester = entryRequester,
+                        drawerRequester = drawerRequester,
+                        isTopNav = isTopNav,
+                        hasResults = state.results.isNotEmpty() || state.discoverItems.isNotEmpty(),
+                        contentEntryRequester = if (state.query.length < 3 && state.discoverItems.isNotEmpty()) {
+                            discoverGridEntryRequester
+                        } else null
+                    )
+                }
 
                 // DISCOVER FILTERS — greyed out with fade when searching
                 if (state.discoverCatalogs.isNotEmpty()) {
-                    val isDiscoverActive = state.query.length < 3
+                    val isDiscoverActive = isDiscoverOnly || state.query.length < 3
                     val filterAlpha by animateFloatAsState(
                         targetValue = if (isDiscoverActive) 1f else 0.3f,
                         animationSpec = tween(durationMillis = 300),
@@ -221,7 +224,10 @@ fun SearchScreen(
                         FilterDropdown(
                             currentValue = state.selectedType.replaceFirstChar { it.uppercase() },
                             options = state.availableTypes.map { it.replaceFirstChar { c -> c.uppercase() } },
-                            modifier = Modifier.fillMaxWidth().then(filterRightInterceptor),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(if (isDiscoverOnly) Modifier.focusRequester(entryRequester) else Modifier)
+                                .then(filterRightInterceptor),
                             onSelect = { selected ->
                                 viewModel.selectType(selected.lowercase())
                             }
@@ -270,11 +276,11 @@ fun SearchScreen(
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
-                } else if (state.results.isEmpty() && state.query.length >= 3) {
+                } else if (!isDiscoverOnly && state.results.isEmpty() && state.query.length >= 3) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(stringResource(id = com.lumera.app.R.string.search_no_results, state.query), color = Color.White.copy(0.5f))
                     }
-                } else if (state.query.length < 3) {
+                } else if (isDiscoverOnly || state.query.length < 3) {
                     // DISCOVER MODE
                     if (state.discoverCatalogs.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -301,7 +307,7 @@ fun SearchScreen(
                             onFocusedIdChange = onFocusedIdChange,
                             keyboardRequester = entryRequester,
                             gridEntryRequester = discoverGridEntryRequester,
-                            headerHeight = searchBarHeight,
+                            headerHeight = if (isDiscoverOnly) 0.dp else searchBarHeight,
                             initialScrollIndex = viewModel.discoverScrollIndex,
                             initialScrollOffset = viewModel.discoverScrollOffset,
                             onScrollPositionChange = { index, offset ->
@@ -430,115 +436,117 @@ fun SearchScreen(
                 // ══════════════════════════════════════════════════════════════
                 // FIXED SEARCH BAR HEADER - Overlays content with gradient fade
                 // ══════════════════════════════════════════════════════════════
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopStart)
-                        .zIndex(10f)
-                        .layout { measurable, constraints ->
-                            val extraPx = 20.dp.roundToPx()
-                            val placeable = measurable.measure(
-                                constraints.copy(maxWidth = constraints.maxWidth + extraPx * 2)
-                            )
-                            layout(constraints.maxWidth, placeable.height) {
-                                placeable.place(-extraPx, 0)
-                            }
-                        }
-                ) {
-                    // Gradient background
-                    val backgroundColor = MaterialTheme.colorScheme.background
+                if (!isDiscoverOnly) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(searchBarHeight + 32.dp)
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        backgroundColor,
-                                        backgroundColor.copy(alpha = 0.95f),
-                                        backgroundColor.copy(alpha = 0.7f),
-                                        backgroundColor.copy(alpha = 0.3f),
-                                        Color.Transparent
-                                    ),
-                                    startY = 0f,
-                                    endY = with(density) { (searchBarHeight + 32.dp).toPx() }
+                            .align(Alignment.TopStart)
+                            .zIndex(10f)
+                            .layout { measurable, constraints ->
+                                val extraPx = 20.dp.roundToPx()
+                                val placeable = measurable.measure(
+                                    constraints.copy(maxWidth = constraints.maxWidth + extraPx * 2)
                                 )
-                            )
-                    )
-
-                    // Search bar content
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(searchBarHeight)
-                    ) {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        // Suppress automatic IME connection — Android TV may not have
-                        // a system keyboard, which can crash the app. The custom
-                        // on-screen keyboard handles input; the system keyboard is
-                        // only shown explicitly via the keyboard button.
-                        CompositionLocalProvider(LocalTextInputService provides null) {
-                            BasicTextField(
-                                value = state.query,
-                                onValueChange = { viewModel.onQueryChange(it) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusProperties { canFocus = keepFocused }
-                                    .focusRequester(searchInputFocusRequester)
-                                    .onFocusChanged { if (!it.isFocused) keepFocused = false }
-                                    .onPreviewKeyEvent {
-                                        if (it.type == KeyEventType.KeyDown) {
-                                            when (it.key) {
-                                                Key.DirectionLeft -> {
-                                                    entryRequester.requestFocus()
-                                                    true
-                                                }
-                                                Key.DirectionUp -> {
-                                                    if (isTopNav) {
-                                                        drawerRequester.requestFocus()
-                                                    }
-                                                    true
-                                                }
-                                                else -> false
-                                            }
-                                        } else false
-                                    },
-                                textStyle = MaterialTheme.typography.headlineMedium.copy(
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Normal
-                                ),
-                                cursorBrush = SolidColor(Color.White),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                keyboardActions = KeyboardActions(
-                                    onSearch = {
-                                        keepFocused = false
-                                        keyboardController?.hide()
-                                    }
-                                ),
-                                decorationBox = { innerTextField ->
-                                    Box(contentAlignment = Alignment.CenterStart) {
-                                        if (state.query.isEmpty()) {
-                                            Text(
-                                                text = stringResource(id = com.lumera.app.R.string.search_placeholder),
-                                                style = MaterialTheme.typography.headlineMedium.copy(
-                                                    fontSize = 20.sp,
-                                                    fontWeight = FontWeight.Normal
-                                                ),
-                                                color = Color.White.copy(alpha = 0.5f)
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
+                                layout(constraints.maxWidth, placeable.height) {
+                                    placeable.place(-extraPx, 0)
                                 }
+                            }
+                    ) {
+                        // Gradient background
+                        val backgroundColor = MaterialTheme.colorScheme.background
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(searchBarHeight + 32.dp)
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            backgroundColor,
+                                            backgroundColor.copy(alpha = 0.95f),
+                                            backgroundColor.copy(alpha = 0.7f),
+                                            backgroundColor.copy(alpha = 0.3f),
+                                            Color.Transparent
+                                        ),
+                                        startY = 0f,
+                                        endY = with(density) { (searchBarHeight + 32.dp).toPx() }
+                                    )
+                                )
+                        )
+
+                        // Search bar content
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(searchBarHeight)
+                        ) {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
                             )
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            // Suppress automatic IME connection — Android TV may not have
+                            // a system keyboard, which can crash the app. The custom
+                            // on-screen keyboard handles input; the system keyboard is
+                            // only shown explicitly via the keyboard button.
+                            CompositionLocalProvider(LocalTextInputService provides null) {
+                                BasicTextField(
+                                    value = state.query,
+                                    onValueChange = { viewModel.onQueryChange(it) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .focusProperties { canFocus = keepFocused }
+                                        .focusRequester(searchInputFocusRequester)
+                                        .onFocusChanged { if (!it.isFocused) keepFocused = false }
+                                        .onPreviewKeyEvent {
+                                            if (it.type == KeyEventType.KeyDown) {
+                                                when (it.key) {
+                                                    Key.DirectionLeft -> {
+                                                        entryRequester.requestFocus()
+                                                        true
+                                                    }
+                                                    Key.DirectionUp -> {
+                                                        if (isTopNav) {
+                                                            drawerRequester.requestFocus()
+                                                        }
+                                                        true
+                                                    }
+                                                    else -> false
+                                                }
+                                            } else false
+                                        },
+                                    textStyle = MaterialTheme.typography.headlineMedium.copy(
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Normal
+                                    ),
+                                    cursorBrush = SolidColor(Color.White),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                    keyboardActions = KeyboardActions(
+                                        onSearch = {
+                                            keepFocused = false
+                                            keyboardController?.hide()
+                                        }
+                                    ),
+                                    decorationBox = { innerTextField ->
+                                        Box(contentAlignment = Alignment.CenterStart) {
+                                            if (state.query.isEmpty()) {
+                                                Text(
+                                                    text = stringResource(id = com.lumera.app.R.string.search_placeholder),
+                                                    style = MaterialTheme.typography.headlineMedium.copy(
+                                                        fontSize = 20.sp,
+                                                        fontWeight = FontWeight.Normal
+                                                    ),
+                                                    color = Color.White.copy(alpha = 0.5f)
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }

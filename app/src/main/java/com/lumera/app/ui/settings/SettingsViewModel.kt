@@ -244,4 +244,32 @@ class SettingsViewModel @Inject constructor(
             if (profile != null) dao.insertProfile(profile.copy(appLanguage = language))
         }
     }
+
+    fun updateMenuDiscoverEnabled(profileId: Int, enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+            val profile = dao.getProfileById(profileId)
+            if (profile != null) dao.insertProfile(profile.copy(menuDiscoverEnabled = enabled))
+        }
+    }
+
+    fun updateMenuWatchlistEnabled(profileId: Int, enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+            val profile = dao.getProfileById(profileId)
+            if (profile != null) dao.insertProfile(profile.copy(menuWatchlistEnabled = enabled))
+        }
+    }
+
+    fun updateMenuMoviesEnabled(profileId: Int, enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+            val profile = dao.getProfileById(profileId)
+            if (profile != null) dao.insertProfile(profile.copy(menuMoviesEnabled = enabled))
+        }
+    }
+
+    fun updateMenuSeriesEnabled(profileId: Int, enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+            val profile = dao.getProfileById(profileId)
+            if (profile != null) dao.insertProfile(profile.copy(menuSeriesEnabled = enabled))
+        }
+    }
 }

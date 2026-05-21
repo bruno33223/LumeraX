@@ -308,5 +308,11 @@
     <string name="settings_remaining">%1$ds remaining</string>
     <string name="settings_trigger_at">Trigger at %1$d%%</string>
     <string name="option_home">Home</string>
-
+    <string name="nav_discover">Discover</string>
+    <string name="settings_menu_buttons">Menu Buttons</string>
+    <string name="menu_discover">Discover Button</string>
+    <string name="menu_watchlist">Watchlist Button</string>
+    <string name="menu_movies">Movies Button</string>
+    <string name="menu_series">Series Button</string>
+    <string name="details_sync_tmdb_instruction">Go to settings and sync TMDB to view more information (actors, recommendations, etc.)</string>
 </resources>

@@ -308,5 +308,11 @@
     <string name="settings_remaining">quedan %1$ds</string>
     <string name="settings_trigger_at">Disparar al %1$d%%</string>
     <string name="option_home">Inicio</string>
-
+    <string name="nav_discover">Descubrir</string>
+    <string name="settings_menu_buttons">Botones del Menú</string>
+    <string name="menu_discover">Botón Descubrir</string>
+    <string name="menu_watchlist">Botón Lista de seguimiento</string>
+    <string name="menu_movies">Botón Películas</string>
+    <string name="menu_series">Botón Series</string>
+    <string name="details_sync_tmdb_instruction">Vaya a configuración y sincronice TMDB para ver más información (actores, recomendaciones, etc.)</string>
 </resources>

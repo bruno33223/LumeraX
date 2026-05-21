@@ -55,6 +55,7 @@ enum class NavDestination(
     val iconSize: Dp = 20.dp
 ) {
     Home(R.drawable.home_icon, R.string.nav_home, iconSize = 21.dp),
+    Discover(R.drawable.discover_icon, R.string.nav_discover),
     Movies(R.drawable.movies_icon, R.string.nav_movies),
     Series(R.drawable.series_icon, R.string.nav_series),
     Watchlist(R.drawable.watchlist_icon, R.string.nav_watchlist),
@@ -95,6 +96,7 @@ fun NavDrawer(
 
     val showStaticMask = currentDestination in listOf(
         NavDestination.Home,
+        NavDestination.Discover,
         NavDestination.Movies,
         NavDestination.Series,
         NavDestination.Watchlist
@@ -114,52 +116,50 @@ fun NavDrawer(
                 modifier = Modifier
                     .width(400.dp)
                     .fillMaxHeight()
-                    .zIndex(1f)
+                    .zIndex(1.1f)
                     .background(
                         Brush.horizontalGradient(
                             colorStops = arrayOf(
-                                0.0f to backgroundColor.copy(alpha = 0.8f),
-                                0.12f to backgroundColor.copy(alpha = 0.72f),
-                                0.25f to backgroundColor.copy(alpha = 0.62f),
-                                0.38f to backgroundColor.copy(alpha = 0.50f),
-                                0.50f to backgroundColor.copy(alpha = 0.38f),
-                                0.65f to backgroundColor.copy(alpha = 0.24f),
-                                0.78f to backgroundColor.copy(alpha = 0.13f),
-                                0.90f to backgroundColor.copy(alpha = 0.05f),
+                                0.0f to backgroundColor.copy(alpha = 0.95f),
+                                0.15f to backgroundColor.copy(alpha = 0.90f),
+                                0.30f to backgroundColor.copy(alpha = 0.80f),
+                                0.45f to backgroundColor.copy(alpha = 0.65f),
+                                0.60f to backgroundColor.copy(alpha = 0.45f),
+                                0.75f to backgroundColor.copy(alpha = 0.25f),
+                                0.90f to backgroundColor.copy(alpha = 0.08f),
                                 1.0f to Color.Transparent
                             ),
                             startX = 0f,
-                            endX = 350f
+                            endY = 0f
                         )
                     )
             )
         }
 
-        // LAYER 3: Dynamic Expansion Shadow
+        // LAYER 3: Interactive Drawer Background (solid on focus/expand)
         androidx.compose.animation.AnimatedVisibility(
             visible = isMenuFocused,
             enter = androidx.compose.animation.fadeIn(animationSpec = tween(300)),
             exit = androidx.compose.animation.fadeOut(animationSpec = tween(300)),
-            modifier = Modifier.zIndex(1.5f).fillMaxSize()
+            modifier = Modifier.zIndex(1.5f)
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .width(width)
+                    .fillMaxHeight()
                     .background(
                         Brush.horizontalGradient(
                             colorStops = arrayOf(
-                                0.0f to backgroundColor.copy(alpha = 0.95f),
-                                0.12f to backgroundColor.copy(alpha = 0.90f),
-                                0.25f to backgroundColor.copy(alpha = 0.82f),
-                                0.38f to backgroundColor.copy(alpha = 0.70f),
-                                0.50f to backgroundColor.copy(alpha = 0.55f),
-                                0.65f to backgroundColor.copy(alpha = 0.38f),
-                                0.78f to backgroundColor.copy(alpha = 0.20f),
-                                0.90f to backgroundColor.copy(alpha = 0.08f),
+                                0.0f to backgroundColor.copy(alpha = 0.98f),
+                                0.2f to backgroundColor.copy(alpha = 0.96f),
+                                0.4f to backgroundColor.copy(alpha = 0.92f),
+                                0.6f to backgroundColor.copy(alpha = 0.85f),
+                                0.8f to backgroundColor.copy(alpha = 0.70f),
+                                0.9f to backgroundColor.copy(alpha = 0.40f),
                                 1.0f to Color.Transparent
                             ),
                             startX = 0f,
-                            endX = 900f
+                            endY = 0f
                         )
                     )
             )
@@ -250,12 +250,22 @@ fun NavDrawer(
 
                 // Middle Items
                 DrawerItem(NavDestination.Home)
-                Spacer(modifier = Modifier.height(4.dp))
-                DrawerItem(NavDestination.Movies)
-                Spacer(modifier = Modifier.height(4.dp))
-                DrawerItem(NavDestination.Series)
-                Spacer(modifier = Modifier.height(4.dp))
-                DrawerItem(NavDestination.Watchlist)
+                if (currentProfile?.menuDiscoverEnabled != false) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    DrawerItem(NavDestination.Discover)
+                }
+                if (currentProfile?.menuMoviesEnabled != false) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    DrawerItem(NavDestination.Movies)
+                }
+                if (currentProfile?.menuSeriesEnabled != false) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    DrawerItem(NavDestination.Series)
+                }
+                if (currentProfile?.menuWatchlistEnabled != false) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    DrawerItem(NavDestination.Watchlist)
+                }
 
                 Spacer(modifier = Modifier.weight(1f))
 

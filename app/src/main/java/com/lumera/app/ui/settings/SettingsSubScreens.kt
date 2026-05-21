@@ -240,6 +240,46 @@ fun PersonalizationSettings(
                 blockUp = false
             )
         }
+
+        Spacer(Modifier.height(15.dp))
+        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(0.1f)))
+        Spacer(Modifier.height(15.dp))
+
+        // MENU CONFIGURATION
+        Text(
+            stringResource(R.string.settings_menu_buttons),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 18.sp),
+            color = Color.White,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        SettingToggleRow(
+            label = stringResource(R.string.menu_discover),
+            isChecked = currentProfile.menuDiscoverEnabled,
+            onCheckedChange = { viewModel.updateMenuDiscoverEnabled(currentProfile.id, it) },
+            onBack = onGoBack
+        )
+
+        SettingToggleRow(
+            label = stringResource(R.string.menu_watchlist),
+            isChecked = currentProfile.menuWatchlistEnabled,
+            onCheckedChange = { viewModel.updateMenuWatchlistEnabled(currentProfile.id, it) },
+            onBack = onGoBack
+        )
+
+        SettingToggleRow(
+            label = stringResource(R.string.menu_movies),
+            isChecked = currentProfile.menuMoviesEnabled,
+            onCheckedChange = { viewModel.updateMenuMoviesEnabled(currentProfile.id, it) },
+            onBack = onGoBack
+        )
+
+        SettingToggleRow(
+            label = stringResource(R.string.menu_series),
+            isChecked = currentProfile.menuSeriesEnabled,
+            onCheckedChange = { viewModel.updateMenuSeriesEnabled(currentProfile.id, it) },
+            onBack = onGoBack
+        )
     }
 }
 

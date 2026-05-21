@@ -25,7 +25,7 @@ import com.lumera.app.data.model.WatchlistEntity
         WatchlistEntity::class,
         SeriesNextUpEntity::class
     ],
-    version = 43
+    version = 44
 )
 abstract class LumeraDatabase : RoomDatabase() {
     abstract fun addonDao(): AddonDao

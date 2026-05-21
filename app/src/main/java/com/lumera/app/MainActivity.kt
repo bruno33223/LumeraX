@@ -405,6 +405,7 @@ class MainActivity : ComponentActivity() {
                         val drawerRequesters = remember { NavDestination.values().associateWith { FocusRequester() } }
                         val homeEntryRequester = remember { FocusRequester() }
                         val searchEntryRequester = remember { FocusRequester() }
+                        val discoverEntryRequester = remember { FocusRequester() }
                         val settingsEntryRequester = remember { FocusRequester() }
                         val watchlistEntryRequester = remember { FocusRequester() }
 
@@ -416,6 +417,10 @@ class MainActivity : ComponentActivity() {
                                 // Avoid requesting early into the loading placeholder, which can
                                 // cause a brief nav -> content -> nav -> content flicker.
                                 NavDestination.Home, NavDestination.Movies, NavDestination.Series -> Unit
+                                NavDestination.Discover -> {
+                                    delay(200)
+                                    discoverEntryRequester.requestFocus()
+                                }
                                 NavDestination.Search -> {
                                     delay(200) // Increased for stability
                                     val target = searchFocusTarget
@@ -473,6 +478,7 @@ class MainActivity : ComponentActivity() {
                                         when(destination) {
                                             NavDestination.Home, NavDestination.Movies, NavDestination.Series -> homeEntryRequester.requestFocus()
                                             NavDestination.Search -> searchEntryRequester.requestFocus()
+                                            NavDestination.Discover -> discoverEntryRequester.requestFocus()
                                             NavDestination.Settings -> settingsEntryRequester.requestFocus()
                                             NavDestination.Watchlist -> watchlistEntryRequester.requestFocus()
                                             else -> {}
@@ -489,6 +495,7 @@ class MainActivity : ComponentActivity() {
                                     when(currentNav) {
                                         NavDestination.Home, NavDestination.Movies, NavDestination.Series -> homeEntryRequester.requestFocus()
                                         NavDestination.Search -> searchEntryRequester.requestFocus()
+                                        NavDestination.Discover -> discoverEntryRequester.requestFocus()
                                         NavDestination.Settings -> settingsEntryRequester.requestFocus()
                                         NavDestination.Watchlist -> watchlistEntryRequester.requestFocus()
                                         else -> {}
@@ -531,6 +538,7 @@ class MainActivity : ComponentActivity() {
                                                 currentProfile = currentProfile,
                                                 homeEntryRequester = homeEntryRequester,
                                                 searchEntryRequester = searchEntryRequester,
+                                                discoverEntryRequester = discoverEntryRequester,
                                                 watchlistEntryRequester = watchlistEntryRequester,
                                                 settingsEntryRequester = settingsEntryRequester,
                                                 drawerRequesters = drawerRequesters,
@@ -603,6 +611,7 @@ class MainActivity : ComponentActivity() {
                                         onClose = handleEnterContent,
                                         content = {
                                             com.lumera.app.ui.navigation.MainDashboardContent(
+                                                discoverEntryRequester = discoverEntryRequester,
                                                 currentNav = currentNav,
                                                 currentProfile = currentProfile,
                                                 homeEntryRequester = homeEntryRequester,

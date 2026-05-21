@@ -71,5 +71,10 @@ data class ProfileEntity(
 
     // TMDB integration
     val tmdbEnabled: Boolean = false,
-    val tmdbLanguage: String = ""                    // ISO-639-1, empty = device locale
+    val tmdbLanguage: String = "",                    // ISO-639-1, empty = device locale
+
+    val menuDiscoverEnabled: Boolean = true,
+    val menuWatchlistEnabled: Boolean = true,
+    val menuMoviesEnabled: Boolean = true,
+    val menuSeriesEnabled: Boolean = true
 )
