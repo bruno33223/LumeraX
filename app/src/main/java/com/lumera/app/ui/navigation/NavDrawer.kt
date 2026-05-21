@@ -129,8 +129,7 @@ fun NavDrawer(
                                 0.90f to backgroundColor.copy(alpha = 0.08f),
                                 1.0f to Color.Transparent
                             ),
-                            startX = 0f,
-                            endY = 0f
+                            startX = 0f
                         )
                     )
             )
@@ -158,8 +157,7 @@ fun NavDrawer(
                                 0.9f to backgroundColor.copy(alpha = 0.40f),
                                 1.0f to Color.Transparent
                             ),
-                            startX = 0f,
-                            endY = 0f
+                            startX = 0f
                         )
                     )
             )
