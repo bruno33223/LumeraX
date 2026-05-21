@@ -471,9 +471,7 @@ class MainActivity : ComponentActivity() {
                                 // Shared content composable
                                 // Shared navigation handler
                                 val handleNavigate: (NavDestination) -> Unit = { destination ->
-                                    if (destination == NavDestination.Exit) {
-                                        showExitConfirmation = true
-                                    } else if (currentNav == destination) {
+                                    if (currentNav == destination) {
                                         // Already here - just focus content
                                         when(destination) {
                                             NavDestination.Home, NavDestination.Movies, NavDestination.Series -> homeEntryRequester.requestFocus()

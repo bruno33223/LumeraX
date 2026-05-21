@@ -97,6 +97,7 @@ class AddonRepository @Inject constructor(
         val catalogId: String,
         val catalogName: String = "",
         val genres: List<String> = emptyList(),
+        val genreKey: String? = null,
         val supportsSkip: Boolean = false
     )
 
@@ -118,9 +119,9 @@ class AddonRepository @Inject constructor(
                 val hasRequiredSearch = catalog.extra?.any { it.name == "search" && it.isRequired } ?: false
                 if (hasRequiredSearch) continue
 
-                val genres = catalog.extra
-                    ?.firstOrNull { it.name == "genre" }
-                    ?.options ?: emptyList()
+                val genreExtra = catalog.extra?.firstOrNull { !it.options.isNullOrEmpty() && it.name != "search" && it.name != "skip" }
+                val genres = genreExtra?.options ?: emptyList()
+                val genreKey = genreExtra?.name
 
                 val supportsSkip = catalog.extra?.any { it.name == "skip" } ?: false
 
@@ -131,6 +132,7 @@ class AddonRepository @Inject constructor(
                     catalogId = catalog.id,
                     catalogName = catalog.name,
                     genres = genres,
+                    genreKey = genreKey,
                     supportsSkip = supportsSkip
                 ))
             }
@@ -142,12 +144,14 @@ class AddonRepository @Inject constructor(
         transportUrl: String,
         type: String,
         catalogId: String,
+        genreKey: String? = null,
         genre: String? = null,
         skip: Int = 0
     ): List<MetaItem> = withContext(Dispatchers.IO) {
         // Build extras as a single path segment joined by '&', matching Stremio protocol
         val extras = mutableListOf<String>()
-        if (!genre.isNullOrEmpty()) extras.add("genre=${java.net.URLEncoder.encode(genre, "UTF-8")}")
+        val key = genreKey ?: "genre"
+        if (!genre.isNullOrEmpty()) extras.add("$key=${java.net.URLEncoder.encode(genre, "UTF-8")}")
         if (skip > 0) extras.add("skip=$skip")
 
         val url = if (extras.isEmpty()) {

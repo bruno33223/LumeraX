@@ -91,7 +91,6 @@ fun TopNavigationBar(
     // Left Logic (Settings + Menu)
     val settingsItem = NavDestination.Settings
     val profileItem = NavDestination.Profile
-    val exitItem = NavDestination.Exit
 
     // Focus Tracking - track separately for each section
     var isSettingsAreaFocused by remember { mutableStateOf(false) }
@@ -107,9 +106,8 @@ fun TopNavigationBar(
     // Dropdown State
     var isSettingsFocused by remember { mutableStateOf(false) }
     var isProfileFocused by remember { mutableStateOf(false) }
-    var isExitFocused by remember { mutableStateOf(false) }
     // Menu is open if Settings or any menu item is focused
-    val showSettingsMenu = isSettingsFocused || isProfileFocused || isExitFocused
+    val showSettingsMenu = isSettingsFocused || isProfileFocused
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val showStaticMask = currentDestination in listOf(
@@ -127,7 +125,7 @@ fun TopNavigationBar(
         }
 
         // LAYER 2: Static Top Gradient (Hero Mask)
-        if (showStaticMask) {
+        if (showStaticMask && isTopNavActive) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -318,7 +316,7 @@ fun TopNavigationBar(
                                          true
                                      }
                                      Key.DirectionDown -> {
-                                         topNavRequesters[exitItem]?.requestFocus()
+                                         onEnterContent()
                                          true
                                      }
                                      Key.DirectionRight -> {
@@ -328,42 +326,6 @@ fun TopNavigationBar(
                                               topNavRequesters[NavDestination.Search]?.requestFocus()
                                           }
                                          true
-                                     }
-                                     else -> false
-                                 }
-                             } else false
-                        }
-                )
-
-                Spacer(Modifier.height(4.dp))
-
-                // EXIT
-                TopNavItem(
-                    destination = exitItem,
-                    isSelected = false,
-                    isTopNavActive = true,
-                    onNavigate = onExit,
-                    modifier = Modifier
-                        .focusRequester(topNavRequesters[exitItem]!!)
-                        .onFocusChanged { isExitFocused = it.isFocused }
-                        .onPreviewKeyEvent { event ->
-                             if (event.type == KeyEventType.KeyDown) {
-                                 when(event.key) {
-                                     Key.DirectionUp -> {
-                                         topNavRequesters[settingsItem]?.requestFocus()
-                                         true
-                                     }
-                                     Key.DirectionDown -> {
-                                         onEnterContent()
-                                         true
-                                     }
-                                      Key.DirectionRight -> {
-                                           if (currentDestination == settingsItem) {
-                                               onEnterContent()
-                                           } else {
-                                               topNavRequesters[NavDestination.Search]?.requestFocus()
-                                           }
-                                          true
                                      }
                                      else -> false
                                  }

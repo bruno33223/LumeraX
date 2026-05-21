@@ -41,6 +41,9 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.size.Scale
 import com.lumera.app.ui.theme.LocalRoundCorners
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 
 /**
  * ============================================================================
@@ -179,6 +182,41 @@ fun LumeraCard(
                         )
                     }
                 }
+
+                // Bottom gradient scrim for text readability
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.45f)
+                        .align(Alignment.BottomStart)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.5f),
+                                    Color.Black.copy(alpha = 0.9f)
+                                )
+                            )
+                        )
+                )
+
+                // Title text
+                Text(
+                    text = title,
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(
+                            start = 8.dp,
+                            end = 8.dp,
+                            bottom = if (progress > 0f) 12.dp else 8.dp
+                        )
+                )
 
                 // Progress bar overlay for Continue Watching items
                 if (progress > 0f) {

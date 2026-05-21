@@ -61,8 +61,7 @@ enum class NavDestination(
     Watchlist(R.drawable.watchlist_icon, R.string.nav_watchlist),
     Search(R.drawable.search_icon, R.string.nav_search),
     Profile(R.drawable.profile_icon, R.string.nav_profile, iconSize = 18.dp),
-    Settings(R.drawable.settings_icon, R.string.nav_settings),
-    Exit(R.drawable.exit_icon, R.string.nav_exit, iconSize = 21.dp)
+    Settings(R.drawable.settings_icon, R.string.nav_settings)
 }
 
 @Composable
@@ -111,7 +110,7 @@ fun NavDrawer(
 
         // LAYER 2: Static Hero Mask
         val backgroundColor = MaterialTheme.colorScheme.background
-        if (showStaticMask) {
+        if (showStaticMask && isMenuFocused) {
             Box(
                 modifier = Modifier
                     .width(400.dp)
@@ -275,13 +274,6 @@ fun NavDrawer(
                     // Settings (Invisible when collapsed)
                     Box(modifier = Modifier.graphicsLayer { alpha = extraItemsAlpha }) {
                         DrawerItem(NavDestination.Settings)
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // Exit (Invisible when collapsed)
-                    Box(modifier = Modifier.graphicsLayer { alpha = extraItemsAlpha }) {
-                        DrawerItem(NavDestination.Exit)
                     }
                 }
             }

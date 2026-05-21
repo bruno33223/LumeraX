@@ -212,7 +212,7 @@ fun SearchScreen(
                             .focusProperties { canFocus = isDiscoverActive }
                     ) {
                         Text(
-                            text = stringResource(id = com.lumera.app.R.string.search_trending),
+                            text = stringResource(id = if (isDiscoverOnly) com.lumera.app.R.string.nav_discover else com.lumera.app.R.string.search_trending),
                             style = TvMaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),

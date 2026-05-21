@@ -146,6 +146,5 @@ fun MainDashboardContent(
                 onContentFocusChanged = onSettingsContentFocusChanged
             )
         }
-        NavDestination.Exit -> { /* App closes */ }
     }
 }

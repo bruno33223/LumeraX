@@ -198,6 +198,7 @@ class SearchViewModel @Inject constructor(
                     transportUrl = catalog.transportUrl,
                     type = catalog.type,
                     catalogId = catalog.catalogId,
+                    genreKey = catalog.genreKey,
                     genre = _state.value.selectedGenre,
                     skip = 0
                 )
@@ -262,6 +263,7 @@ class SearchViewModel @Inject constructor(
                     transportUrl = catalog.transportUrl,
                     type = catalog.type,
                     catalogId = catalog.catalogId,
+                    genreKey = catalog.genreKey,
                     genre = _state.value.selectedGenre,
                     skip = totalFetched
                 )
