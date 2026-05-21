@@ -123,6 +123,21 @@ import com.lumera.app.data.tmdb.TmdbCastInfo
 import com.lumera.app.data.tmdb.TmdbCompanyInfo
 import com.lumera.app.data.tmdb.TmdbMetaPreview
 import com.lumera.app.data.tmdb.TmdbVideoInfo
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import androidx.palette.graphics.Palette
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+import androidx.media3.ui.AspectRatioFrameLayout
+
 
 @Composable
 fun DetailsScreen(
@@ -197,15 +212,116 @@ fun DetailsScreen(
         viewModel.consumeAutoPlayStream()
     }
 
+    var playActionState by remember { mutableStateOf<PlayActionState?>(null) }
+
+    // Dynamic BG Palette
+    var dynamicBgColor by remember(movie?.poster) { mutableStateOf(bg) }
+    LaunchedEffect(movie?.poster) {
+        val posterUrl = movie?.poster
+        if (posterUrl.isNullOrEmpty()) {
+            dynamicBgColor = bg
+            return@LaunchedEffect
+        }
+        val request = ImageRequest.Builder(context)
+            .data(posterUrl)
+            .allowHardware(false)
+            .build()
+        val imageLoader = ImageLoader(context)
+        val result = imageLoader.execute(request)
+        if (result is SuccessResult) {
+            val drawable = result.drawable
+            if (drawable is BitmapDrawable) {
+                val bitmap = drawable.bitmap
+                val palette = withContext(Dispatchers.Default) {
+                    Palette.from(bitmap).generate()
+                }
+                val extractedColor = palette.getDarkVibrantColor(
+                    palette.getDarkMutedColor(
+                        palette.getDominantColor(0)
+                    )
+                )
+                if (extractedColor != 0) {
+                    val colorObj = Color(extractedColor)
+                    dynamicBgColor = Color(
+                        red = colorObj.red * 0.15f + bg.red * 0.85f,
+                        green = colorObj.green * 0.15f + bg.green * 0.85f,
+                        blue = colorObj.blue * 0.15f + bg.blue * 0.85f,
+                        alpha = 1f
+                    )
+                } else {
+                    dynamicBgColor = bg
+                }
+            }
+        } else {
+            dynamicBgColor = bg
+        }
+    }
+
+    // Background Trailer Player
+    val trailer = state.tmdbTrailer
+    var trailerUrl by remember { mutableStateOf<String?>(null) }
+    var isTrailerPlaying by remember { mutableStateOf(false) }
+    var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
+
+    LaunchedEffect(trailer) {
+        trailerUrl = null
+        isTrailerPlaying = false
+        if (trailer == null) return@LaunchedEffect
+        
+        delay(2000) // 2-second delay of inactivity
+        val source = withContext(Dispatchers.IO) {
+            com.lumera.app.data.trailer.YouTubeExtractor().extractPlaybackSource(trailer.key)
+        }
+        if (source != null) {
+            trailerUrl = source.videoUrl
+        }
+    }
+
+    var isLifecycleResumed by remember { mutableStateOf(true) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.refreshResumeState()
+                isLifecycleResumed = true
+            } else if (event == Lifecycle.Event.ON_PAUSE) {
+                isLifecycleResumed = false
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val isAnyOverlayActive = state.isLoadingStreams || isTrailerLoading || sidebarState !is SidebarState.Closed || showClearProgressDialog || playActionState != null
+    val shouldPlayTrailer = !trailerUrl.isNullOrEmpty() && isLifecycleResumed && !isAnyOverlayActive
+
+    LaunchedEffect(shouldPlayTrailer, trailerUrl) {
+        if (shouldPlayTrailer && !trailerUrl.isNullOrEmpty()) {
+            val player = ExoPlayer.Builder(context).build().apply {
+                setMediaItem(MediaItem.fromUri(trailerUrl!!))
+                volume = 0f
+                repeatMode = Player.REPEAT_MODE_ONE
+                playWhenReady = true
+                prepare()
+            }
+            exoPlayer = player
+            player.addListener(object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    isTrailerPlaying = isPlaying
+                }
+            })
+        } else {
+            isTrailerPlaying = false
+            exoPlayer?.release()
+            exoPlayer = null
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer?.release()
+            exoPlayer = null
         }
     }
 
@@ -288,7 +404,7 @@ fun DetailsScreen(
         label = "content_reveal"
     )
 
-    Box(modifier = Modifier.fillMaxSize().background(bg)) {
+    Box(modifier = Modifier.fillMaxSize().background(dynamicBgColor)) {
         // Loading sweep — solid bg with subtle light sweep while data loads
         if (!contentReady) {
             com.lumera.app.ui.components.DetailsLoadingSweep()
@@ -304,20 +420,44 @@ fun DetailsScreen(
                 modifier = Modifier.fillMaxSize().alpha(0.6f)
             )
 
+            // Background Trailer Player
+            if (exoPlayer != null) {
+                val alphaAnim by animateFloatAsState(
+                    targetValue = if (isTrailerPlaying) 0.6f else 0f,
+                    animationSpec = tween(1000),
+                    label = "trailer_fade"
+                )
+                AndroidView(
+                    factory = { ctx ->
+                        PlayerView(ctx).apply {
+                            useController = false
+                            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                            player = exoPlayer
+                        }
+                    },
+                    update = { view ->
+                        view.player = exoPlayer
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .alpha(alphaAnim)
+                )
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.horizontalGradient(
                             colorStops = arrayOf(
-                                0.0f to bg,
-                                0.1f to bg.copy(alpha = 0.95f),
-                                0.2f to bg.copy(alpha = 0.85f),
-                                0.3f to bg.copy(alpha = 0.72f),
-                                0.4f to bg.copy(alpha = 0.58f),
-                                0.55f to bg.copy(alpha = 0.38f),
-                                0.7f to bg.copy(alpha = 0.20f),
-                                0.85f to bg.copy(alpha = 0.08f),
+                                0.0f to dynamicBgColor,
+                                0.1f to dynamicBgColor.copy(alpha = 0.95f),
+                                0.2f to dynamicBgColor.copy(alpha = 0.85f),
+                                0.3f to dynamicBgColor.copy(alpha = 0.72f),
+                                0.4f to dynamicBgColor.copy(alpha = 0.58f),
+                                0.55f to dynamicBgColor.copy(alpha = 0.38f),
+                                0.7f to dynamicBgColor.copy(alpha = 0.20f),
+                                0.85f to dynamicBgColor.copy(alpha = 0.08f),
                                 1.0f to Color.Transparent
                             ),
                             startX = 0f,
@@ -535,7 +675,18 @@ fun DetailsScreen(
                                 pendingPlaybackId = trackId
                                 pendingPlaybackType = type
                                 pendingPlaybackTitle = epTitle
-                                viewModel.loadStreams(type, epStreamId, epTitle, sourceSelectionId = trackId, autoSelectSource = autoSelectSource, rememberSourceSelection = rememberSourceSelection)
+                                if (autoSelectSource) {
+                                    playActionState = PlayActionState(
+                                        type = type,
+                                        streamId = epStreamId,
+                                        title = epTitle,
+                                        sourceSelectionId = trackId,
+                                        autoSelectSource = true,
+                                        rememberSourceSelection = rememberSourceSelection
+                                    )
+                                } else {
+                                    viewModel.loadStreams(type, epStreamId, epTitle, sourceSelectionId = trackId, autoSelectSource = autoSelectSource, rememberSourceSelection = rememberSourceSelection)
+                                }
                             }
                         )
 
@@ -588,7 +739,18 @@ fun DetailsScreen(
                                 pendingPlaybackId = streamId
                                 pendingPlaybackType = type
                                 pendingPlaybackTitle = currentMovie.name
-                                viewModel.loadStreams(type, streamId, currentMovie.name, autoSelectSource = autoSelectSource, rememberSourceSelection = rememberSourceSelection)
+                                if (autoSelectSource) {
+                                    playActionState = PlayActionState(
+                                        type = type,
+                                        streamId = streamId,
+                                        title = currentMovie.name,
+                                        sourceSelectionId = streamId,
+                                        autoSelectSource = true,
+                                        rememberSourceSelection = rememberSourceSelection
+                                    )
+                                } else {
+                                    viewModel.loadStreams(type, streamId, currentMovie.name, autoSelectSource = autoSelectSource, rememberSourceSelection = rememberSourceSelection)
+                                }
                             }
                         )
 
@@ -918,6 +1080,78 @@ fun DetailsScreen(
                             LaunchedEffect(Unit) {
                                 kotlinx.coroutines.delay(200)
                                 runCatching { cancelFocusRequester.requestFocus() }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Play Options Dialog
+        val currentPlayState = playActionState
+        if (currentPlayState != null) {
+            androidx.compose.ui.window.Dialog(
+                onDismissRequest = { playActionState = null },
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = 400.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(bg)
+                            .border(1.dp, Color.White.copy(0.1f), RoundedCornerShape(16.dp))
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            stringResource(id = R.string.details_play_options_title),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = textColor
+                        )
+                        Spacer(Modifier.height(20.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+                        ) {
+                            val startFocusRequester = remember { FocusRequester() }
+
+                            DialogButton(
+                                text = stringResource(id = R.string.details_play_options_start),
+                                modifier = Modifier.width(150.dp).focusRequester(startFocusRequester),
+                                onClick = {
+                                    playActionState = null
+                                    viewModel.loadStreams(
+                                        type = currentPlayState.type,
+                                        id = currentPlayState.streamId,
+                                        displayTitle = currentPlayState.title,
+                                        sourceSelectionId = currentPlayState.sourceSelectionId ?: currentPlayState.streamId,
+                                        forceSourcePicker = false,
+                                        autoSelectSource = true,
+                                        rememberSourceSelection = currentPlayState.rememberSourceSelection
+                                    )
+                                }
+                            )
+                            DialogButton(
+                                text = stringResource(id = R.string.details_play_options_choose_source),
+                                modifier = Modifier.width(150.dp),
+                                onClick = {
+                                    playActionState = null
+                                    viewModel.loadStreams(
+                                        type = currentPlayState.type,
+                                        id = currentPlayState.streamId,
+                                        displayTitle = currentPlayState.title,
+                                        sourceSelectionId = currentPlayState.sourceSelectionId ?: currentPlayState.streamId,
+                                        forceSourcePicker = true,
+                                        autoSelectSource = currentPlayState.autoSelectSource,
+                                        rememberSourceSelection = currentPlayState.rememberSourceSelection
+                                    )
+                                }
+                            )
+
+                            LaunchedEffect(Unit) {
+                                kotlinx.coroutines.delay(200)
+                                runCatching { startFocusRequester.requestFocus() }
                             }
                         }
                     }
@@ -1516,3 +1750,12 @@ private fun resolvePlayableUrl(stream: com.lumera.app.data.model.stremio.Stream)
     }
     return null
 }
+
+private data class PlayActionState(
+    val type: String,
+    val streamId: String,
+    val title: String,
+    val sourceSelectionId: String? = null,
+    val autoSelectSource: Boolean,
+    val rememberSourceSelection: Boolean
+)

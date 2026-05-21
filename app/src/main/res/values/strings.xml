@@ -315,4 +315,7 @@
     <string name="menu_movies">Movies Button</string>
     <string name="menu_series">Series Button</string>
     <string name="details_sync_tmdb_instruction">Go to settings and sync TMDB to view more information (actors, recommendations, etc.)</string>
+    <string name="details_play_options_title">Play Options</string>
+    <string name="details_play_options_start">Start</string>
+    <string name="details_play_options_choose_source">Choose Source</string>
 </resources>

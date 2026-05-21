@@ -143,6 +143,7 @@ dependencies {
 
     // 4. Image Loading
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.palette:palette-ktx:1.0.0")
 
     // 5. Database
     implementation("androidx.room:room-runtime:2.7.0")

@@ -315,4 +315,7 @@
     <string name="menu_movies">Botón Películas</string>
     <string name="menu_series">Botón Series</string>
     <string name="details_sync_tmdb_instruction">Vaya a configuración y sincronice TMDB para ver más información (actores, recomendaciones, etc.)</string>
+    <string name="details_play_options_title">Opciones de Reproducción</string>
+    <string name="details_play_options_start">Iniciar</string>
+    <string name="details_play_options_choose_source">Elegir Fuente</string>
 </resources>
