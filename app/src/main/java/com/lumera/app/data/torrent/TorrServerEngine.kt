@@ -79,9 +79,16 @@ class TorrServerEngine @Inject constructor(
             }
         } catch (_: Exception) {}
 
-        process = ProcessBuilder(binaryPath, "-p", PORT.toString(), "-d", configDir.absolutePath)
-            .redirectErrorStream(true)
-            .start()
+        val pb = ProcessBuilder(binaryPath, "-p", PORT.toString(), "-d", configDir.absolutePath)
+        pb.directory(configDir)
+        
+        // Setup environment variables required by Go and SQLite on Android
+        val env = pb.environment()
+        env["HOME"] = configDir.absolutePath
+        env["TMPDIR"] = configDir.absolutePath
+        env["GOCACHE"] = configDir.absolutePath
+        
+        process = pb.redirectErrorStream(true).start()
 
         val lastLogs = java.util.Collections.synchronizedList(mutableListOf<String>())
         val proc = process
@@ -114,6 +121,7 @@ class TorrServerEngine @Inject constructor(
             }
             val p = process
             if (p != null && !p.isAlive) {
+                try { logThread.join(500) } catch (_: Exception) {}
                 val exitCode = try { p.exitValue() } catch (_: Exception) { -1 }
                 val logsStr = synchronized(lastLogs) { lastLogs.joinToString("\n") }
                 throw IllegalStateException("TorrServer process died (exit $exitCode). Logs:\n$logsStr")
