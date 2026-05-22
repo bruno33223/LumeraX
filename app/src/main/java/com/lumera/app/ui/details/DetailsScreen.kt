@@ -214,9 +214,9 @@ fun DetailsScreen(
     }
 
     // Dynamic BG Palette
-    var dynamicBgColor by remember(movie?.poster) { mutableStateOf(bg) }
-    LaunchedEffect(movie?.poster) {
-        val posterUrl = movie?.poster
+    var dynamicBgColor by remember(movie?.poster, movie?.background) { mutableStateOf(bg) }
+    LaunchedEffect(movie?.poster, movie?.background) {
+        val posterUrl = movie?.poster ?: movie?.background
         if (posterUrl.isNullOrEmpty()) {
             dynamicBgColor = bg
             return@LaunchedEffect
@@ -234,17 +234,33 @@ fun DetailsScreen(
                 val palette = withContext(Dispatchers.Default) {
                     Palette.from(bitmap).generate()
                 }
-                val extractedColor = palette.getDarkVibrantColor(
-                    palette.getDarkMutedColor(
-                        palette.getDominantColor(0)
-                    )
-                )
-                if (extractedColor != 0) {
-                    val colorObj = Color(extractedColor)
+                val swatch = palette.vibrantSwatch
+                    ?: palette.darkVibrantSwatch
+                    ?: palette.mutedSwatch
+                    ?: palette.darkMutedSwatch
+                    ?: palette.lightVibrantSwatch
+                    ?: palette.lightMutedSwatch
+                    ?: palette.dominantSwatch
+                if (swatch != null) {
+                    val hsl = FloatArray(3)
+                    androidx.core.graphics.ColorUtils.colorToHSL(swatch.rgb, hsl)
+                    
+                    // Saturation boost for more prominent color theme (if not grayscale)
+                    if (hsl[1] > 0.05f) {
+                        hsl[1] = hsl[1].coerceAtLeast(0.45f)
+                    }
+                    
+                    // 12% lightness ensures rich colors that are dark enough for white text readability
+                    hsl[2] = 0.12f
+                    
+                    val adjustedColorInt = androidx.core.graphics.ColorUtils.HSLToColor(hsl)
+                    val targetColor = Color(adjustedColorInt)
+                    
+                    // Blend 80% dynamic color + 20% theme background for visible dynamic shift with theme integration
                     dynamicBgColor = Color(
-                        red = colorObj.red * 0.15f + bg.red * 0.85f,
-                        green = colorObj.green * 0.15f + bg.green * 0.85f,
-                        blue = colorObj.blue * 0.15f + bg.blue * 0.85f,
+                        red = targetColor.red * 0.8f + bg.red * 0.2f,
+                        green = targetColor.green * 0.8f + bg.green * 0.2f,
+                        blue = targetColor.blue * 0.8f + bg.blue * 0.2f,
                         alpha = 1f
                     )
                 } else {
@@ -255,6 +271,12 @@ fun DetailsScreen(
             dynamicBgColor = bg
         }
     }
+
+    val animatedBgColor by animateColorAsState(
+        targetValue = dynamicBgColor,
+        animationSpec = tween(durationMillis = 800),
+        label = "bgColorAnimation"
+    )
 
     // Background Trailer Player
     val trailer = state.tmdbTrailer
@@ -403,7 +425,7 @@ fun DetailsScreen(
         label = "content_reveal"
     )
 
-    Box(modifier = Modifier.fillMaxSize().background(dynamicBgColor)) {
+    Box(modifier = Modifier.fillMaxSize().background(animatedBgColor)) {
         // Loading sweep — solid bg with subtle light sweep while data loads
         if (!contentReady) {
             com.lumera.app.ui.components.DetailsLoadingSweep()
@@ -449,14 +471,14 @@ fun DetailsScreen(
                     .background(
                         Brush.horizontalGradient(
                             colorStops = arrayOf(
-                                0.0f to dynamicBgColor,
-                                0.1f to dynamicBgColor.copy(alpha = 0.95f),
-                                0.2f to dynamicBgColor.copy(alpha = 0.85f),
-                                0.3f to dynamicBgColor.copy(alpha = 0.72f),
-                                0.4f to dynamicBgColor.copy(alpha = 0.58f),
-                                0.55f to dynamicBgColor.copy(alpha = 0.38f),
-                                0.7f to dynamicBgColor.copy(alpha = 0.20f),
-                                0.85f to dynamicBgColor.copy(alpha = 0.08f),
+                                0.0f to animatedBgColor,
+                                0.1f to animatedBgColor.copy(alpha = 0.95f),
+                                0.2f to animatedBgColor.copy(alpha = 0.85f),
+                                0.3f to animatedBgColor.copy(alpha = 0.72f),
+                                0.4f to animatedBgColor.copy(alpha = 0.58f),
+                                0.55f to animatedBgColor.copy(alpha = 0.38f),
+                                0.7f to animatedBgColor.copy(alpha = 0.20f),
+                                0.85f to animatedBgColor.copy(alpha = 0.08f),
                                 1.0f to Color.Transparent
                             ),
                             startX = 0f,
