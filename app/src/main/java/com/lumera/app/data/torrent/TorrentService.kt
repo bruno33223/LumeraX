@@ -152,7 +152,7 @@ class TorrentService : Service() {
     private val videoExtensions = setOf("mkv", "mp4", "avi", "webm", "ts", "m4v", "mov", "wmv", "flv")
 
     private suspend fun resolveFileIndex(magnet: String, hintIdx: Int, hintName: String = ""): Int {
-        val deadline = System.currentTimeMillis() + 15_000L
+        val deadline = System.currentTimeMillis() + 45_000L
         while (System.currentTimeMillis() < deadline) {
             val files = api.getFileList(magnet)
             if (files.isNotEmpty()) {
