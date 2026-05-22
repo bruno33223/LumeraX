@@ -71,6 +71,7 @@ fun LumeraLandscapeCard(
     modifier: Modifier = Modifier,
     progress: Float = 0f,
     hasNewEpisode: Boolean = false,
+    badgeText: String? = null,
     onFocused: (() -> Unit)? = null
 ) {
     var isFocused by remember { mutableStateOf(false) }
@@ -207,7 +208,7 @@ fun LumeraLandscapeCard(
                 }
 
                 // New episode badge
-                if (hasNewEpisode) {
+                if (hasNewEpisode || badgeText != null) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -216,7 +217,7 @@ fun LumeraLandscapeCard(
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         androidx.compose.material3.Text(
-                            "+1",
+                            badgeText ?: "+1",
                             color = Color.White,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold

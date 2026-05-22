@@ -122,7 +122,8 @@ fun InfiniteLoopRow(
     repeatGate: DpadRepeatGate,
     pivotFocusRequester: FocusRequester? = null,
     isLandscapeCards: Boolean = false,
-    enrichedItems: Map<String, MetaItem> = emptyMap()
+    enrichedItems: Map<String, MetaItem> = emptyMap(),
+    badgeText: String? = null
 ) {
     val density = LocalDensity.current
     val paddingPx = remember(density, startPadding) { with(density) { startPadding.toPx() } }
@@ -215,7 +216,8 @@ fun InfiniteLoopRow(
                         pivotFocusRequester = pivotFocusRequester,
                         isLandscapeCards = isLandscapeCards,
                         enrichedItems = enrichedItems,
-                        effectiveItemWidth = effectiveItemWidth
+                        effectiveItemWidth = effectiveItemWidth,
+                        badgeText = badgeText
                     )
                 }
             }
@@ -310,7 +312,8 @@ private fun LinearContent(
     pivotFocusRequester: FocusRequester? = null,
     isLandscapeCards: Boolean = false,
     enrichedItems: Map<String, MetaItem> = emptyMap(),
-    effectiveItemWidth: Dp = ITEM_WIDTH
+    effectiveItemWidth: Dp = ITEM_WIDTH,
+    badgeText: String? = null
 ) {
     val context = LocalContext.current
 
@@ -427,6 +430,7 @@ private fun LinearContent(
                         onClick = { onMovieClick(item) },
                         progress = item.progress,
                         hasNewEpisode = item.hasNewEpisode,
+                        badgeText = badgeText,
                         onFocused = {
                             ImagePrefetcher.prefetchAroundLandscape(context, imageUrls, index)
                             onFocused(item, uniqueKey)
@@ -446,6 +450,7 @@ private fun LinearContent(
                         progress = item.progress,
                         isWatched = rowIndex != -1 && item.id in watchedIds,
                         hasNewEpisode = item.hasNewEpisode,
+                        badgeText = badgeText,
                         onFocused = {
                             ImagePrefetcher.prefetchAround(context, imageUrls, index)
                             onFocused(item, uniqueKey)

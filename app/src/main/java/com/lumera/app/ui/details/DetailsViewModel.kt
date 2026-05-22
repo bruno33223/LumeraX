@@ -85,7 +85,9 @@ class DetailsViewModel @Inject constructor(
         val tmdbRecommendations: List<TmdbMetaPreview> = emptyList(),
         val tmdbTrailer: TmdbVideoInfo? = null,
         val tmdbCollection: List<TmdbMetaPreview> = emptyList(),
-        val tmdbCollectionName: String? = null
+        val tmdbCollectionName: String? = null,
+        val parentalPin: String = "",
+        val parentalAgeLimit: Int = 0
     )
 
     private val _state = MutableStateFlow(DetailsState())
@@ -144,8 +146,9 @@ class DetailsViewModel @Inject constructor(
         loadDetailsJob = viewModelScope.launch {
             try {
                 // Resolve tmdb: IDs to IMDb IDs via TMDB API so all addons work consistently
-                val isTmdbEnabled = profileConfigurationManager.getLastActiveProfileId()
-                    ?.let { dao.getProfileById(it) }?.tmdbEnabled == true
+                val profileId = profileConfigurationManager.getLastActiveProfileId()
+                val profile = profileId?.let { dao.getProfileById(it) }
+                val isTmdbEnabled = profile?.tmdbEnabled == true
                 val resolvedId = if (isTmdbEnabled && id.startsWith("tmdb:", ignoreCase = true)) {
                     val tmdbNumericId = id.substringAfter(':').substringBefore(':').toIntOrNull()
                     val mediaType = tmdbService.normalizeMediaType(type)
@@ -201,7 +204,9 @@ class DetailsViewModel @Inject constructor(
                     tmdbCollection = emptyList(),
                     tmdbCollectionName = null,
                     tmdbEnabled = isTmdbEnabled,
-                    tmdbLoading = isTmdbEnabled
+                    tmdbLoading = isTmdbEnabled || (profile?.parentalAgeLimit ?: 0) > 0,
+                    parentalPin = profile?.parentalPin ?: "",
+                    parentalAgeLimit = profile?.parentalAgeLimit ?: 0
                 )
                 // Update next-up entry when details load
                 if (details.type == "series") {
@@ -411,17 +416,19 @@ class DetailsViewModel @Inject constructor(
         tmdbEnrichmentJob?.cancel()
         tmdbEnrichmentJob = viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Check if TMDB is enabled for the active profile
+                // Check if TMDB is enabled or parental limit is active
                 val profileId = profileConfigurationManager.getLastActiveProfileId()
                 val profile = profileId?.let { dao.getProfileById(it) }
-                if (profile?.tmdbEnabled != true) {
+                val isTmdbEnabled = profile?.tmdbEnabled == true
+                val hasParentalLimit = (profile?.parentalAgeLimit ?: 0) > 0
+                if (!isTmdbEnabled && !hasParentalLimit) {
                     _state.value = _state.value.copy(tmdbEnabled = false, tmdbLoading = false)
                     return@launch
                 }
 
-                _state.value = _state.value.copy(tmdbEnabled = true, tmdbLoading = true)
+                _state.value = _state.value.copy(tmdbEnabled = isTmdbEnabled, tmdbLoading = true)
 
-                val language = profile.tmdbLanguage.ifBlank { null } ?: "en"
+                val language = profile?.tmdbLanguage?.ifBlank { null } ?: "en"
                 val mediaType = tmdbService.normalizeMediaType(type)
 
                 // Resolve TMDB ID — if unresolvable (e.g. Kitsu IDs), stop loading and show addon data
@@ -450,7 +457,7 @@ class DetailsViewModel @Inject constructor(
 
                 // Apply enrichment — overlay TMDB data onto existing metadata where it adds value
                 val currentMeta = _state.value.meta
-                val enrichedMeta = if (currentMeta != null && enrichment != null) {
+                val enrichedMeta = if (isTmdbEnabled && currentMeta != null && enrichment != null) {
                     currentMeta.copy(
                         // Localized title
                         name = enrichment.localizedTitle ?: currentMeta.name,

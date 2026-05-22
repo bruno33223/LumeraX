@@ -36,6 +36,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -165,9 +166,29 @@ fun HomeScreen(
             }
         } else {
             // DATA IS READY: Show Content
+            val newEpisodesItems = remember(state.newEpisodesSeries, currentProfile?.homeNewEpisodesEnabled) {
+                if (currentProfile?.homeNewEpisodesEnabled == true) {
+                    state.newEpisodesSeries.map { entity ->
+                        MetaItem(
+                            id = entity.id,
+                            type = entity.type,
+                            name = entity.title,
+                            poster = entity.poster,
+                            hasNewEpisode = true
+                        )
+                    }
+                } else {
+                    emptyList()
+                }
+            }
             val hasInProgressHistory = remember(state.history, state.seriesNextUp) {
                 state.history.any { !it.watched } || state.seriesNextUp.any { !it.isComplete }
             }
+            val hasNewEpisodesRow = newEpisodesItems.isNotEmpty()
+            val historyAdjustment = if (viewModel.needsHistoryScrollAdjustment(hasInProgressHistory)) 1 else 0
+            val newEpisodesAdjustment = if (viewModel.needsHistoryScrollAdjustment(hasNewEpisodesRow)) 1 else 0
+            val combinedAdjustment = historyAdjustment + newEpisodesAdjustment
+
             if (layoutMode == "cinematic") {
                 CinematicLayout(
                     infoTopPadding = infoTopPadding,
@@ -188,12 +209,13 @@ fun HomeScreen(
                     lastFocusedKey = lastFocusedKey,
                     rowScrollPositions = rowScrollPositions,
                     verticalScrollPosition = verticalScrollPosition,
-                    historyScrollAdjustment = if (viewModel.needsHistoryScrollAdjustment(hasInProgressHistory)) 1 else 0,
+                    historyScrollAdjustment = combinedAdjustment,
                     onFocusChange = { viewModel.setLastFocusedKey(it) },
                     onScrollPositionChange = { key, pos -> viewModel.setRowScrollPosition(key, pos) },
-                    onVerticalScrollChange = { viewModel.setVerticalScrollPosition(it, hasInProgressHistory) },
+                    onVerticalScrollChange = { viewModel.setVerticalScrollPosition(it, hasInProgressHistory || hasNewEpisodesRow) },
                     onPreviewItemVisible = { viewModel.ensureMetadataFallback(it); viewModel.ensureTmdbEnrichment(it) },
-                    isLandscapeContinueWatching = isLandscapeContinueWatching
+                    isLandscapeContinueWatching = isLandscapeContinueWatching,
+                    newEpisodesItems = newEpisodesItems
                 )
             } else {
                 val heroConfig = currentProfile?.heroFor(tab) ?: HeroConfig(null, 10, 0)
@@ -222,14 +244,15 @@ fun HomeScreen(
                     rowScrollPositions = rowScrollPositions,
                     verticalScrollPosition = verticalScrollPosition,
                     historyScrollAdjustment = if (
-                        viewModel.needsHistoryScrollAdjustment(hasInProgressHistory) &&
+                        viewModel.needsHistoryScrollAdjustment(hasInProgressHistory || hasNewEpisodesRow) &&
                         (heroItems.isEmpty() || verticalScrollPosition.first > 0)
-                    ) 1 else 0,
+                    ) combinedAdjustment else 0,
                     onFocusChange = { viewModel.setLastFocusedKey(it) },
                     onScrollPositionChange = { key, pos -> viewModel.setRowScrollPosition(key, pos) },
-                    onVerticalScrollChange = { viewModel.setVerticalScrollPosition(it, hasInProgressHistory) },
+                    onVerticalScrollChange = { viewModel.setVerticalScrollPosition(it, hasInProgressHistory || hasNewEpisodesRow) },
                     onHeroItemVisible = { viewModel.ensureMetadataFallback(it); viewModel.ensureTmdbEnrichment(it) },
-                    isLandscapeContinueWatching = isLandscapeContinueWatching
+                    isLandscapeContinueWatching = isLandscapeContinueWatching,
+                    newEpisodesItems = newEpisodesItems
                 )
             }
         }
@@ -260,7 +283,8 @@ fun CinematicLayout(
     onScrollPositionChange: (String, Pair<Int, Int>) -> Unit,
     onVerticalScrollChange: (Pair<Int, Int>) -> Unit,
     onPreviewItemVisible: (MetaItem) -> Unit,
-    isLandscapeContinueWatching: Boolean = false
+    isLandscapeContinueWatching: Boolean = false,
+    newEpisodesItems: List<MetaItem> = emptyList()
 ) {
     var instantFocusItem by remember { mutableStateOf<MetaItem?>(null) }
     var displayedItem by remember { mutableStateOf<MetaItem?>(null) }
@@ -562,6 +586,56 @@ fun CinematicLayout(
                             }
                         }
 
+                        if (newEpisodesItems.isNotEmpty()) {
+                            item(key = "new_episodes_header", contentType = "row") {
+                                val savedPosition = rowScrollPositions["new_episodes"] ?: Pair(0, 0)
+                                val newEpisodesRowState = rememberLazyListState(
+                                    initialFirstVisibleItemIndex = savedPosition.first,
+                                    initialFirstVisibleItemScrollOffset = savedPosition.second
+                                )
+
+                                PersistLazyListPosition(
+                                    listState = newEpisodesRowState,
+                                    key = "cinematic_new_episodes",
+                                    minOffsetDeltaPx = 36,
+                                    onPositionChanged = { onScrollPositionChange("new_episodes", it) }
+                                )
+
+                                val rowTitle = stringResource(id = R.string.home_new_episodes)
+                                val badgeText = stringResource(id = R.string.badge_new)
+
+                                InfiniteLoopRow(
+                                    startPadding = startPadding,
+                                    isTopNav = isTopNav,
+                                    rowIndex = -2,
+                                    title = rowTitle,
+                                    items = newEpisodesItems,
+                                    onMovieClick = onMovieClick,
+                                    onViewMore = { onViewMore(rowTitle, newEpisodesItems, "") },
+                                    onFocused = remember(wrappedOnFocusChange) {
+                                        { item: MetaItem?, key: String ->
+                                            updatePreviewItem(item)
+                                            wrappedOnFocusChange(key)
+                                        }
+                                    },
+                                    entryRequester = entryRequester,
+                                    drawerRequester = drawerRequester,
+                                    locallyFocusedItemId = if (effectiveLastFocusedKey?.startsWith("-2_") == true) effectiveLastFocusedKey else null,
+                                    isGlobalFocusPresent = effectiveLastFocusedKey != null,
+                                    isFirstRow = state.historyItems.isEmpty(),
+                                    isInfiniteLoopEnabled = false,
+                                    visibleItemCount = 15,
+                                    isInfiniteScrollingEnabled = true,
+                                    externalListState = newEpisodesRowState,
+                                    upKeyDebouncer = upKeyDebouncer,
+                                    repeatGate = dpadRepeatGate,
+                                    isLandscapeCards = false,
+                                    enrichedItems = state.enrichedMeta,
+                                    badgeText = badgeText
+                                )
+                            }
+                        }
+
                         itemsIndexed(
                             items = state.mixedRows,
                             key = { _, item -> 
@@ -616,7 +690,7 @@ fun CinematicLayout(
                                         upKeyDebouncer = upKeyDebouncer,
                                         repeatGate = dpadRepeatGate,
                                         isLastRow = index == state.mixedRows.lastIndex,
-                                        isFirstRow = state.historyItems.isEmpty() && index == 0,
+                                        isFirstRow = state.historyItems.isEmpty() && newEpisodesItems.isEmpty() && index == 0,
                                         isGlobalFocusPresent = effectiveLastFocusedKey != null
                                     )
                                 }
@@ -676,7 +750,7 @@ fun CinematicLayout(
                                         drawerRequester = drawerRequester,
                                         locallyFocusedItemId = if (effectiveLastFocusedKey?.startsWith("${index}_") == true) effectiveLastFocusedKey else null,
                                         isGlobalFocusPresent = effectiveLastFocusedKey != null,
-                                        isFirstRow = state.historyItems.isEmpty() && index == 0,
+                                        isFirstRow = state.historyItems.isEmpty() && newEpisodesItems.isEmpty() && index == 0,
                                         isInfiniteLoopEnabled = item.isInfiniteLoopEnabled,
                                         visibleItemCount = item.visibleItemCount,
                                         isInfiniteScrollingEnabled = item.isInfiniteScrollingEnabled,
@@ -719,7 +793,8 @@ fun SimpleLayout(
     onScrollPositionChange: (String, Pair<Int, Int>) -> Unit,
     onVerticalScrollChange: (Pair<Int, Int>) -> Unit,
     onHeroItemVisible: (MetaItem) -> Unit,
-    isLandscapeContinueWatching: Boolean = false
+    isLandscapeContinueWatching: Boolean = false,
+    newEpisodesItems: List<MetaItem> = emptyList()
 ) {
     var hasRequestedFocus by remember { mutableStateOf(false) }
     // Proactive metadata fetch for continue watching cards (posters + landscape)
@@ -885,6 +960,54 @@ fun SimpleLayout(
                 }
             }
 
+            if (newEpisodesItems.isNotEmpty()) {
+                item(key = "simple_new_episodes_header", contentType = "row") {
+                    val savedPosition = rowScrollPositions["new_episodes"] ?: Pair(0, 0)
+                    val newEpisodesRowState = rememberLazyListState(
+                        initialFirstVisibleItemIndex = savedPosition.first,
+                        initialFirstVisibleItemScrollOffset = savedPosition.second
+                    )
+
+                    PersistLazyListPosition(
+                        listState = newEpisodesRowState,
+                        key = "simple_new_episodes",
+                        minOffsetDeltaPx = 36,
+                        onPositionChanged = { onScrollPositionChange("new_episodes", it) }
+                    )
+
+                    val rowTitle = stringResource(id = R.string.home_new_episodes)
+                    val badgeText = stringResource(id = R.string.badge_new)
+
+                    InfiniteLoopRow(
+                        startPadding = startPadding,
+                        isTopNav = isTopNav,
+                        rowIndex = -2,
+                        title = rowTitle,
+                        items = newEpisodesItems,
+                        onMovieClick = onMovieClick,
+                        onViewMore = { onViewMore(rowTitle, newEpisodesItems, "") },
+                        onFocused = remember(wrappedOnFocusChange) {
+                            { _: MetaItem?, key: String -> wrappedOnFocusChange(key) }
+                        },
+                        entryRequester = entryRequester,
+                        drawerRequester = drawerRequester,
+                        locallyFocusedItemId = if (effectiveLastFocusedKey?.startsWith("-2_") == true) effectiveLastFocusedKey else null,
+                        isGlobalFocusPresent = effectiveLastFocusedKey != null,
+                        isFirstRow = heroItems.isEmpty() && state.historyItems.isEmpty(),
+                        isInfiniteLoopEnabled = false,
+                        visibleItemCount = 15,
+                        isInfiniteScrollingEnabled = true,
+                        externalListState = newEpisodesRowState,
+                        upKeyDebouncer = upKeyDebouncer,
+                        repeatGate = dpadRepeatGate,
+                        pivotFocusRequester = if (heroItems.isNotEmpty() && state.historyItems.isEmpty()) firstRowPivotRequester else null,
+                        isLandscapeCards = false,
+                        enrichedItems = state.enrichedMeta,
+                        badgeText = badgeText
+                    )
+                }
+            }
+
             itemsIndexed(
                 items = state.mixedRows,
                 key = { _, item -> 
@@ -934,12 +1057,12 @@ fun SimpleLayout(
                             locallyFocusedItemId = if (effectiveLastFocusedKey?.startsWith("hub_") == true) effectiveLastFocusedKey else null,
                             isTopNav = isTopNav,
                             rowIndex = rowIndex,
-                            isFirstRow = heroItems.isEmpty() && state.historyItems.isEmpty() && rowIndex == 0, // Only steal focus if no hero/history row
+                            isFirstRow = heroItems.isEmpty() && state.historyItems.isEmpty() && newEpisodesItems.isEmpty() && rowIndex == 0, // Only steal focus if no hero/history/new episodes row
                             externalListState = hubListState,
                             upKeyDebouncer = upKeyDebouncer,
                             repeatGate = dpadRepeatGate,
                             isLastRow = rowIndex == state.mixedRows.lastIndex,
-                            pivotFocusRequester = if (heroItems.isNotEmpty() && state.historyItems.isEmpty() && rowIndex == 0) firstRowPivotRequester else null,
+                            pivotFocusRequester = if (heroItems.isNotEmpty() && state.historyItems.isEmpty() && newEpisodesItems.isEmpty() && rowIndex == 0) firstRowPivotRequester else null,
                             isGlobalFocusPresent = effectiveLastFocusedKey != null
                         )
                     }
@@ -1006,7 +1129,7 @@ fun SimpleLayout(
                             drawerRequester = drawerRequester,
                             locallyFocusedItemId = if (effectiveLastFocusedKey?.startsWith("${rowIndex}_") == true) effectiveLastFocusedKey else null,
                             isGlobalFocusPresent = effectiveLastFocusedKey != null,
-                            isFirstRow = heroItems.isEmpty() && state.historyItems.isEmpty() && rowIndex == 0,
+                            isFirstRow = heroItems.isEmpty() && state.historyItems.isEmpty() && newEpisodesItems.isEmpty() && rowIndex == 0,
                             isInfiniteLoopEnabled = item.isInfiniteLoopEnabled,
                             visibleItemCount = item.visibleItemCount,
                             isInfiniteScrollingEnabled = item.isInfiniteScrollingEnabled,
@@ -1014,7 +1137,7 @@ fun SimpleLayout(
                             rowHeight = rowHeight,
                             upKeyDebouncer = upKeyDebouncer,
                             repeatGate = dpadRepeatGate,
-                            pivotFocusRequester = if (heroItems.isNotEmpty() && state.historyItems.isEmpty() && rowIndex == 0) firstRowPivotRequester else null
+                            pivotFocusRequester = if (heroItems.isNotEmpty() && state.historyItems.isEmpty() && newEpisodesItems.isEmpty() && rowIndex == 0) firstRowPivotRequester else null
                         )
                     }
                 }

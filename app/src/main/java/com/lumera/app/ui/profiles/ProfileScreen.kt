@@ -50,6 +50,7 @@ import com.lumera.app.data.model.ThemeEntity
 import com.lumera.app.ui.addons.VoidButton
 import com.lumera.app.ui.addons.VoidInput
 import com.lumera.app.ui.components.CenterCarouselRow
+import com.lumera.app.ui.components.dialogs.ParentalPinDialog
 import com.lumera.app.ui.home.DpadRepeatGate
 import com.lumera.app.ui.theme.DefaultThemes
 import com.lumera.app.ui.theme.LumeraTheme
@@ -74,6 +75,10 @@ fun ProfileScreen(
 ) {
     var initialLanguageSelected by remember { mutableStateOf(false) }
     var currentLanguage by remember { mutableStateOf("en") }
+    val context = LocalContext.current
+
+    var pinTargetProfile by remember { mutableStateOf<ProfileEntity?>(null) }
+    var pinError by remember { mutableStateOf<String?>(null) }
 
     val wizardStep by viewModel.wizardStep.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -111,7 +116,14 @@ fun ProfileScreen(
                             } else {
                                 ProfileSelectorView(
                                     profiles = profiles,
-                                    onSelect = onProfileSelected,
+                                    onSelect = { profile ->
+                                        if (profile.parentalPin.isNotEmpty()) {
+                                            pinTargetProfile = profile
+                                            pinError = null
+                                        } else {
+                                            onProfileSelected(profile)
+                                        }
+                                    },
                                     onAdd = { viewModel.startWizard() },
                                     onEdit = { viewModel.startEditWizard(it) },
                                     onDelete = { viewModel.deleteProfile(it.id) },
@@ -137,6 +149,29 @@ fun ProfileScreen(
             }
         }
 
+        pinTargetProfile?.let { targetProfile ->
+            ParentalPinDialog(
+                title = stringResource(R.string.parental_locked_profile),
+                subtitle = stringResource(R.string.parental_enter_pin_desc),
+                errorMessage = pinError,
+                onPinSubmitted = { enteredPin ->
+                    if (enteredPin == targetProfile.parentalPin) {
+                        val p = pinTargetProfile
+                        pinTargetProfile = null
+                        pinError = null
+                        if (p != null) {
+                            onProfileSelected(p)
+                        }
+                    } else {
+                        pinError = context.getString(R.string.parental_pin_incorrect)
+                    }
+                },
+                onDismiss = {
+                    pinTargetProfile = null
+                    pinError = null
+                }
+            )
+        }
     }
 }
 

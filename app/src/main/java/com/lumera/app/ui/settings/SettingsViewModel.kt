@@ -272,4 +272,25 @@ class SettingsViewModel @Inject constructor(
             if (profile != null) dao.insertProfile(profile.copy(menuSeriesEnabled = enabled))
         }
     }
+
+    fun updateHomeNewEpisodesEnabled(profileId: Int, enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+            val profile = dao.getProfileById(profileId)
+            if (profile != null) dao.insertProfile(profile.copy(homeNewEpisodesEnabled = enabled))
+        }
+    }
+
+    fun updateParentalPin(profileId: Int, pin: String) {
+        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+            val profile = dao.getProfileById(profileId)
+            if (profile != null) dao.insertProfile(profile.copy(parentalPin = pin))
+        }
+    }
+
+    fun updateParentalAgeLimit(profileId: Int, limit: Int) {
+        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
+            val profile = dao.getProfileById(profileId)
+            if (profile != null) dao.insertProfile(profile.copy(parentalAgeLimit = limit))
+        }
+    }
 }

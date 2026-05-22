@@ -213,6 +213,9 @@ interface AddonDao {
     @Query("SELECT * FROM watchlist WHERE type = :type ORDER BY addedAt DESC")
     fun getWatchlistByType(type: String): Flow<List<WatchlistEntity>>
 
+    @Query("SELECT w.* FROM watchlist w INNER JOIN series_next_up s ON w.id = s.seriesId WHERE w.type = 'series' AND s.isNewEpisode = 1 ORDER BY w.addedAt DESC")
+    fun getWatchlistSeriesWithNewEpisodes(): Flow<List<WatchlistEntity>>
+
     @Query("SELECT * FROM watchlist ORDER BY addedAt DESC")
     suspend fun getWatchlistOnce(): List<WatchlistEntity>
 

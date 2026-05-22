@@ -318,4 +318,25 @@
     <string name="details_play_options_title">Opciones de Reproducción</string>
     <string name="details_play_options_start">Iniciar</string>
     <string name="details_play_options_choose_source">Elegir Fuente</string>
+    <string name="badge_new">NUEVO</string>
+    <string name="home_new_episodes">Nuevos Episodios</string>
+    <string name="settings_home_new_episodes">Mostrar Nuevos Episodios</string>
+    <string name="settings_home_new_episodes_desc">Muestra series de tu lista con episodios nuevos en la pantalla de inicio</string>
+    <string name="settings_parental_control">Control Parental</string>
+    <string name="settings_parental_control_desc">Bloquea perfiles y restringe contenidos por clasificación de edad</string>
+    <string name="parental_setup_pin">Establecer PIN Parental</string>
+    <string name="parental_remove_pin">Eliminar PIN Parental</string>
+    <string name="parental_change_pin">Cambiar PIN Parental</string>
+    <string name="parental_enter_pin">Introducir PIN</string>
+    <string name="parental_enter_pin_desc">Introduce el PIN de 4 dígitos para continuar</string>
+    <string name="parental_confirm_pin">Confirmar PIN</string>
+    <string name="parental_pin_mismatch">Los PIN no coinciden. Inténtalo de nuevo.</string>
+    <string name="parental_pin_incorrect">PIN incorrecto. Inténtalo de nuevo.</string>
+    <string name="parental_pin_set_success">¡PIN configurado correctamente!</string>
+    <string name="parental_pin_removed">¡PIN eliminado correctamente!</string>
+    <string name="parental_age_limit">Límite de Edad</string>
+    <string name="parental_age_limit_desc">Bloquear contenido que supere esta clasificación de edad</string>
+    <string name="parental_age_limit_none">Ninguno (Permitir Todo)</string>
+    <string name="parental_locked_content">Contenido Bloqueado</string>
+    <string name="parental_locked_profile">Perfil Bloqueado</string>
 </resources>

@@ -76,5 +76,8 @@ data class ProfileEntity(
     val menuDiscoverEnabled: Boolean = true,
     val menuWatchlistEnabled: Boolean = true,
     val menuMoviesEnabled: Boolean = true,
-    val menuSeriesEnabled: Boolean = true
+    val menuSeriesEnabled: Boolean = true,
+    val homeNewEpisodesEnabled: Boolean = true,
+    val parentalPin: String = "",
+    val parentalAgeLimit: Int = 0
 )

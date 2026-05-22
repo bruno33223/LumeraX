@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lumera.app.data.local.AddonDao
 import com.lumera.app.data.model.WatchHistoryEntity
+import com.lumera.app.data.model.WatchlistEntity
 import com.lumera.app.data.repository.AddonRepository
 import com.lumera.app.data.tmdb.TmdbMetadataService
 import com.lumera.app.data.tmdb.TmdbService
@@ -63,7 +64,8 @@ class HomeViewModel @Inject constructor(
         val enrichedMeta: Map<String, MetaItem> = emptyMap(),
         val historyItems: List<MetaItem> = emptyList(),
         val tmdbEnabled: Boolean = false,
-        val tmdbEnrichedIds: Set<String> = emptySet()
+        val tmdbEnrichedIds: Set<String> = emptySet(),
+        val newEpisodesSeries: List<WatchlistEntity> = emptyList()
     )
 
     private val _state = MutableStateFlow(HomeState())
@@ -492,7 +494,8 @@ class HomeViewModel @Inject constructor(
                 loadedProfileId = null,
                 enrichedMeta = emptyMap(),
                 tmdbEnrichedIds = emptySet(),
-                tmdbEnabled = currentProfile?.tmdbEnabled == true
+                tmdbEnabled = currentProfile?.tmdbEnabled == true,
+                newEpisodesSeries = emptyList()
             )
             tmdbEnrichmentInFlight.clear()
             lastFocusedKeyMemory = null
@@ -506,15 +509,21 @@ class HomeViewModel @Inject constructor(
                 launch {
                     val historyFlow = dao.getWatchHistory()
                     val nextUpFlow = dao.getActiveSeriesNextUp()
+                    val newEpisodesFlow = if (currentProfile?.homeNewEpisodesEnabled == true) {
+                        dao.getWatchlistSeriesWithNewEpisodes()
+                    } else {
+                        kotlinx.coroutines.flow.flowOf(emptyList())
+                    }
                     
-                    kotlinx.coroutines.flow.combine(historyFlow, nextUpFlow) { history, nextUp ->
-                        Pair(history, nextUp)
-                    }.collect { (history, nextUp) ->
+                    kotlinx.coroutines.flow.combine(historyFlow, nextUpFlow, newEpisodesFlow) { history, nextUp, newEpisodes ->
+                        Triple(history, nextUp, newEpisodes)
+                    }.collect { (history, nextUp, newEpisodes) ->
                         val historyItems = buildContinueWatchingItems(history, nextUp)
                         _state.update { it.copy(
                             history = history, 
                             seriesNextUp = nextUp,
-                            historyItems = historyItems
+                            historyItems = historyItems,
+                            newEpisodesSeries = newEpisodes
                         ) }
                     }
                 }
@@ -522,7 +531,8 @@ class HomeViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     history = emptyList(), 
                     seriesNextUp = emptyList(),
-                    historyItems = emptyList()
+                    historyItems = emptyList(),
+                    newEpisodesSeries = emptyList()
                 )
             }
 
@@ -833,6 +843,17 @@ class HomeViewModel @Inject constructor(
 
         if (rowToken == "-1") {
             return historyItems.firstOrNull { it.id == itemToken }
+        }
+        if (rowToken == "-2") {
+            return _state.value.newEpisodesSeries.firstOrNull { it.id == itemToken }?.let { entity ->
+                MetaItem(
+                    id = entity.id,
+                    type = entity.type,
+                    name = entity.title,
+                    poster = entity.poster,
+                    hasNewEpisode = true
+                )
+            }
         }
 
         val rowIndex = rowToken.toIntOrNull() ?: return null

@@ -318,4 +318,25 @@
     <string name="details_play_options_title">Play Options</string>
     <string name="details_play_options_start">Start</string>
     <string name="details_play_options_choose_source">Choose Source</string>
+    <string name="badge_new">NEW</string>
+    <string name="home_new_episodes">New Episodes</string>
+    <string name="settings_home_new_episodes">Show New Episodes</string>
+    <string name="settings_home_new_episodes_desc">Display watchlist series with new episodes on the home screen</string>
+    <string name="settings_parental_control">Parental Control</string>
+    <string name="settings_parental_control_desc">Lock profiles and restrict content by age rating</string>
+    <string name="parental_setup_pin">Set Parental PIN</string>
+    <string name="parental_remove_pin">Remove Parental PIN</string>
+    <string name="parental_change_pin">Change Parental PIN</string>
+    <string name="parental_enter_pin">Enter PIN</string>
+    <string name="parental_enter_pin_desc">Enter your 4-digit parental PIN to continue</string>
+    <string name="parental_confirm_pin">Confirm PIN</string>
+    <string name="parental_pin_mismatch">PINs do not match. Try again.</string>
+    <string name="parental_pin_incorrect">Incorrect PIN. Try again.</string>
+    <string name="parental_pin_set_success">PIN configured successfully!</string>
+    <string name="parental_pin_removed">PIN removed successfully!</string>
+    <string name="parental_age_limit">Age Rating Limit</string>
+    <string name="parental_age_limit_desc">Block content above this age rating certification</string>
+    <string name="parental_age_limit_none">None (Allow All)</string>
+    <string name="parental_locked_content">Content Locked</string>
+    <string name="parental_locked_profile">Profile Locked</string>
 </resources>

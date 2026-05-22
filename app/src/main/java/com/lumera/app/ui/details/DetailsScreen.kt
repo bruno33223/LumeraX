@@ -11,6 +11,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
+import com.lumera.app.ui.components.dialogs.ParentalPinDialog
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -278,6 +279,31 @@ fun DetailsScreen(
         label = "bgColorAnimation"
     )
 
+    var isContentUnlocked by remember { mutableStateOf(false) }
+    var showPinDialog by remember { mutableStateOf(false) }
+    var pinError by remember { mutableStateOf<String?>(null) }
+    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    LaunchedEffect(state.contentKey) {
+        isContentUnlocked = false
+    }
+
+    val contentAgeRating = remember(state.tmdbEnrichment?.ageRating) {
+        parseAgeRating(state.tmdbEnrichment?.ageRating)
+    }
+    val isParentalLocked = remember(state.parentalAgeLimit, state.parentalPin, contentAgeRating, isContentUnlocked) {
+        state.parentalAgeLimit > 0 && state.parentalPin.isNotEmpty() && contentAgeRating > state.parentalAgeLimit && !isContentUnlocked
+    }
+
+    val checkLockAndExecute: (() -> Unit) -> Unit = { action ->
+        if (isParentalLocked) {
+            pendingAction = action
+            showPinDialog = true
+        } else {
+            action()
+        }
+    }
+
     // Background Trailer Player
     val trailer = state.tmdbTrailer
     var trailerUrl by remember { mutableStateOf<String?>(null) }
@@ -314,8 +340,8 @@ fun DetailsScreen(
         }
     }
 
-    val isAnyOverlayActive = state.isLoadingStreams || isTrailerLoading || sidebarState !is SidebarState.Closed || showClearProgressDialog
-    val shouldPlayTrailer = !trailerUrl.isNullOrEmpty() && isLifecycleResumed && !isAnyOverlayActive
+    val isAnyOverlayActive = state.isLoadingStreams || isTrailerLoading || sidebarState !is SidebarState.Closed || showClearProgressDialog || showPinDialog
+    val shouldPlayTrailer = !trailerUrl.isNullOrEmpty() && isLifecycleResumed && !isAnyOverlayActive && !isParentalLocked
 
     LaunchedEffect(shouldPlayTrailer, trailerUrl) {
         if (shouldPlayTrailer && !trailerUrl.isNullOrEmpty()) {
@@ -683,28 +709,30 @@ fun DetailsScreen(
                             icon = Icons.Default.PlayArrow,
                             modifier = Modifier.focusRequester(firstButtonFocusRequester),
                             onClick = {
-                                val ep = resumeEpisode ?: firstEpisode ?: return@ExpandableIconButton
-                                val trackId = resumePlaybackId ?: episodePlaybackId(streamId, ep)
-                                val epStreamId = episodeStreamId(streamId, ep)
-                                val epTitle = when {
-                                    resumePlaybackId != null && resumeEpisode != null -> episodeDisplayTitle(resumeEpisode)
-                                    resumePlaybackId != null && parsedResumeSeasonEpisode != null ->
-                                        "S${parsedResumeSeasonEpisode.first}:E${parsedResumeSeasonEpisode.second} - ${currentMovie.name}"
-                                    resumePlaybackId != null -> currentMovie.name
-                                    else -> episodeDisplayTitle(ep)
+                                checkLockAndExecute {
+                                    val ep = resumeEpisode ?: firstEpisode ?: return@checkLockAndExecute
+                                    val trackId = resumePlaybackId ?: episodePlaybackId(streamId, ep)
+                                    val epStreamId = episodeStreamId(streamId, ep)
+                                    val epTitle = when {
+                                        resumePlaybackId != null && resumeEpisode != null -> episodeDisplayTitle(resumeEpisode)
+                                        resumePlaybackId != null && parsedResumeSeasonEpisode != null ->
+                                            "S${parsedResumeSeasonEpisode.first}:E${parsedResumeSeasonEpisode.second} - ${currentMovie.name}"
+                                        resumePlaybackId != null -> currentMovie.name
+                                        else -> episodeDisplayTitle(ep)
+                                    }
+                                    pendingPlaybackId = trackId
+                                    pendingPlaybackType = type
+                                    pendingPlaybackTitle = epTitle
+                                    viewModel.loadStreams(
+                                        type = type,
+                                        id = epStreamId,
+                                        displayTitle = epTitle,
+                                        sourceSelectionId = trackId,
+                                        forceSourcePicker = false,
+                                        autoSelectSource = autoSelectSource,
+                                        rememberSourceSelection = rememberSourceSelection
+                                    )
                                 }
-                                pendingPlaybackId = trackId
-                                pendingPlaybackType = type
-                                pendingPlaybackTitle = epTitle
-                                viewModel.loadStreams(
-                                    type = type,
-                                    id = epStreamId,
-                                    displayTitle = epTitle,
-                                    sourceSelectionId = trackId,
-                                    forceSourcePicker = false,
-                                    autoSelectSource = autoSelectSource,
-                                    rememberSourceSelection = rememberSourceSelection
-                                )
                             }
                         )
 
@@ -712,28 +740,30 @@ fun DetailsScreen(
                             label = stringResource(id = R.string.details_play_options_choose_source),
                             icon = Icons.Default.Settings,
                             onClick = {
-                                val ep = resumeEpisode ?: firstEpisode ?: return@ExpandableIconButton
-                                val trackId = resumePlaybackId ?: episodePlaybackId(streamId, ep)
-                                val epStreamId = episodeStreamId(streamId, ep)
-                                val epTitle = when {
-                                    resumePlaybackId != null && resumeEpisode != null -> episodeDisplayTitle(resumeEpisode)
-                                    resumePlaybackId != null && parsedResumeSeasonEpisode != null ->
-                                        "S${parsedResumeSeasonEpisode.first}:E${parsedResumeSeasonEpisode.second} - ${currentMovie.name}"
-                                    resumePlaybackId != null -> currentMovie.name
-                                    else -> episodeDisplayTitle(ep)
+                                checkLockAndExecute {
+                                    val ep = resumeEpisode ?: firstEpisode ?: return@checkLockAndExecute
+                                    val trackId = resumePlaybackId ?: episodePlaybackId(streamId, ep)
+                                    val epStreamId = episodeStreamId(streamId, ep)
+                                    val epTitle = when {
+                                        resumePlaybackId != null && resumeEpisode != null -> episodeDisplayTitle(resumeEpisode)
+                                        resumePlaybackId != null && parsedResumeSeasonEpisode != null ->
+                                            "S${parsedResumeSeasonEpisode.first}:E${parsedResumeSeasonEpisode.second} - ${currentMovie.name}"
+                                        resumePlaybackId != null -> currentMovie.name
+                                        else -> episodeDisplayTitle(ep)
+                                    }
+                                    pendingPlaybackId = trackId
+                                    pendingPlaybackType = type
+                                    pendingPlaybackTitle = epTitle
+                                    viewModel.loadStreams(
+                                        type = type,
+                                        id = epStreamId,
+                                        displayTitle = epTitle,
+                                        sourceSelectionId = trackId,
+                                        forceSourcePicker = true,
+                                        autoSelectSource = autoSelectSource,
+                                        rememberSourceSelection = rememberSourceSelection
+                                    )
                                 }
-                                pendingPlaybackId = trackId
-                                pendingPlaybackType = type
-                                pendingPlaybackTitle = epTitle
-                                viewModel.loadStreams(
-                                    type = type,
-                                    id = epStreamId,
-                                    displayTitle = epTitle,
-                                    sourceSelectionId = trackId,
-                                    forceSourcePicker = true,
-                                    autoSelectSource = autoSelectSource,
-                                    rememberSourceSelection = rememberSourceSelection
-                                )
                             }
                         )
 
@@ -749,7 +779,7 @@ fun DetailsScreen(
                             ExpandableIconButton(
                                 label = "Trailer",
                                 icon = Icons.Default.Videocam,
-                                onClick = { onTrailerClick(seriesTrailer.key, seriesTrailer.name) }
+                                onClick = { checkLockAndExecute { onTrailerClick(seriesTrailer.key, seriesTrailer.name) } }
                             )
                         }
 
@@ -783,17 +813,19 @@ fun DetailsScreen(
                             icon = Icons.Default.PlayArrow,
                             modifier = Modifier.focusRequester(firstButtonFocusRequester),
                             onClick = {
-                                pendingPlaybackId = streamId
-                                pendingPlaybackType = type
-                                pendingPlaybackTitle = currentMovie.name
-                                viewModel.loadStreams(
-                                    type = type,
-                                    id = streamId,
-                                    displayTitle = currentMovie.name,
-                                    forceSourcePicker = false,
-                                    autoSelectSource = autoSelectSource,
-                                    rememberSourceSelection = rememberSourceSelection
-                                )
+                                checkLockAndExecute {
+                                    pendingPlaybackId = streamId
+                                    pendingPlaybackType = type
+                                    pendingPlaybackTitle = currentMovie.name
+                                    viewModel.loadStreams(
+                                        type = type,
+                                        id = streamId,
+                                        displayTitle = currentMovie.name,
+                                        forceSourcePicker = false,
+                                        autoSelectSource = autoSelectSource,
+                                        rememberSourceSelection = rememberSourceSelection
+                                    )
+                                }
                             }
                         )
 
@@ -801,17 +833,19 @@ fun DetailsScreen(
                             label = stringResource(id = R.string.details_play_options_choose_source),
                             icon = Icons.Default.Settings,
                             onClick = {
-                                pendingPlaybackId = streamId
-                                pendingPlaybackType = type
-                                pendingPlaybackTitle = currentMovie.name
-                                viewModel.loadStreams(
-                                    type = type,
-                                    id = streamId,
-                                    displayTitle = currentMovie.name,
-                                    forceSourcePicker = true,
-                                    autoSelectSource = autoSelectSource,
-                                    rememberSourceSelection = rememberSourceSelection
-                                )
+                                checkLockAndExecute {
+                                    pendingPlaybackId = streamId
+                                    pendingPlaybackType = type
+                                    pendingPlaybackTitle = currentMovie.name
+                                    viewModel.loadStreams(
+                                        type = type,
+                                        id = streamId,
+                                        displayTitle = currentMovie.name,
+                                        forceSourcePicker = true,
+                                        autoSelectSource = autoSelectSource,
+                                        rememberSourceSelection = rememberSourceSelection
+                                    )
+                                }
                             }
                         )
 
@@ -820,7 +854,7 @@ fun DetailsScreen(
                             ExpandableIconButton(
                                 label = "Trailer",
                                 icon = Icons.Default.Videocam,
-                                onClick = { onTrailerClick(movieTrailer.key, movieTrailer.name) }
+                                onClick = { checkLockAndExecute { onTrailerClick(movieTrailer.key, movieTrailer.name) } }
                             )
                         }
 
@@ -1066,13 +1100,15 @@ fun DetailsScreen(
             onDismiss = { viewModel.closeSidebar() },
             onBack = { viewModel.goBackInSidebar() },
             onEpisodeSelected = { episode ->
-                val trackId = episodePlaybackId(streamId, episode)
-                val epStreamId = episodeStreamId(streamId, episode)
-                val epTitle = episodeDisplayTitle(episode)
-                pendingPlaybackId = trackId
-                pendingPlaybackType = type
-                pendingPlaybackTitle = epTitle
-                viewModel.loadStreams(type, epStreamId, epTitle, sourceSelectionId = trackId, autoSelectSource = autoSelectSource, rememberSourceSelection = rememberSourceSelection)
+                checkLockAndExecute {
+                    val trackId = episodePlaybackId(streamId, episode)
+                    val epStreamId = episodeStreamId(streamId, episode)
+                    val epTitle = episodeDisplayTitle(episode)
+                    pendingPlaybackId = trackId
+                    pendingPlaybackType = type
+                    pendingPlaybackTitle = epTitle
+                    viewModel.loadStreams(type, epStreamId, epTitle, sourceSelectionId = trackId, autoSelectSource = autoSelectSource, rememberSourceSelection = rememberSourceSelection)
+                }
             },
             onSourceSelected = { stream ->
                 val playbackId = pendingPlaybackId.ifBlank { movie?.id ?: id }
@@ -1148,7 +1184,29 @@ fun DetailsScreen(
             }
         }
 
-
+        if (showPinDialog) {
+            ParentalPinDialog(
+                title = stringResource(id = R.string.parental_enter_pin),
+                subtitle = stringResource(id = R.string.parental_enter_pin_desc),
+                errorMessage = pinError,
+                onPinSubmitted = { enteredPin ->
+                    if (enteredPin == state.parentalPin) {
+                        isContentUnlocked = true
+                        showPinDialog = false
+                        pinError = null
+                        pendingAction?.invoke()
+                        pendingAction = null
+                    } else {
+                        pinError = context.getString(R.string.parental_pin_incorrect)
+                    }
+                },
+                onDismiss = {
+                    showPinDialog = false
+                    pinError = null
+                    pendingAction = null
+                }
+            )
+        }
     }
 }
 
@@ -1740,5 +1798,27 @@ private fun resolvePlayableUrl(stream: com.lumera.app.data.model.stremio.Stream)
         return "magnet:?xt=urn:btih:${stream.infoHash}&dn=Video${trackerParams}"
     }
     return null
+}
+
+private fun parseAgeRating(rating: String?): Int {
+    if (rating.isNullOrBlank()) return 0
+    val upper = rating.uppercase().trim()
+    
+    // First try standard matches to handle non-pure-digit cases properly
+    if (upper.contains("PG-13") || upper.contains("13")) return 13
+    if (upper.contains("PG-14") || upper.contains("14")) return 14
+    if (upper.contains("PG-16") || upper.contains("16")) return 16
+    if (upper.contains("PG-18") || upper.contains("18")) return 18
+    if (upper == "G" || upper == "U" || upper == "L" || upper == "TP" || upper == "ALL") return 0
+    if (upper.contains("PG") || upper == "10") return 10
+    if (upper == "R" || upper.contains("15") || upper == "MA15+") return 15
+    if (upper == "NC-17" || upper == "X") return 18
+    
+    // Fallback: extract digits
+    val digitsOnly = rating.filter { it.isDigit() }
+    if (digitsOnly.isNotEmpty()) {
+        return digitsOnly.toIntOrNull() ?: 0
+    }
+    return 0
 }
 

@@ -1,6 +1,7 @@
 package com.lumera.app.ui.settings
 
 import com.lumera.app.ui.addons.VoidDialog
+import com.lumera.app.ui.components.dialogs.ParentalPinDialog
 import com.lumera.app.ui.details.FilterDropdown
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.text.style.TextOverflow
@@ -137,6 +138,10 @@ fun PersonalizationSettings(
     val roundCorners = currentProfile.roundCorners
     val hubRoundCorners = currentProfile.hubRoundCorners
     val navPos = currentProfile.navPosition
+
+    var showPinDialogMode by remember { mutableStateOf<PinDialogMode?>(null) }
+    var pinError by remember { mutableStateOf<String?>(null) }
+    var firstPinAttempt by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -279,6 +284,198 @@ fun PersonalizationSettings(
             isChecked = currentProfile.menuSeriesEnabled,
             onCheckedChange = { viewModel.updateMenuSeriesEnabled(currentProfile.id, it) },
             onBack = onGoBack
+        )
+
+        Spacer(Modifier.height(15.dp))
+        SettingToggleRow(
+            label = stringResource(R.string.settings_home_new_episodes),
+            subtitle = stringResource(R.string.settings_home_new_episodes_desc),
+            isChecked = currentProfile.homeNewEpisodesEnabled,
+            onCheckedChange = { viewModel.updateHomeNewEpisodesEnabled(currentProfile.id, it) },
+            onBack = onGoBack
+        )
+
+        Spacer(Modifier.height(20.dp))
+        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(0.1f)))
+        Spacer(Modifier.height(15.dp))
+
+        Text(
+            stringResource(R.string.settings_parental_control),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 18.sp),
+            color = Color.White,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        Text(
+            stringResource(R.string.settings_parental_control_desc),
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+            color = Color.White.copy(0.6f),
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        val hasPin = currentProfile.parentalPin.isNotEmpty()
+        if (!hasPin) {
+            SettingButtonRow(
+                label = stringResource(R.string.parental_setup_pin),
+                onClick = {
+                    showPinDialogMode = PinDialogMode.CREATE_FIRST
+                    pinError = null
+                },
+                onBack = onGoBack
+            )
+        } else {
+            SettingButtonRow(
+                label = stringResource(R.string.parental_change_pin),
+                onClick = {
+                    showPinDialogMode = PinDialogMode.ENTER_TO_CHANGE
+                    pinError = null
+                },
+                onBack = onGoBack
+            )
+            Spacer(Modifier.height(10.dp))
+            SettingButtonRow(
+                label = stringResource(R.string.parental_remove_pin),
+                onClick = {
+                    showPinDialogMode = PinDialogMode.ENTER_TO_REMOVE
+                    pinError = null
+                },
+                onBack = onGoBack
+            )
+            Spacer(Modifier.height(15.dp))
+            SettingRow(stringResource(R.string.parental_age_limit)) {
+                VoidSegmentedControl(
+                    options = listOf(
+                        stringResource(R.string.parental_age_limit_none) to 0,
+                        "10+" to 10,
+                        "12+" to 12,
+                        "14+" to 14,
+                        "16+" to 16,
+                        "18+" to 18
+                    ),
+                    selectedOption = currentProfile.parentalAgeLimit,
+                    onOptionSelected = { viewModel.updateParentalAgeLimit(currentProfile.id, it) },
+                    onBack = onGoBack,
+                    blockUp = false
+                )
+            }
+        }
+
+        if (showPinDialogMode != null) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val dialogTitle = when (showPinDialogMode) {
+                PinDialogMode.CREATE_FIRST -> stringResource(id = R.string.parental_setup_pin)
+                PinDialogMode.CREATE_CONFIRM -> stringResource(id = R.string.parental_confirm_pin)
+                PinDialogMode.ENTER_TO_CHANGE, PinDialogMode.ENTER_TO_REMOVE -> stringResource(id = R.string.parental_enter_pin)
+                else -> ""
+            }
+            val dialogSubtitle = when (showPinDialogMode) {
+                PinDialogMode.CREATE_FIRST -> stringResource(id = R.string.parental_enter_pin_desc)
+                PinDialogMode.CREATE_CONFIRM -> stringResource(id = R.string.parental_enter_pin_desc)
+                PinDialogMode.ENTER_TO_CHANGE -> stringResource(id = R.string.parental_enter_pin_desc)
+                PinDialogMode.ENTER_TO_REMOVE -> stringResource(id = R.string.parental_enter_pin_desc)
+                else -> null
+            }
+            ParentalPinDialog(
+                title = dialogTitle,
+                subtitle = dialogSubtitle,
+                errorMessage = pinError,
+                onPinSubmitted = { enteredPin ->
+                    when (showPinDialogMode) {
+                        PinDialogMode.CREATE_FIRST -> {
+                            firstPinAttempt = enteredPin
+                            pinError = null
+                            showPinDialogMode = PinDialogMode.CREATE_CONFIRM
+                        }
+                        PinDialogMode.CREATE_CONFIRM -> {
+                            if (enteredPin == firstPinAttempt) {
+                                viewModel.updateParentalPin(currentProfile.id, enteredPin)
+                                showPinDialogMode = null
+                                firstPinAttempt = ""
+                                pinError = null
+                            } else {
+                                pinError = context.getString(R.string.parental_pin_mismatch)
+                                firstPinAttempt = ""
+                                showPinDialogMode = PinDialogMode.CREATE_FIRST
+                            }
+                        }
+                        PinDialogMode.ENTER_TO_CHANGE -> {
+                            if (enteredPin == currentProfile.parentalPin) {
+                                pinError = null
+                                showPinDialogMode = PinDialogMode.CREATE_FIRST
+                            } else {
+                                pinError = context.getString(R.string.parental_pin_incorrect)
+                            }
+                        }
+                        PinDialogMode.ENTER_TO_REMOVE -> {
+                            if (enteredPin == currentProfile.parentalPin) {
+                                viewModel.updateParentalPin(currentProfile.id, "")
+                                viewModel.updateParentalAgeLimit(currentProfile.id, 0)
+                                showPinDialogMode = null
+                                pinError = null
+                            } else {
+                                pinError = context.getString(R.string.parental_pin_incorrect)
+                            }
+                        }
+                        null -> {}
+                    }
+                },
+                onDismiss = {
+                    showPinDialogMode = null
+                    firstPinAttempt = ""
+                    pinError = null
+                }
+            )
+        }
+    }
+}
+
+private enum class PinDialogMode {
+    CREATE_FIRST,
+    CREATE_CONFIRM,
+    ENTER_TO_CHANGE,
+    ENTER_TO_REMOVE
+}
+
+@Composable
+fun SettingButtonRow(
+    label: String,
+    onClick: () -> Unit,
+    onBack: (() -> Unit)? = null
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val scale by animateFloatAsState(if (isFocused) 1.02f else 1f)
+    val accentColor = MaterialTheme.colorScheme.primary
+
+    val backModifier = if (onBack != null) {
+        Modifier.onPreviewKeyEvent {
+            if (it.key == Key.DirectionLeft && it.type == KeyEventType.KeyDown) {
+                onBack()
+                true
+            } else false
+        }
+    } else Modifier
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .scale(scale)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isFocused) Color.White.copy(0.12f) else Color.White.copy(0.05f))
+            .border(1.5.dp, if (isFocused) Color.White else Color.Transparent, RoundedCornerShape(8.dp))
+            .clickable(interactionSource = interactionSource, indication = null) { onClick() }
+            .focusable(interactionSource = interactionSource)
+            .then(backModifier)
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Text(
+            text = label,
+            color = if (isFocused) accentColor else Color.White,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp
+            )
         )
     }
 }
