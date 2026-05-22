@@ -5,9 +5,12 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -1240,12 +1243,28 @@ fun CinematicBackground(item: MetaItem?) {
                             .build()
                     }
 
+                    val scale = remember(currentItem) { Animatable(1.0f) }
+                    LaunchedEffect(currentItem) {
+                        scale.animateTo(
+                            targetValue = 1.05f,
+                            animationSpec = tween(
+                                durationMillis = 8000,
+                                easing = LinearOutSlowInEasing
+                            )
+                        )
+                    }
+
                     Box(modifier = Modifier.fillMaxSize()) {
                         AsyncImage(
                             model = imageRequest,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale.value,
+                                    scaleY = scale.value
+                                )
                         )
                         // Left and bottom edge fades only
                         Spacer(
