@@ -31,12 +31,12 @@ android {
         applicationId = "com.lumerax.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 9
-        versionName = "0.1.8-beta"
+        versionCode = 10
+        versionName = "0.2.0"
 
         // GitHub repository for auto-update system
-        buildConfigField("String", "GITHUB_OWNER", "\"LumeraD3v\"")
-        buildConfigField("String", "GITHUB_REPO", "\"Lumera\"")
+        buildConfigField("String", "GITHUB_OWNER", "\"bruno33223\"")
+        buildConfigField("String", "GITHUB_REPO", "\"LumeraX\"")
 
         // ACRA crash reporting (loaded from local.properties)
         buildConfigField("String", "ACRA_URL", "\"$acraUrl\"")
