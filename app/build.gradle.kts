@@ -188,5 +188,6 @@ dependencies {
 
     // 9. Backup & Cloud Sync
 
-
+    // Testing
+    testImplementation("junit:junit:4.13.2")
 }

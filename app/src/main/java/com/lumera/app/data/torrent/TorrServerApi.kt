@@ -122,9 +122,52 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
             }
         }
 
-    private fun extractHash(magnetLink: String): String {
-        val regex = Regex("btih:([a-fA-F0-9]{40})")
-        return regex.find(magnetLink)?.groupValues?.get(1) ?: magnetLink
+    internal fun extractHash(magnetLink: String): String {
+        val cleanedLink = magnetLink.trim()
+        val btihPrefix = "urn:btih:"
+        val xtIndex = cleanedLink.indexOf(btihPrefix, ignoreCase = true)
+        
+        val rawHash = if (xtIndex != -1) {
+            val start = xtIndex + btihPrefix.length
+            val end = cleanedLink.indexOf('&', start).let { if (it == -1) cleanedLink.length else it }
+            cleanedLink.substring(start, end).trim()
+        } else {
+            cleanedLink
+        }
+
+        if (rawHash.length == 40 && rawHash.all { it.isDigit() || (it in 'a'..'f') || (it in 'A'..'F') }) {
+            return rawHash.lowercase()
+        }
+
+        if (rawHash.length == 32 && rawHash.all { it.isDigit() || (it in 'a'..'z') || (it in 'A'..'Z') }) {
+            try {
+                return base32ToHex(rawHash)
+            } catch (_: Exception) {}
+        }
+
+        val regex = Regex("btih:([a-fA-F0-9]{40})", RegexOption.IGNORE_CASE)
+        return regex.find(cleanedLink)?.groupValues?.get(1)?.lowercase() ?: cleanedLink
+    }
+
+    internal fun base32ToHex(base32: String): String {
+        val base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+        val clean = base32.uppercase()
+        var bits = 0
+        var value = 0
+        val hex = StringBuilder()
+        
+        for (char in clean) {
+            val idx = base32Chars.indexOf(char)
+            if (idx == -1) continue
+            value = (value shl 5) or idx
+            bits += 5
+            if (bits >= 8) {
+                bits -= 8
+                val byteVal = (value shr bits) and 0xFF
+                hex.append(String.format("%02x", byteVal))
+            }
+        }
+        return hex.toString()
     }
 
     private fun parseTorrentStats(json: JsonObject): TorrentStats {

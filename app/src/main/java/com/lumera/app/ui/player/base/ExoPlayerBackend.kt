@@ -1287,8 +1287,8 @@ class ExoPlayerBackend(
                 .also { torrentOkHttpClient = it }
         }
         return okHttpClient ?: OkHttpClient.Builder()
-            .connectTimeout(8000, TimeUnit.MILLISECONDS)
-            .readTimeout(8000, TimeUnit.MILLISECONDS)
+            .connectTimeout(15000, TimeUnit.MILLISECONDS)
+            .readTimeout(30000, TimeUnit.MILLISECONDS)
             .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
             .retryOnConnectionFailure(true)
             .followRedirects(true)
