@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -212,8 +213,6 @@ fun DetailsScreen(
         viewModel.consumeAutoPlayStream()
     }
 
-    var playActionState by remember { mutableStateOf<PlayActionState?>(null) }
-
     // Dynamic BG Palette
     var dynamicBgColor by remember(movie?.poster) { mutableStateOf(bg) }
     LaunchedEffect(movie?.poster) {
@@ -293,7 +292,7 @@ fun DetailsScreen(
         }
     }
 
-    val isAnyOverlayActive = state.isLoadingStreams || isTrailerLoading || sidebarState !is SidebarState.Closed || showClearProgressDialog || playActionState != null
+    val isAnyOverlayActive = state.isLoadingStreams || isTrailerLoading || sidebarState !is SidebarState.Closed || showClearProgressDialog
     val shouldPlayTrailer = !trailerUrl.isNullOrEmpty() && isLifecycleResumed && !isAnyOverlayActive
 
     LaunchedEffect(shouldPlayTrailer, trailerUrl) {
@@ -675,18 +674,44 @@ fun DetailsScreen(
                                 pendingPlaybackId = trackId
                                 pendingPlaybackType = type
                                 pendingPlaybackTitle = epTitle
-                                if (autoSelectSource) {
-                                    playActionState = PlayActionState(
-                                        type = type,
-                                        streamId = epStreamId,
-                                        title = epTitle,
-                                        sourceSelectionId = trackId,
-                                        autoSelectSource = true,
-                                        rememberSourceSelection = rememberSourceSelection
-                                    )
-                                } else {
-                                    viewModel.loadStreams(type, epStreamId, epTitle, sourceSelectionId = trackId, autoSelectSource = autoSelectSource, rememberSourceSelection = rememberSourceSelection)
+                                viewModel.loadStreams(
+                                    type = type,
+                                    id = epStreamId,
+                                    displayTitle = epTitle,
+                                    sourceSelectionId = trackId,
+                                    forceSourcePicker = false,
+                                    autoSelectSource = autoSelectSource,
+                                    rememberSourceSelection = rememberSourceSelection
+                                )
+                            }
+                        )
+
+                        ExpandableIconButton(
+                            label = stringResource(id = R.string.details_play_options_choose_source),
+                            icon = Icons.Default.Settings,
+                            onClick = {
+                                val ep = resumeEpisode ?: firstEpisode ?: return@ExpandableIconButton
+                                val trackId = resumePlaybackId ?: episodePlaybackId(streamId, ep)
+                                val epStreamId = episodeStreamId(streamId, ep)
+                                val epTitle = when {
+                                    resumePlaybackId != null && resumeEpisode != null -> episodeDisplayTitle(resumeEpisode)
+                                    resumePlaybackId != null && parsedResumeSeasonEpisode != null ->
+                                        "S${parsedResumeSeasonEpisode.first}:E${parsedResumeSeasonEpisode.second} - ${currentMovie.name}"
+                                    resumePlaybackId != null -> currentMovie.name
+                                    else -> episodeDisplayTitle(ep)
                                 }
+                                pendingPlaybackId = trackId
+                                pendingPlaybackType = type
+                                pendingPlaybackTitle = epTitle
+                                viewModel.loadStreams(
+                                    type = type,
+                                    id = epStreamId,
+                                    displayTitle = epTitle,
+                                    sourceSelectionId = trackId,
+                                    forceSourcePicker = true,
+                                    autoSelectSource = autoSelectSource,
+                                    rememberSourceSelection = rememberSourceSelection
+                                )
                             }
                         )
 
@@ -739,18 +764,32 @@ fun DetailsScreen(
                                 pendingPlaybackId = streamId
                                 pendingPlaybackType = type
                                 pendingPlaybackTitle = currentMovie.name
-                                if (autoSelectSource) {
-                                    playActionState = PlayActionState(
-                                        type = type,
-                                        streamId = streamId,
-                                        title = currentMovie.name,
-                                        sourceSelectionId = streamId,
-                                        autoSelectSource = true,
-                                        rememberSourceSelection = rememberSourceSelection
-                                    )
-                                } else {
-                                    viewModel.loadStreams(type, streamId, currentMovie.name, autoSelectSource = autoSelectSource, rememberSourceSelection = rememberSourceSelection)
-                                }
+                                viewModel.loadStreams(
+                                    type = type,
+                                    id = streamId,
+                                    displayTitle = currentMovie.name,
+                                    forceSourcePicker = false,
+                                    autoSelectSource = autoSelectSource,
+                                    rememberSourceSelection = rememberSourceSelection
+                                )
+                            }
+                        )
+
+                        ExpandableIconButton(
+                            label = stringResource(id = R.string.details_play_options_choose_source),
+                            icon = Icons.Default.Settings,
+                            onClick = {
+                                pendingPlaybackId = streamId
+                                pendingPlaybackType = type
+                                pendingPlaybackTitle = currentMovie.name
+                                viewModel.loadStreams(
+                                    type = type,
+                                    id = streamId,
+                                    displayTitle = currentMovie.name,
+                                    forceSourcePicker = true,
+                                    autoSelectSource = autoSelectSource,
+                                    rememberSourceSelection = rememberSourceSelection
+                                )
                             }
                         )
 
@@ -1087,77 +1126,7 @@ fun DetailsScreen(
             }
         }
 
-        // Play Options Dialog
-        val currentPlayState = playActionState
-        if (currentPlayState != null) {
-            androidx.compose.ui.window.Dialog(
-                onDismissRequest = { playActionState = null },
-                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-            ) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(
-                        modifier = Modifier
-                            .widthIn(max = 400.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(bg)
-                            .border(1.dp, Color.White.copy(0.1f), RoundedCornerShape(16.dp))
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            stringResource(id = R.string.details_play_options_title),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = textColor
-                        )
-                        Spacer(Modifier.height(20.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
-                        ) {
-                            val startFocusRequester = remember { FocusRequester() }
 
-                            DialogButton(
-                                text = stringResource(id = R.string.details_play_options_start),
-                                modifier = Modifier.width(150.dp).focusRequester(startFocusRequester),
-                                onClick = {
-                                    playActionState = null
-                                    viewModel.loadStreams(
-                                        type = currentPlayState.type,
-                                        id = currentPlayState.streamId,
-                                        displayTitle = currentPlayState.title,
-                                        sourceSelectionId = currentPlayState.sourceSelectionId ?: currentPlayState.streamId,
-                                        forceSourcePicker = false,
-                                        autoSelectSource = true,
-                                        rememberSourceSelection = currentPlayState.rememberSourceSelection
-                                    )
-                                }
-                            )
-                            DialogButton(
-                                text = stringResource(id = R.string.details_play_options_choose_source),
-                                modifier = Modifier.width(150.dp),
-                                onClick = {
-                                    playActionState = null
-                                    viewModel.loadStreams(
-                                        type = currentPlayState.type,
-                                        id = currentPlayState.streamId,
-                                        displayTitle = currentPlayState.title,
-                                        sourceSelectionId = currentPlayState.sourceSelectionId ?: currentPlayState.streamId,
-                                        forceSourcePicker = true,
-                                        autoSelectSource = currentPlayState.autoSelectSource,
-                                        rememberSourceSelection = currentPlayState.rememberSourceSelection
-                                    )
-                                }
-                            )
-
-                            LaunchedEffect(Unit) {
-                                kotlinx.coroutines.delay(200)
-                                runCatching { startFocusRequester.requestFocus() }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -1751,11 +1720,3 @@ private fun resolvePlayableUrl(stream: com.lumera.app.data.model.stremio.Stream)
     return null
 }
 
-private data class PlayActionState(
-    val type: String,
-    val streamId: String,
-    val title: String,
-    val sourceSelectionId: String? = null,
-    val autoSelectSource: Boolean,
-    val rememberSourceSelection: Boolean
-)
