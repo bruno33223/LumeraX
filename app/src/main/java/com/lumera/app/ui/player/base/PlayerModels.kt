@@ -106,3 +106,8 @@ data class PlayerUiState(
     val isEnded: Boolean = false,
     val errorMessage: String? = null
 )
+
+data class PlayerHeaderInfo(
+    val primaryText: String,
+    val secondaryText: String?
+)
