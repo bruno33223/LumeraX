@@ -40,8 +40,37 @@ class TorrServerEngine @Inject constructor(
             throw IllegalStateException("TorrServer binary not found at: $binaryPath")
         }
 
-        if (BuildConfig.DEBUG) Log.d(TAG, "Starting TorrServer from: $binaryPath")
+        val configDir = File(context.filesDir, "torrserver")
+        configDir.mkdirs()
 
+        var attempts = 0
+        val maxAttempts = 2
+        var lastException: Exception? = null
+
+        while (attempts < maxAttempts) {
+            attempts++
+            try {
+                if (BuildConfig.DEBUG) Log.d(TAG, "Starting TorrServer from: $binaryPath (Attempt $attempts/$maxAttempts)")
+                runServerProcess(binaryPath, configDir)
+                return // Success!
+            } catch (e: Exception) {
+                lastException = e
+                if (BuildConfig.DEBUG) Log.e(TAG, "TorrServer startup attempt $attempts failed: ${e.message}")
+                
+                // Ensure process is fully stopped/killed before deleting files
+                stop()
+                
+                if (attempts < maxAttempts) {
+                    if (BuildConfig.DEBUG) Log.w(TAG, "Clearing config directory to heal potential database corruption...")
+                    deleteDirectoryContents(configDir)
+                }
+            }
+        }
+
+        throw lastException ?: IllegalStateException("TorrServer failed to start after $maxAttempts attempts")
+    }
+
+    private fun runServerProcess(binaryPath: String, configDir: File) {
         // Ensure the binary is executable
         val binaryFile = File(binaryPath)
         try {
@@ -50,17 +79,13 @@ class TorrServerEngine @Inject constructor(
             }
         } catch (_: Exception) {}
 
-        val configDir = File(context.filesDir, "torrserver")
-        configDir.mkdirs()
-
         process = ProcessBuilder(binaryPath, "-p", PORT.toString(), "-d", configDir.absolutePath)
             .redirectErrorStream(true)
             .start()
 
         val lastLogs = java.util.Collections.synchronizedList(mutableListOf<String>())
-        // Read and discard/log output in background to prevent process blocking/hanging due to full pipe buffers
         val proc = process
-        Thread({
+        val logThread = Thread({
             try {
                 proc?.inputStream?.bufferedReader()?.use { reader ->
                     var line: String?
@@ -77,7 +102,8 @@ class TorrServerEngine @Inject constructor(
                     }
                 }
             } catch (_: Exception) {}
-        }, "torrserver-log").apply { isDaemon = true }.start()
+        }, "torrserver-log").apply { isDaemon = true }
+        logThread.start()
 
         // Wait for server to be ready
         val deadline = System.currentTimeMillis() + 10_000L
@@ -97,6 +123,19 @@ class TorrServerEngine @Inject constructor(
 
         val logsStr = synchronized(lastLogs) { lastLogs.joinToString("\n") }
         throw IllegalStateException("TorrServer failed to start within 10 seconds. Logs:\n$logsStr")
+    }
+
+    private fun deleteDirectoryContents(dir: File) {
+        try {
+            if (dir.exists() && dir.isDirectory) {
+                dir.listFiles()?.forEach { file ->
+                    if (file.isDirectory) {
+                        deleteDirectoryContents(file)
+                    }
+                    file.delete()
+                }
+            }
+        } catch (_: Exception) {}
     }
 
     fun stop() {
