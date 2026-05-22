@@ -57,6 +57,7 @@ class TorrServerEngine @Inject constructor(
             .redirectErrorStream(true)
             .start()
 
+        val lastLogs = java.util.Collections.synchronizedList(mutableListOf<String>())
         // Read and discard/log output in background to prevent process blocking/hanging due to full pipe buffers
         val proc = process
         Thread({
@@ -66,6 +67,12 @@ class TorrServerEngine @Inject constructor(
                     while (reader.readLine().also { line = it } != null) {
                         if (BuildConfig.DEBUG) {
                             Log.v(TAG, "TorrServer: $line")
+                        }
+                        synchronized(lastLogs) {
+                            lastLogs.add(line)
+                            if (lastLogs.size > 20) {
+                                lastLogs.removeAt(0)
+                            }
                         }
                     }
                 }
@@ -79,10 +86,17 @@ class TorrServerEngine @Inject constructor(
                 if (BuildConfig.DEBUG) Log.d(TAG, "TorrServer started successfully on port $PORT")
                 return
             }
+            val p = process
+            if (p != null && !p.isAlive) {
+                val exitCode = try { p.exitValue() } catch (_: Exception) { -1 }
+                val logsStr = synchronized(lastLogs) { lastLogs.joinToString("\n") }
+                throw IllegalStateException("TorrServer process died (exit $exitCode). Logs:\n$logsStr")
+            }
             Thread.sleep(200)
         }
 
-        throw IllegalStateException("TorrServer failed to start within 10 seconds")
+        val logsStr = synchronized(lastLogs) { lastLogs.joinToString("\n") }
+        throw IllegalStateException("TorrServer failed to start within 10 seconds. Logs:\n$logsStr")
     }
 
     fun stop() {
