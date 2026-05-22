@@ -39,7 +39,7 @@ class AddonRepository @Inject constructor(
     private fun MetaItem?.sanitize(): MetaItem? =
         this?.takeIf { it.id != null && it.name != null && it.type != null }
     private val CATALOG_TIMEOUT_MS = 10_000L // 10 seconds per catalog request
-    private val STREAM_TIMEOUT_MS = 20_000L  // 20 seconds per stream request (torrent addons need more time)
+    private val STREAM_TIMEOUT_MS = 8_000L   // 8 seconds per stream request (torrent addons need more time)
 
     /**
      * Fetches a single page of catalog items at the given skip offset.

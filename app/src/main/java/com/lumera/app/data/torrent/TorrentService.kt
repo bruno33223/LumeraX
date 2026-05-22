@@ -76,14 +76,15 @@ class TorrentService : Service() {
     }
 
     private fun startDownload(magnet: String, fileIdx: Int, fileName: String = "") {
+        val sanitizedMagnet = appendDefaultTrackers(magnet)
         downloadJob?.cancel()
 
         // Drop previous torrent to free TorrServer's RAM cache
         val previousMagnet = currentMagnet
-        currentMagnet = magnet
+        currentMagnet = sanitizedMagnet
 
         downloadJob = scope.launch {
-            if (previousMagnet != null && previousMagnet != magnet) {
+            if (previousMagnet != null && previousMagnet != sanitizedMagnet) {
                 if (BuildConfig.DEBUG) Log.d(TAG, "Dropping previous torrent")
                 api.dropTorrent(previousMagnet)
             }
@@ -96,17 +97,17 @@ class TorrentService : Service() {
                 engine.start()
 
                 // Phase 2: Add torrent
-                if (BuildConfig.DEBUG) Log.d(TAG, "Adding magnet: ${magnet.take(120)}...")
+                if (BuildConfig.DEBUG) Log.d(TAG, "Adding magnet: ${sanitizedMagnet.take(120)}...")
                 withContext(Dispatchers.Main) {
                     onStreamProgress?.invoke(TorrentProgress(status = "Fetching metadata..."))
                 }
-                api.addTorrent(magnet)
+                api.addTorrent(sanitizedMagnet)
 
                 // Phase 3: Resolve correct video file, then start streaming
-                val targetFileIndex = resolveFileIndex(magnet, fileIdx, fileName)
+                val targetFileIndex = resolveFileIndex(sanitizedMagnet, fileIdx, fileName)
                 if (BuildConfig.DEBUG) Log.d(TAG, "Streaming file index: $targetFileIndex")
 
-                val streamUrl = api.getStreamUrl(magnet, targetFileIndex)
+                val streamUrl = api.getStreamUrl(sanitizedMagnet, targetFileIndex)
                 updateNotification("Streaming...")
                 withContext(Dispatchers.Main) {
                     onStreamProgress?.invoke(TorrentProgress(status = "Starting playback..."))
@@ -117,7 +118,7 @@ class TorrentService : Service() {
                 while (isActive) {
                     delay(1000)
                     try {
-                        val stats = api.getTorrentStats(magnet)
+                        val stats = api.getTorrentStats(sanitizedMagnet)
                         // Show determinate progress only while preloading (< target)
                         val progress = if (stats.preloadedBytes in 1 until PRELOAD_TARGET_BYTES.toLong()) {
                             stats.preloadedBytes.toFloat() / PRELOAD_TARGET_BYTES
@@ -232,6 +233,32 @@ class TorrentService : Service() {
         onStreamError = null
         onStreamProgress = null
         super.onDestroy()
+    }
+
+    private val defaultTrackers = listOf(
+        "udp://tracker.opentrackr.org:1337/announce",
+        "udp://tracker.coppersurfer.tk:6969/announce",
+        "udp://open.demonii.com:1337/announce",
+        "udp://tracker.leechers-paradise.org:6969/announce",
+        "udp://explodie.org:6969/announce",
+        "udp://tracker.openbittorrent.com:80/announce",
+        "udp://tracker.tiny-vps.com:6969/announce",
+        "http://tracker.ipv6tracker.ru:80/announce"
+    )
+
+    private fun appendDefaultTrackers(magnet: String): String {
+        if (!magnet.startsWith("magnet:", ignoreCase = true)) return magnet
+        val builder = StringBuilder(magnet)
+        for (tracker in defaultTrackers) {
+            try {
+                val encodedTracker = java.net.URLEncoder.encode(tracker, "UTF-8")
+                val trackerParam = "&tr=$encodedTracker"
+                if (!magnet.contains(trackerParam, ignoreCase = true) && !magnet.contains(tracker, ignoreCase = true)) {
+                    builder.append(trackerParam)
+                }
+            } catch (_: Exception) {}
+        }
+        return builder.toString()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
