@@ -125,20 +125,7 @@ import com.lumera.app.data.tmdb.TmdbCastInfo
 import com.lumera.app.data.tmdb.TmdbCompanyInfo
 import com.lumera.app.data.tmdb.TmdbMetaPreview
 import com.lumera.app.data.tmdb.TmdbVideoInfo
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
-import androidx.palette.graphics.Palette
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
-import androidx.media3.ui.AspectRatioFrameLayout
+
 
 
 @Composable
@@ -215,68 +202,9 @@ fun DetailsScreen(
     }
 
     // Dynamic BG Palette
-    var dynamicBgColor by remember(movie?.poster, movie?.background) { mutableStateOf(bg) }
-    LaunchedEffect(movie?.poster, movie?.background) {
-        val posterUrl = movie?.poster ?: movie?.background
-        if (posterUrl.isNullOrEmpty()) {
-            dynamicBgColor = bg
-            return@LaunchedEffect
-        }
-        val request = ImageRequest.Builder(context)
-            .data(posterUrl)
-            .allowHardware(false)
-            .build()
-        val imageLoader = ImageLoader(context)
-        val result = imageLoader.execute(request)
-        if (result is SuccessResult) {
-            val drawable = result.drawable
-            if (drawable is BitmapDrawable) {
-                val bitmap = drawable.bitmap
-                val palette = withContext(Dispatchers.Default) {
-                    Palette.from(bitmap).generate()
-                }
-                val swatch = palette.vibrantSwatch
-                    ?: palette.darkVibrantSwatch
-                    ?: palette.mutedSwatch
-                    ?: palette.darkMutedSwatch
-                    ?: palette.lightVibrantSwatch
-                    ?: palette.lightMutedSwatch
-                    ?: palette.dominantSwatch
-                if (swatch != null) {
-                    val hsl = FloatArray(3)
-                    androidx.core.graphics.ColorUtils.colorToHSL(swatch.rgb, hsl)
-                    
-                    // Saturation boost for more prominent color theme (if not grayscale)
-                    if (hsl[1] > 0.05f) {
-                        hsl[1] = hsl[1].coerceAtLeast(0.45f)
-                    }
-                    
-                    // 12% lightness ensures rich colors that are dark enough for white text readability
-                    hsl[2] = 0.12f
-                    
-                    val adjustedColorInt = androidx.core.graphics.ColorUtils.HSLToColor(hsl)
-                    val targetColor = Color(adjustedColorInt)
-                    
-                    // Blend 80% dynamic color + 20% theme background for visible dynamic shift with theme integration
-                    dynamicBgColor = Color(
-                        red = targetColor.red * 0.8f + bg.red * 0.2f,
-                        green = targetColor.green * 0.8f + bg.green * 0.2f,
-                        blue = targetColor.blue * 0.8f + bg.blue * 0.2f,
-                        alpha = 1f
-                    )
-                } else {
-                    dynamicBgColor = bg
-                }
-            }
-        } else {
-            dynamicBgColor = bg
-        }
-    }
-
-    val animatedBgColor by animateColorAsState(
-        targetValue = dynamicBgColor,
-        animationSpec = tween(durationMillis = 800),
-        label = "bgColorAnimation"
+    val animatedBgColor = DynamicBackgroundLayer(
+        posterUrl = movie?.poster ?: movie?.background,
+        fallbackColor = bg
     )
 
     var isContentUnlocked by remember { mutableStateOf(false) }
@@ -304,26 +232,6 @@ fun DetailsScreen(
         }
     }
 
-    // Background Trailer Player
-    val trailer = state.tmdbTrailer
-    var trailerUrl by remember { mutableStateOf<String?>(null) }
-    var isTrailerPlaying by remember { mutableStateOf(false) }
-    var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
-
-    LaunchedEffect(trailer) {
-        trailerUrl = null
-        isTrailerPlaying = false
-        if (trailer == null) return@LaunchedEffect
-        
-        delay(2000) // 2-second delay of inactivity
-        val source = withContext(Dispatchers.IO) {
-            com.lumera.app.data.trailer.YouTubeExtractor().extractPlaybackSource(trailer.key)
-        }
-        if (source != null) {
-            trailerUrl = source.videoUrl
-        }
-    }
-
     var isLifecycleResumed by remember { mutableStateOf(true) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -341,36 +249,6 @@ fun DetailsScreen(
     }
 
     val isAnyOverlayActive = state.isLoadingStreams || isTrailerLoading || sidebarState !is SidebarState.Closed || showClearProgressDialog || showPinDialog
-    val shouldPlayTrailer = !trailerUrl.isNullOrEmpty() && isLifecycleResumed && !isAnyOverlayActive && !isParentalLocked
-
-    LaunchedEffect(shouldPlayTrailer, trailerUrl) {
-        if (shouldPlayTrailer && !trailerUrl.isNullOrEmpty()) {
-            val player = ExoPlayer.Builder(context).build().apply {
-                setMediaItem(MediaItem.fromUri(trailerUrl!!))
-                volume = 0f
-                repeatMode = Player.REPEAT_MODE_ONE
-                playWhenReady = true
-                prepare()
-            }
-            exoPlayer = player
-            player.addListener(object : Player.Listener {
-                override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    isTrailerPlaying = isPlaying
-                }
-            })
-        } else {
-            isTrailerPlaying = false
-            exoPlayer?.release()
-            exoPlayer = null
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            exoPlayer?.release()
-            exoPlayer = null
-        }
-    }
 
     BackHandler(enabled = sidebarState !is SidebarState.Closed) {
         viewModel.goBackInSidebar()
@@ -468,28 +346,12 @@ fun DetailsScreen(
             )
 
             // Background Trailer Player
-            if (exoPlayer != null) {
-                val alphaAnim by animateFloatAsState(
-                    targetValue = if (isTrailerPlaying) 0.6f else 0f,
-                    animationSpec = tween(1000),
-                    label = "trailer_fade"
-                )
-                AndroidView(
-                    factory = { ctx ->
-                        PlayerView(ctx).apply {
-                            useController = false
-                            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                            player = exoPlayer
-                        }
-                    },
-                    update = { view ->
-                        view.player = exoPlayer
-                    },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(alphaAnim)
-                )
-            }
+            TrailerBackgroundPlayer(
+                trailerKey = state.tmdbTrailer?.key,
+                isLifecycleResumed = isLifecycleResumed,
+                isOverlayActive = isAnyOverlayActive,
+                isParentalLocked = isParentalLocked
+            )
 
             Box(
                 modifier = Modifier

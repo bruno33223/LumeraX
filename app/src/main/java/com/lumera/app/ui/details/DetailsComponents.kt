@@ -38,6 +38,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import com.lumera.app.R
 
@@ -214,4 +220,157 @@ fun ImdbBadge() {
         contentDescription = "IMDb",
         modifier = Modifier.height(20.dp)
     )
+}
+
+@Composable
+fun DynamicBackgroundLayer(
+    posterUrl: String?,
+    fallbackColor: Color
+): Color {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var dynamicBgColor by remember(posterUrl) { mutableStateOf(fallbackColor) }
+
+    LaunchedEffect(posterUrl) {
+        if (posterUrl.isNullOrEmpty()) {
+            dynamicBgColor = fallbackColor
+            return@LaunchedEffect
+        }
+        val request = coil.request.ImageRequest.Builder(context)
+            .data(posterUrl)
+            .allowHardware(false)
+            .build()
+        val imageLoader = coil.ImageLoader(context)
+        val result = imageLoader.execute(request)
+        if (result is coil.request.SuccessResult) {
+            val drawable = result.drawable
+            if (drawable is android.graphics.drawable.BitmapDrawable) {
+                val bitmap = drawable.bitmap
+                val palette = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    androidx.palette.graphics.Palette.from(bitmap).generate()
+                }
+                val swatch = palette.vibrantSwatch
+                    ?: palette.darkVibrantSwatch
+                    ?: palette.mutedSwatch
+                    ?: palette.darkMutedSwatch
+                    ?: palette.lightVibrantSwatch
+                    ?: palette.lightMutedSwatch
+                    ?: palette.dominantSwatch
+                if (swatch != null) {
+                    val hsl = FloatArray(3)
+                    androidx.core.graphics.ColorUtils.colorToHSL(swatch.rgb, hsl)
+                    
+                    // Saturation boost for more prominent color theme (if not grayscale)
+                    if (hsl[1] > 0.05f) {
+                        hsl[1] = hsl[1].coerceAtLeast(0.45f)
+                    }
+                    
+                    // 12% lightness ensures rich colors that are dark enough for white text readability
+                    hsl[2] = 0.12f
+                    
+                    val adjustedColorInt = androidx.core.graphics.ColorUtils.HSLToColor(hsl)
+                    val targetColor = Color(adjustedColorInt)
+                    
+                    // Blend 80% dynamic color + 20% theme background for visible dynamic shift with theme integration
+                    dynamicBgColor = Color(
+                        red = targetColor.red * 0.8f + fallbackColor.red * 0.2f,
+                        green = targetColor.green * 0.8f + fallbackColor.green * 0.2f,
+                        blue = targetColor.blue * 0.8f + fallbackColor.blue * 0.2f,
+                        alpha = 1f
+                    )
+                } else {
+                    dynamicBgColor = fallbackColor
+                }
+            }
+        } else {
+            dynamicBgColor = fallbackColor
+        }
+    }
+
+    val animatedBgColor by animateColorAsState(
+        targetValue = dynamicBgColor,
+        animationSpec = tween(durationMillis = 800),
+        label = "bgColorAnimation"
+    )
+    return animatedBgColor
+}
+
+@Composable
+fun TrailerBackgroundPlayer(
+    trailerKey: String?,
+    isLifecycleResumed: Boolean,
+    isOverlayActive: Boolean,
+    isParentalLocked: Boolean
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var trailerUrl by remember(trailerKey) { mutableStateOf<String?>(null) }
+    var isTrailerPlaying by remember { mutableStateOf(false) }
+    var exoPlayer by remember { mutableStateOf<androidx.media3.exoplayer.ExoPlayer?>(null) }
+
+    LaunchedEffect(trailerKey) {
+        trailerUrl = null
+        isTrailerPlaying = false
+        if (trailerKey.isNullOrEmpty()) return@LaunchedEffect
+        
+        kotlinx.coroutines.delay(2000) // 2-second delay of inactivity
+        val source = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            com.lumera.app.data.trailer.YouTubeExtractor().extractPlaybackSource(trailerKey)
+        }
+        if (source != null) {
+            trailerUrl = source.videoUrl
+        }
+    }
+
+    val shouldPlayTrailer = !trailerUrl.isNullOrEmpty() && isLifecycleResumed && !isOverlayActive && !isParentalLocked
+
+    LaunchedEffect(shouldPlayTrailer, trailerUrl) {
+        if (shouldPlayTrailer && !trailerUrl.isNullOrEmpty()) {
+            val player = androidx.media3.exoplayer.ExoPlayer.Builder(context).build().apply {
+                setMediaItem(androidx.media3.common.MediaItem.fromUri(trailerUrl!!))
+                volume = 0f
+                repeatMode = androidx.media3.common.Player.REPEAT_MODE_ONE
+                playWhenReady = true
+                prepare()
+            }
+            exoPlayer = player
+            player.addListener(object : androidx.media3.common.Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    isTrailerPlaying = isPlaying
+                }
+            })
+        } else {
+            isTrailerPlaying = false
+            exoPlayer?.release()
+            exoPlayer = null
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer?.release()
+            exoPlayer = null
+        }
+    }
+
+    if (exoPlayer != null) {
+        val alphaAnim by animateFloatAsState(
+            targetValue = if (isTrailerPlaying) 0.6f else 0f,
+            animationSpec = tween(1000),
+            label = "trailer_fade"
+        )
+        androidx.compose.ui.viewinterop.AndroidView(
+            factory = { ctx ->
+                androidx.media3.ui.PlayerView(ctx).apply {
+                    useController = false
+                    resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    player = exoPlayer
+                }
+            },
+            update = { view ->
+                view.player = exoPlayer
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(alphaAnim)
+        )
+    }
 }
