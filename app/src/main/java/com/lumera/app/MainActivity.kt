@@ -774,9 +774,9 @@ class MainActivity : ComponentActivity() {
                                             selectedVideoUrl = localUrl
                                         }
                                         TorrentService.onStreamError = { error ->
-                                            torrentProgress = null
-                                            if (BuildConfig.DEBUG) Log.e("LumeraTorrent", "Stream error: $error")
-                                        }
+                                             torrentProgress = TorrentProgress(status = "Error: $error", isError = true)
+                                             if (BuildConfig.DEBUG) Log.e("LumeraTorrent", "Stream error: $error")
+                                         }
                                         TorrentService.onStreamProgress = { progress ->
                                             torrentProgress = progress
                                         }

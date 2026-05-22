@@ -5,5 +5,6 @@ data class TorrentProgress(
     val downloadSpeed: Long = 0,
     val peers: Int = 0,
     val seeds: Int = 0,
-    val progress: Float? = null  // null = indeterminate, 0.0-1.0 = determinate
+    val progress: Float? = null,  // null = indeterminate, 0.0-1.0 = determinate
+    val isError: Boolean = false
 )

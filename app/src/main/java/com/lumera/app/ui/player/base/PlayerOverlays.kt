@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -485,64 +486,95 @@ private fun PlayerStatusPill(
 
 @Composable
 fun LoadingOverlay(torrentProgress: TorrentProgress? = null) {
+    val isError = torrentProgress?.isError == true
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.22f)),
+            .background(Color.Black.copy(alpha = if (isError) 0.42f else 0.22f)),
         contentAlignment = Alignment.Center
     ) {
-        val progress = torrentProgress?.progress
-        if (progress != null) {
-            val animatedProgress by animateFloatAsState(
-                targetValue = progress,
-                animationSpec = tween(durationMillis = 300),
-                label = "preload"
-            )
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { animatedProgress },
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = Color.White.copy(alpha = 0.15f),
-                    strokeWidth = 4.dp
+        if (isError) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Error",
+                    tint = Color(0xFFE57373),
+                    modifier = Modifier.size(48.dp)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "${(animatedProgress * 100).toInt()}%",
-                    color = Color.White.copy(alpha = 0.9f),
-                    style = MaterialTheme.typography.labelSmall
+                    text = torrentProgress?.status ?: "Unknown error starting torrent engine",
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Press BACK to return",
+                    color = Color.White.copy(alpha = 0.6f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
                 )
             }
         } else {
-            CircularProgressIndicator(
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        if (torrentProgress != null) {
-            Column(
-                modifier = Modifier.align(Alignment.Center).padding(top = 80.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = torrentProgress.status,
-                    color = Color.White.copy(alpha = 0.9f),
-                    style = MaterialTheme.typography.bodyMedium
+            val progress = torrentProgress?.progress
+            if (progress != null) {
+                val animatedProgress by animateFloatAsState(
+                    targetValue = progress,
+                    animationSpec = tween(durationMillis = 300),
+                    label = "preload"
                 )
-                if (torrentProgress.peers > 0 || torrentProgress.downloadSpeed > 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    val parts = mutableListOf<String>()
-                    if (torrentProgress.downloadSpeed > 0) {
-                        parts.add(formatSpeed(torrentProgress.downloadSpeed))
-                    }
-                    if (torrentProgress.peers > 0) {
-                        parts.add("${torrentProgress.peers} peers")
-                    }
-                    if (torrentProgress.seeds > 0) {
-                        parts.add("${torrentProgress.seeds} seeds")
-                    }
-                    Text(
-                        text = parts.joinToString("  \u2022  "),
-                        color = Color.White.copy(alpha = 0.6f),
-                        style = MaterialTheme.typography.bodySmall
+                Box(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        progress = { animatedProgress },
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = Color.White.copy(alpha = 0.15f),
+                        strokeWidth = 4.dp
                     )
+                    Text(
+                        text = "${(animatedProgress * 100).toInt()}%",
+                        color = Color.White.copy(alpha = 0.9f),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            } else {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            if (torrentProgress != null) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center).padding(top = 80.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = torrentProgress.status,
+                        color = Color.White.copy(alpha = 0.9f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (torrentProgress.peers > 0 || torrentProgress.downloadSpeed > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        val parts = mutableListOf<String>()
+                        if (torrentProgress.downloadSpeed > 0) {
+                            parts.add(formatSpeed(torrentProgress.downloadSpeed))
+                        }
+                        if (torrentProgress.peers > 0) {
+                            parts.add("${torrentProgress.peers} peers")
+                        }
+                        if (torrentProgress.seeds > 0) {
+                            parts.add("${torrentProgress.seeds} seeds")
+                        }
+                        Text(
+                            text = parts.joinToString("  \u2022  "),
+                            color = Color.White.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
         }

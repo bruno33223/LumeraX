@@ -302,7 +302,7 @@ fun PlayerRoute(
                                                     onSelectedVideoUrlChange(localUrl)
                                                 }
                                                 TorrentService.onStreamError = { error ->
-                                                    onTorrentProgressChange(null)
+                                                    onTorrentProgressChange(TorrentProgress(status = "Error: $error", isError = true))
                                                     if (BuildConfig.DEBUG) Log.e("LumeraTorrent", "Stream error: $error")
                                                 }
                                                 TorrentService.onStreamProgress = { progress ->
@@ -472,7 +472,7 @@ fun PlayerRoute(
                                                     onSelectedVideoUrlChange(localUrl)
                                                 }
                                                 TorrentService.onStreamError = { error ->
-                                                    onTorrentProgressChange(null)
+                                                    onTorrentProgressChange(TorrentProgress(status = "Error: $error", isError = true))
                                                     if (BuildConfig.DEBUG) Log.e("LumeraTorrent", "Stream error: $error")
                                                 }
                                                 TorrentService.onStreamProgress = { progress ->
@@ -572,7 +572,7 @@ fun PlayerRoute(
                                                 onSelectedVideoUrlChange(localUrl)
                                             }
                                             TorrentService.onStreamError = { error ->
-                                                onTorrentProgressChange(null)
+                                                onTorrentProgressChange(TorrentProgress(status = "Error: $error", isError = true))
                                                 if (com.lumera.app.BuildConfig.DEBUG) android.util.Log.e("LumeraTorrent", "Stream error: $error")
                                             }
                                             TorrentService.onStreamProgress = { progress ->
@@ -609,7 +609,7 @@ fun PlayerRoute(
                                         onReady(localUrl)
                                     }
                                     TorrentService.onStreamError = { error ->
-                                                    onTorrentProgressChange(null)
+                                                    onTorrentProgressChange(TorrentProgress(status = "Error: $error", isError = true))
                                         if (BuildConfig.DEBUG) Log.e("LumeraTorrent", "Source switch error: $error")
                                     }
                                     TorrentService.onStreamProgress = { progress ->

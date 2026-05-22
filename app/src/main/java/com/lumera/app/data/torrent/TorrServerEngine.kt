@@ -30,8 +30,8 @@ class TorrServerEngine @Inject constructor(
     fun getBaseUrl(): String = "http://127.0.0.1:$PORT"
 
     fun start() {
-        if (isRunning()) {
-            if (BuildConfig.DEBUG) Log.d(TAG, "TorrServer already running")
+        if (echo()) {
+            if (BuildConfig.DEBUG) Log.d(TAG, "TorrServer already running (detected via echo)")
             return
         }
 
@@ -44,9 +44,11 @@ class TorrServerEngine @Inject constructor(
 
         // Ensure the binary is executable
         val binaryFile = File(binaryPath)
-        if (!binaryFile.canExecute()) {
-            binaryFile.setExecutable(true)
-        }
+        try {
+            if (!binaryFile.canExecute()) {
+                binaryFile.setExecutable(true)
+            }
+        } catch (_: Exception) {}
 
         val configDir = File(context.filesDir, "torrserver")
         configDir.mkdirs()
@@ -55,17 +57,20 @@ class TorrServerEngine @Inject constructor(
             .redirectErrorStream(true)
             .start()
 
-        // Log output in background for debugging
-        if (BuildConfig.DEBUG) {
-            val proc = process
-            Thread({
-                try {
-                    proc?.inputStream?.bufferedReader()?.forEachLine { line ->
-                        Log.v(TAG, "TorrServer: $line")
+        // Read and discard/log output in background to prevent process blocking/hanging due to full pipe buffers
+        val proc = process
+        Thread({
+            try {
+                proc?.inputStream?.bufferedReader()?.use { reader ->
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        if (BuildConfig.DEBUG) {
+                            Log.v(TAG, "TorrServer: $line")
+                        }
                     }
-                } catch (_: Exception) {}
-            }, "torrserver-log").apply { isDaemon = true }.start()
-        }
+                }
+            } catch (_: Exception) {}
+        }, "torrserver-log").apply { isDaemon = true }.start()
 
         // Wait for server to be ready
         val deadline = System.currentTimeMillis() + 10_000L
