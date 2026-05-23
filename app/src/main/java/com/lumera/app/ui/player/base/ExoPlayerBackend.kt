@@ -412,6 +412,7 @@ class ExoPlayerBackend(
                     val pv = frame.getChildAt(0) as? PlayerView
                     if (pv != null) {
                         pv.keepScreenOn = player?.isPlaying == true
+                        pv.resizeMode = currentUiState.resizeMode
                         applySubtitleOffset(pv, currentUiState.subtitleVerticalOffsetPercent)
                         applySubtitleSize(pv, currentUiState.subtitleSizePercent)
                         applySubtitleCaptionStyle(pv)
@@ -724,14 +725,16 @@ class ExoPlayerBackend(
         if (released) return
         subtitleTextColor = color
         _uiState.update { it.copy(subtitleTextColor = color) }
-        playerView?.let { applySubtitleCaptionStyle(it) }
-    }
-
     override fun setSubtitleBackgroundColor(color: Int) {
         if (released) return
         subtitleBackgroundColor = color
         _uiState.update { it.copy(subtitleBackgroundColor = color) }
         playerView?.let { applySubtitleCaptionStyle(it) }
+    }
+
+    override fun setResizeMode(mode: Int) {
+        _uiState.update { it.copy(resizeMode = mode) }
+        playerView?.resizeMode = mode
     }
 
     private fun applySubtitleCaptionStyle(pv: PlayerView) {

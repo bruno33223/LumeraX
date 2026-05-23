@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ClosedCaption
+import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -69,6 +70,7 @@ fun PlayerControlsOverlay(
     onShowSourcesPanel: () -> Unit,
     onShowAudioPanel: () -> Unit,
     onShowSubtitlePanel: () -> Unit,
+    onToggleResizeMode: () -> Unit,
     showEpisodesControl: Boolean = false,
     onShowEpisodesPanel: () -> Unit = {},
     onResetHideTimer: () -> Unit
@@ -164,6 +166,15 @@ fun PlayerControlsOverlay(
                             iconSize = 18.dp
                         )
                     }
+
+                    ControlButton(
+                        icon = Icons.Default.AspectRatio,
+                        contentDescription = "Aspect Ratio / Resize Mode",
+                        onClick = onToggleResizeMode,
+                        onFocused = onResetHideTimer,
+                        buttonSize = 36.dp,
+                        iconSize = 18.dp
+                    )
 
                     if (showSourceControl || showAudioControl || showSubtitleControl) {
                         ControlButton(
