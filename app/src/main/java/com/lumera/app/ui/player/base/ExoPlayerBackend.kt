@@ -725,6 +725,8 @@ class ExoPlayerBackend(
         if (released) return
         subtitleTextColor = color
         _uiState.update { it.copy(subtitleTextColor = color) }
+    }
+
     override fun setSubtitleBackgroundColor(color: Int) {
         if (released) return
         subtitleBackgroundColor = color
