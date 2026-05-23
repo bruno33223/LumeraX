@@ -43,11 +43,12 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
             JsonParser.parseString(responseBody).asJsonObject
         }
 
-    suspend fun applyOptimalSettings(): Unit = withContext(Dispatchers.IO) {
+    suspend fun applyOptimalSettings(cacheSizeMb: Int = 200): Unit = withContext(Dispatchers.IO) {
+        val cacheBytes = cacheSizeMb.toLong() * 1024 * 1024
         val body = JsonObject().apply {
             addProperty("action", "set")
             add("sets", JsonObject().apply {
-                addProperty("CacheSize", 419430400) // 400MB RAM Cache for 4K streaming
+                addProperty("CacheSize", cacheBytes) // Dynamic RAM Cache
                 addProperty("ReaderReadAHead", 95) // Read ahead percentage
                 addProperty("PreloadCache", 20) // Preload buffer % before stream starts
                 addProperty("ForceAllPeers", true) // Ensure it queries all possible peers for rare torrents

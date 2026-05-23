@@ -95,7 +95,9 @@ class TorrentService : Service() {
                     onStreamProgress?.invoke(TorrentProgress(status = "Starting engine..."))
                 }
                 engine.start()
-                api.applyOptimalSettings()
+                val prefs = getSharedPreferences("lumera_prefs", android.content.Context.MODE_PRIVATE)
+                val cacheMb = prefs.getInt("torrserver_cache_mb", 200)
+                api.applyOptimalSettings(cacheMb)
 
                 // Phase 2: Add torrent
                 if (BuildConfig.DEBUG) Log.d(TAG, "Adding magnet: ${sanitizedMagnet.take(120)}...")
