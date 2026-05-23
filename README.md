@@ -89,6 +89,12 @@ Connect your Stremio account to instantly import your existing addon collection.
 - Seamless subtitle fetching directly from Stremio subtitle addons
 - Complete support for subtitle source lookups across movies, series, and anime
 
+### Torrent Engine (P2P)
+- **Built-in TorrServer Engine:** Highly tuned background service specifically optimized for Android TV environments.
+- **Hardware Heuristics (Auto-Tuning):** Automatically scans total RAM and CPU cores during onboarding to determine the device's tier (Low, Mid, High), safely adjusting the engine's memory cache and network footprint to prevent Out-Of-Memory crashes.
+- **Dynamic Limits:** Advanced UI sliders to manually override default values for Continuous Buffer (RAM Cache) and Peer/DHT Connection Limits up to 1000 nodes.
+- **High-Performance Trackers:** Injection of a curated list of elite, ultra-low latency public trackers to ensure immediate peer discovery and maximum bandwidth utilization, even for 4K torrents.
+
 
 ## Tech Stack
 
