@@ -676,6 +676,16 @@ fun BasePlayerScaffold(
                     showControls = true
                     showSeekOverlay = false
                 },
+                onToggleResizeMode = {
+                    markInteraction()
+                    val nextMode = when (uiState.resizeMode) {
+                        0 -> 4
+                        4 -> 3
+                        else -> 0
+                    }
+                    playbackController.setResizeMode(nextMode)
+                    showControlsTemporarily()
+                },
                 showEpisodesControl = episodes.isNotEmpty() && onEpisodeSelected != null,
                 onShowEpisodesPanel = {
                     markInteraction()
