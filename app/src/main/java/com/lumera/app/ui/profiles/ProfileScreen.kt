@@ -63,6 +63,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import android.content.res.Configuration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.CircularProgressIndicator
+import com.lumera.app.domain.DeviceCapabilities
 import java.util.Locale
 
 private const val PROFILE_HORIZONTAL_REPEAT_INTERVAL_MS = 150L
@@ -76,6 +78,9 @@ fun ProfileScreen(
     var initialLanguageSelected by remember { mutableStateOf(false) }
     var currentLanguage by remember { mutableStateOf("en") }
     val context = LocalContext.current
+    var benchmarkCompleted by remember { 
+        mutableStateOf(context.getSharedPreferences("lumera_prefs", android.content.Context.MODE_PRIVATE).getBoolean("torrserver_benchmark_done", false)) 
+    }
 
     var pinTargetProfile by remember { mutableStateOf<ProfileEntity?>(null) }
     var pinError by remember { mutableStateOf<String?>(null) }
@@ -110,6 +115,8 @@ fun ProfileScreen(
                                             initialLanguageSelected = true
                                         }
                                     )
+                                } else if (!benchmarkCompleted) {
+                                    BenchmarkView(onBenchmarkComplete = { benchmarkCompleted = true })
                                 } else {
                                     WelcomeView(onStart = { viewModel.startWizard() })
                                 }
@@ -206,6 +213,36 @@ fun WelcomeView(onStart: () -> Unit) {
             isPrimary = true,
             modifier = Modifier.width(250.dp),
             focusRequester = requester
+        )
+    }
+}
+
+// --- 1.5 BENCHMARK VIEW ---
+@Composable
+fun BenchmarkView(onBenchmarkComplete: () -> Unit) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        DeviceCapabilities.applyBenchmarkDefaultsIfNeeded(context)
+        delay(2500) // Artificial delay for UX
+        onBenchmarkComplete()
+    }
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.height(24.dp))
+        Text(
+            text = "Verificando configurações ideais do hardware...",
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Isso garante uma reprodução de vídeo sem engasgos.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
         )
     }
 }
