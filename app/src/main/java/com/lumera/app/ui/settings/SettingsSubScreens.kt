@@ -617,6 +617,55 @@ fun PlaybackSettings(
                 onBack = onGoBack
             )
 
+            // TORRENT CACHE SIZE (Dynamic)
+            Spacer(Modifier.height(12.dp))
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(0.1f)))
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "Torrent Engine",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
+                color = Color.White.copy(0.7f),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val prefs = remember { context.getSharedPreferences("lumera_prefs", android.content.Context.MODE_PRIVATE) }
+            var torrCacheMb by remember { mutableIntStateOf(prefs.getInt("torrserver_cache_mb", 200)) }
+
+            Text(
+                text = "Cache em RAM: ${torrCacheMb} MB",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp),
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+            )
+            if (torrCacheMb > 200) {
+                Text(
+                    text = "Aviso: Valores acima de 200MB podem causar travamentos em Smart TVs devido à falta de memória RAM disponível.",
+                    color = Color.Red.copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                )
+            } else {
+                Text(
+                    text = "Define o tamanho do buffer contínuo de vídeo. TV: 150-200MB. Celular: 400-600MB.",
+                    color = Color.White.copy(alpha = 0.5f),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                )
+            }
+            VoidSlider(
+                value = torrCacheMb.toFloat(),
+                onValueChange = { 
+                    torrCacheMb = it.toInt()
+                    prefs.edit().putInt("torrserver_cache_mb", torrCacheMb).apply()
+                },
+                valueRange = 50f..800f,
+                steps = 14
+            )
+            Spacer(Modifier.height(12.dp))
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(0.1f)))
+            Spacer(Modifier.height(12.dp))
+
             // AUTOPLAY NEXT EPISODE
             SettingToggleRow(
                 label = stringResource(R.string.settings_autoplay),
