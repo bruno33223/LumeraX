@@ -240,13 +240,15 @@ class TorrentService : Service() {
 
     private val defaultTrackers = listOf(
         "udp://tracker.opentrackr.org:1337/announce",
-        "udp://tracker.coppersurfer.tk:6969/announce",
+        "udp://tracker.internetwarriors.net:1337/announce",
+        "udp://exodus.desync.com:6969/announce",
+        "udp://tracker.cyberia.is:6969/announce",
+        "udp://tracker.torrent.eu.org:451/announce",
+        "udp://tracker.moeking.me:6969/announce",
+        "udp://retracker.lanta-net.ru:2710/announce",
         "udp://open.demonii.com:1337/announce",
-        "udp://tracker.leechers-paradise.org:6969/announce",
-        "udp://explodie.org:6969/announce",
-        "udp://tracker.openbittorrent.com:80/announce",
-        "udp://tracker.tiny-vps.com:6969/announce",
-        "http://tracker.ipv6tracker.ru:80/announce"
+        "udp://tracker.coppersurfer.tk:6969/announce",
+        "http://tracker.openbittorrent.com:80/announce"
     )
 
     private fun appendDefaultTrackers(magnet: String): String {
