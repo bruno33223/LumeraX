@@ -47,14 +47,17 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
         val body = JsonObject().apply {
             addProperty("action", "set")
             add("sets", JsonObject().apply {
-                addProperty("CacheSize", 209715200) // 200MB RAM Cache
+                addProperty("CacheSize", 419430400) // 400MB RAM Cache for 4K streaming
                 addProperty("ReaderReadAHead", 95) // Read ahead percentage
-                addProperty("PreloadCache", 30) // Preload buffer % before stream starts
+                addProperty("PreloadCache", 20) // Preload buffer % before stream starts
                 addProperty("ForceAllPeers", true) // Ensure it queries all possible peers for rare torrents
-                addProperty("ConnectionsLimit", 400) // Max connections for DHT/Peer discovery
+                addProperty("ConnectionsLimit", 500) // Max connections for DHT/Peer discovery
                 addProperty("DhtConnectionLimit", 500)
                 addProperty("PeersListenPort", 0)
                 addProperty("EnableIPv6", false) // IPv6 sometimes causes slow peer discovery timeout
+                addProperty("DisableUPNP", false) // Crucial for getting inbound connections from peers
+                addProperty("DisableUTP", false) // Crucial for connecting to uTP-only peers
+                addProperty("LimitSpeed", 0) // Explicitly remove any internal speed limit
                 addProperty("TorrentDisconnectTimeout", 60) // Keep torrent alive in background longer when paused
                 addProperty("RetrackersMode", 1) // Allow local retrackers if available
             })
@@ -93,7 +96,7 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
     suspend fun dropTorrent(magnetLink: String) = withContext(Dispatchers.IO) {
         val hash = extractHash(magnetLink)
         val body = JsonObject().apply {
-            addProperty("action", "drop")
+            addProperty("action", "rem") // 'rem' explicitly removes from memory and stops all peer connections
             addProperty("hash", hash)
         }
         val request = Request.Builder()
