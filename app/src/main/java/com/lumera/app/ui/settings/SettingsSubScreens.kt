@@ -662,6 +662,31 @@ fun PlaybackSettings(
                 valueRange = 50f..800f,
                 steps = 14
             )
+            
+            var torrConnections by remember { mutableIntStateOf(prefs.getInt("torrserver_connections_limit", 500)) }
+            
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "Limite de Conexões DHT/Peers: $torrConnections",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp),
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+            )
+            Text(
+                text = "Mais conexões = mais velocidade, mas pode congelar seu roteador de internet se ele for fraco.",
+                color = Color.White.copy(alpha = 0.5f),
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+            )
+            VoidSlider(
+                value = torrConnections.toFloat(),
+                onValueChange = { 
+                    torrConnections = it.toInt()
+                    prefs.edit().putInt("torrserver_connections_limit", torrConnections).apply()
+                },
+                valueRange = 250f..1000f,
+                steps = 2
+            )
             Spacer(Modifier.height(12.dp))
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(0.1f)))
             Spacer(Modifier.height(12.dp))

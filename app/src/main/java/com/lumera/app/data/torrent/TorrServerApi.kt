@@ -43,7 +43,7 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
             JsonParser.parseString(responseBody).asJsonObject
         }
 
-    suspend fun applyOptimalSettings(cacheSizeMb: Int = 200): Unit = withContext(Dispatchers.IO) {
+    suspend fun applyOptimalSettings(cacheSizeMb: Int = 200, connectionsLimit: Int = 500): Unit = withContext(Dispatchers.IO) {
         val cacheBytes = cacheSizeMb.toLong() * 1024 * 1024
         val body = JsonObject().apply {
             addProperty("action", "set")
@@ -52,8 +52,8 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
                 addProperty("ReaderReadAHead", 95) // Read ahead percentage
                 addProperty("PreloadCache", 20) // Preload buffer % before stream starts
                 addProperty("ForceAllPeers", true) // Ensure it queries all possible peers for rare torrents
-                addProperty("ConnectionsLimit", 1000) // Increased for max peer discovery
-                addProperty("DhtConnectionLimit", 1000) // Increased for better DHT discovery
+                addProperty("ConnectionsLimit", connectionsLimit) // Increased for max peer discovery
+                addProperty("DhtConnectionLimit", connectionsLimit) // Increased for better DHT discovery
                 addProperty("PeersListenPort", 0)
                 addProperty("EnableIPv6", false) // IPv6 sometimes causes slow peer discovery timeout
                 addProperty("DisableUPNP", false) // Crucial for getting inbound connections from peers
