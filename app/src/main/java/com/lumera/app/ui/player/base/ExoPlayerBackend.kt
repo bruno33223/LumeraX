@@ -1128,11 +1128,15 @@ class ExoPlayerBackend(
 
         val renderersFactory = if (playbackSettings.assRendererEnabled) {
             val handler = getOrCreateAssHandler()
-            AssRenderersFactory(appContext, handler)
+            AssRenderersFactory(appContext, handler).apply {
+                setEnableDecoderFallback(true)
+            }
                 .setExtensionRendererMode(playbackSettings.decoderPriority)
                 .setMapDV7ToHevc(playbackSettings.mapDV7ToHevc)
         } else {
-            SubtitleDelayRenderersFactory(appContext, subtitleDelayUs::get)
+            SubtitleDelayRenderersFactory(appContext, subtitleDelayUs::get).apply {
+                setEnableDecoderFallback(true)
+            }
                 .setExtensionRendererMode(playbackSettings.decoderPriority)
                 .setMapDV7ToHevc(playbackSettings.mapDV7ToHevc)
         }

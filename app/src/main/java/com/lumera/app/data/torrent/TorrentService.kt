@@ -95,6 +95,7 @@ class TorrentService : Service() {
                     onStreamProgress?.invoke(TorrentProgress(status = "Starting engine..."))
                 }
                 engine.start()
+                api.applyOptimalSettings()
 
                 // Phase 2: Add torrent
                 if (BuildConfig.DEBUG) Log.d(TAG, "Adding magnet: ${sanitizedMagnet.take(120)}...")

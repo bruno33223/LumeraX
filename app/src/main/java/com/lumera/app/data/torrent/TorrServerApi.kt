@@ -43,6 +43,31 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
             JsonParser.parseString(responseBody).asJsonObject
         }
 
+    suspend fun applyOptimalSettings(): Unit = withContext(Dispatchers.IO) {
+        val body = JsonObject().apply {
+            addProperty("action", "set")
+            add("sets", JsonObject().apply {
+                addProperty("CacheSize", 104857600) // 100MB RAM Cache
+                addProperty("ReaderReadAHead", 90) // Read ahead percentage
+                addProperty("PreloadCache", 50) // Preload buffer % before stream starts
+                addProperty("ForceAllPeers", false) 
+                addProperty("ConnectionsLimit", 60) // Limit connections to avoid socket exhaustion/timeout
+                addProperty("DhtConnectionLimit", 500)
+                addProperty("PeersListenPort", 0)
+                addProperty("EnableIPv6", false) // IPv6 sometimes causes slow peer discovery timeout
+            })
+        }
+        val request = Request.Builder()
+            .url("$baseUrl/settings")
+            .post(body.toString().toRequestBody(jsonType))
+            .build()
+        try {
+            client.newCall(request).execute().close()
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) Log.w("TorrServerApi", "Failed to apply settings", e)
+        }
+    }
+
     suspend fun getTorrentStats(magnetLink: String): TorrentStats =
         withContext(Dispatchers.IO) {
             val hash = extractHash(magnetLink)

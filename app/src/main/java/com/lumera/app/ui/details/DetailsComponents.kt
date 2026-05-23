@@ -324,7 +324,9 @@ fun TrailerBackgroundPlayer(
 
     LaunchedEffect(shouldPlayTrailer, trailerUrl) {
         if (shouldPlayTrailer && !trailerUrl.isNullOrEmpty()) {
-            val player = androidx.media3.exoplayer.ExoPlayer.Builder(context).build().apply {
+            val renderersFactory = androidx.media3.exoplayer.DefaultRenderersFactory(context)
+                .setEnableDecoderFallback(true)
+            val player = androidx.media3.exoplayer.ExoPlayer.Builder(context, renderersFactory).build().apply {
                 setMediaItem(androidx.media3.common.MediaItem.fromUri(trailerUrl!!))
                 volume = 0f
                 repeatMode = androidx.media3.common.Player.REPEAT_MODE_ONE
