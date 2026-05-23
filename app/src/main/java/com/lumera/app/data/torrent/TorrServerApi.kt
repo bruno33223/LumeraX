@@ -47,14 +47,16 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
         val body = JsonObject().apply {
             addProperty("action", "set")
             add("sets", JsonObject().apply {
-                addProperty("CacheSize", 104857600) // 100MB RAM Cache
-                addProperty("ReaderReadAHead", 90) // Read ahead percentage
-                addProperty("PreloadCache", 50) // Preload buffer % before stream starts
-                addProperty("ForceAllPeers", false) 
-                addProperty("ConnectionsLimit", 60) // Limit connections to avoid socket exhaustion/timeout
+                addProperty("CacheSize", 209715200) // 200MB RAM Cache
+                addProperty("ReaderReadAHead", 95) // Read ahead percentage
+                addProperty("PreloadCache", 30) // Preload buffer % before stream starts
+                addProperty("ForceAllPeers", true) // Ensure it queries all possible peers for rare torrents
+                addProperty("ConnectionsLimit", 400) // Max connections for DHT/Peer discovery
                 addProperty("DhtConnectionLimit", 500)
                 addProperty("PeersListenPort", 0)
                 addProperty("EnableIPv6", false) // IPv6 sometimes causes slow peer discovery timeout
+                addProperty("TorrentDisconnectTimeout", 60) // Keep torrent alive in background longer when paused
+                addProperty("RetrackersMode", 1) // Allow local retrackers if available
             })
         }
         val request = Request.Builder()
