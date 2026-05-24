@@ -76,8 +76,13 @@ class TorrentService : Service() {
     }
 
     private fun startDownload(magnet: String, fileIdx: Int, fileName: String = "") {
-        val sanitizedMagnet = appendDefaultTrackers(magnet)
         downloadJob?.cancel()
+
+        scope.launch {
+            TrackerFetcher.updateTrackersIfNeeded(this@TorrentService)
+        }
+
+        val sanitizedMagnet = appendDefaultTrackers(magnet)
 
         // Drop previous torrent to free TorrServer's RAM cache
         val previousMagnet = currentMagnet
@@ -264,7 +269,8 @@ class TorrentService : Service() {
     private fun appendDefaultTrackers(magnet: String): String {
         if (!magnet.startsWith("magnet:", ignoreCase = true)) return magnet
         val builder = StringBuilder(magnet)
-        for (tracker in defaultTrackers) {
+        val dynamicTrackers = TrackerFetcher.getCachedTrackers(this) ?: defaultTrackers
+        for (tracker in dynamicTrackers) {
             try {
                 val encodedTracker = java.net.URLEncoder.encode(tracker, "UTF-8")
                 val trackerParam = "&tr=$encodedTracker"
