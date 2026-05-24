@@ -573,6 +573,11 @@ class ExoPlayerBackend(
         if (source.url.startsWith("magnet:")) {
             val handler = onMagnetSourceSelected
             if (handler != null) {
+                // Stop player immediately to close the socket connection to TorrServer.
+                // This prevents ExoPlayer from deadlocking while TorrentService drops the old torrent.
+                exoPlayer?.stop()
+                exoPlayer?.clearMediaItems()
+
                 _uiState.update { it.copy(isBuffering = true) }
                 handler(source.url, source.fileIdx, source.fileName) { localUrl ->
                     if (released) return@handler
