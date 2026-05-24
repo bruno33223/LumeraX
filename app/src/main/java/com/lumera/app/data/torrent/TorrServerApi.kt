@@ -49,8 +49,8 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
             addProperty("action", "set")
             add("sets", JsonObject().apply {
                 addProperty("CacheSize", cacheBytes) // Dynamic RAM Cache
-                addProperty("ReaderReadAHead", 95) // Read ahead percentage
-                addProperty("PreloadCache", 20) // Preload buffer % before stream starts
+                addProperty("ReaderReadAHead", 80) // 80% read ahead, 20% keep behind for rewind/resume
+                addProperty("PreloadCache", 0) // 0% preload to prevent ExoPlayer HTTP timeouts on 4K files
                 addProperty("ForceAllPeers", true) // Ensure it queries all possible peers for rare torrents
                 addProperty("ConnectionsLimit", connectionsLimit) // Increased for max peer discovery
                 addProperty("DhtConnectionLimit", connectionsLimit) // Increased for better DHT discovery
