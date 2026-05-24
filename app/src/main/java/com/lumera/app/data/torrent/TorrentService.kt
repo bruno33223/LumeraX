@@ -239,6 +239,13 @@ class TorrentService : Service() {
         super.onDestroy()
     }
 
+    // EXPLICAÇÃO TÉCNICA (Heurística de Trackers):
+    // Os trackers originais provenientes do Addon do Stremio NÃO SÃO SUBSTITUÍDOS.
+    // A função 'appendDefaultTrackers' preserva todos os trackers originais do link magnet e
+    // APENAS ADICIONA (faz append) desta lista curada abaixo para garantir redundância.
+    // Injetar uma lista gigantesca (+50 trackers) é contraproducente: causa um "UDP Flood",
+    // sobrecarrega o roteador/NAT com centenas de conexões simultâneas de anúncio e atrasa o Handshake P2P.
+    // Esta lista curada (Tier 1) garante o discovery mais rápido sem estourar a tabela NAT.
     private val defaultTrackers = listOf(
         "udp://tracker.opentrackr.org:1337/announce",
         "udp://tracker.internetwarriors.net:1337/announce",
@@ -249,6 +256,8 @@ class TorrentService : Service() {
         "udp://retracker.lanta-net.ru:2710/announce",
         "udp://open.demonii.com:1337/announce",
         "udp://tracker.coppersurfer.tk:6969/announce",
+        "udp://tracker.tiny-vps.com:6969/announce",
+        "udp://open.stealth.si:80/announce",
         "http://tracker.openbittorrent.com:80/announce"
     )
 
