@@ -412,7 +412,17 @@ class ExoPlayerBackend(
                     val pv = frame.getChildAt(0) as? PlayerView
                     if (pv != null) {
                         pv.keepScreenOn = player?.isPlaying == true
-                        pv.resizeMode = currentUiState.resizeMode
+                        pv.resizeMode = if (currentUiState.resizeMode == 5) 0 else currentUiState.resizeMode
+                        
+                        val videoSurface = pv.videoSurfaceView as? android.view.View
+                        if (currentUiState.resizeMode == 5) {
+                            videoSurface?.scaleX = 1.34f
+                            videoSurface?.scaleY = 1.34f
+                        } else {
+                            videoSurface?.scaleX = 1.0f
+                            videoSurface?.scaleY = 1.0f
+                        }
+                        
                         applySubtitleOffset(pv, currentUiState.subtitleVerticalOffsetPercent)
                         applySubtitleSize(pv, currentUiState.subtitleSizePercent)
                         applySubtitleCaptionStyle(pv)

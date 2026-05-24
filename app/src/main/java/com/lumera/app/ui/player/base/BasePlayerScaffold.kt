@@ -679,9 +679,10 @@ fun BasePlayerScaffold(
                 onToggleResizeMode = {
                     markInteraction()
                     val nextMode = when (uiState.resizeMode) {
-                        0 -> 4
-                        4 -> 3
-                        else -> 0
+                        0 -> 4 // Fit -> Zoom
+                        4 -> 3 // Zoom -> Stretch
+                        3 -> 5 // Stretch -> Encoded Zoom (1.34x)
+                        else -> 0 // Encoded Zoom -> Fit
                     }
                     playbackController.setResizeMode(nextMode)
                     showControlsTemporarily()

@@ -59,7 +59,7 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
                 addProperty("DisableUPNP", false) // Crucial for getting inbound connections from peers
                 addProperty("DisableUTP", false) // Crucial for connecting to uTP-only peers
                 addProperty("LimitSpeed", 0) // Explicitly remove any internal speed limit
-                addProperty("TorrentDisconnectTimeout", 60) // Keep torrent alive in background longer when paused
+                addProperty("TorrentDisconnectTimeout", 3600) // Keep torrent alive in RAM (up to 1 hour) when paused!
                 addProperty("RetrackersMode", 1) // Allow local retrackers if available
             })
         }
