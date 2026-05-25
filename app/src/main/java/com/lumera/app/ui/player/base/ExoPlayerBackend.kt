@@ -414,13 +414,19 @@ class ExoPlayerBackend(
                         pv.keepScreenOn = player?.isPlaying == true
                         pv.resizeMode = if (currentUiState.resizeMode == 5) 0 else currentUiState.resizeMode
                         
-                        val videoSurface = pv.videoSurfaceView as? android.view.View
-                        if (currentUiState.resizeMode == 5) {
-                            videoSurface?.scaleX = 1.34f
-                            videoSurface?.scaleY = 1.34f
-                        } else {
-                            videoSurface?.scaleX = 1.0f
-                            videoSurface?.scaleY = 1.0f
+                        val exoContentFrame = pv.findViewById<android.view.View>(androidx.media3.ui.R.id.exo_content_frame)
+                        val targetView = exoContentFrame ?: pv.videoSurfaceView as? android.view.View
+                        
+                        val scale = if (currentUiState.resizeMode == 5) 1.34f else 1.0f
+                        if (targetView?.scaleX != scale) {
+                            targetView?.scaleX = scale
+                            targetView?.scaleY = scale
+                            targetView?.requestLayout()
+                            targetView?.invalidate()
+                            
+                            // Force parent layout update to ensure Window Manager (HWC) applies the new surface bounds
+                            pv.requestLayout()
+                            pv.invalidate()
                         }
                         
                         applySubtitleOffset(pv, currentUiState.subtitleVerticalOffsetPercent)
