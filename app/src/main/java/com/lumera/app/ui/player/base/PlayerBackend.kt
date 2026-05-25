@@ -12,6 +12,7 @@ interface PlayerPlaybackController {
     val subtitleTracks: StateFlow<List<PlayerTrackOption>>
 
     fun load(request: PlayerLoadRequest)
+    fun retryPlayback()
 
     fun play()
     fun pause()

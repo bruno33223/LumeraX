@@ -724,7 +724,11 @@ fun BasePlayerScaffold(
                         showControls = true
                         showSeekOverlay = false
                     }
-                } else null
+                } else null,
+                onRetry = {
+                    markInteraction()
+                    playbackController.retryPlayback()
+                }
             )
         }
 

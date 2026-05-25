@@ -371,7 +371,8 @@ fun PauseBrandOverlay(
 fun PlayerErrorOverlay(
     errorMessage: String,
     onBack: () -> Unit,
-    onSwitchSource: (() -> Unit)? = null
+    onSwitchSource: (() -> Unit)? = null,
+    onRetry: (() -> Unit)? = null
 ) {
     val backFocusRequester = remember { FocusRequester() }
 
@@ -405,6 +406,13 @@ fun PlayerErrorOverlay(
                     onClick = onBack,
                     focusRequester = backFocusRequester
                 )
+                if (onRetry != null) {
+                    PlayerErrorButton(
+                        icon = Icons.Default.Refresh,
+                        label = "RETRY",
+                        onClick = onRetry
+                    )
+                }
                 if (onSwitchSource != null) {
                     PlayerErrorButton(
                         icon = Icons.Default.SwapHoriz,
