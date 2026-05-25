@@ -51,7 +51,7 @@ Connect your Stremio account to instantly import your existing addon collection.
 - Multiple audio track and subtitle selection
 - Subtitle customization (size, position, timing offset)
 - Playback speed control
-- Video scale cycling (Fit, Zoom, Fill) to remove black bars
+- Video scale cycling (Fit, Zoom, Fill, Encoded Zoom) to remove hardcoded black bars, fully compatible with Android TV Hardware Composers (HWC)
 - Seamless source switching mid-playback without socket deadlocks
 - Skip intro/outro segments via IntroDb integration
 
