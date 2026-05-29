@@ -227,71 +227,8 @@ fun DynamicBackgroundLayer(
     posterUrl: String?,
     fallbackColor: Color
 ): Color {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    var dynamicBgColor by remember(posterUrl) { mutableStateOf(fallbackColor) }
-
-    LaunchedEffect(posterUrl) {
-        if (posterUrl.isNullOrEmpty()) {
-            dynamicBgColor = fallbackColor
-            return@LaunchedEffect
-        }
-        val request = coil.request.ImageRequest.Builder(context)
-            .data(posterUrl)
-            .allowHardware(false)
-            .build()
-        val imageLoader = coil.ImageLoader(context)
-        val result = imageLoader.execute(request)
-        if (result is coil.request.SuccessResult) {
-            val drawable = result.drawable
-            if (drawable is android.graphics.drawable.BitmapDrawable) {
-                val bitmap = drawable.bitmap
-                val palette = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                    androidx.palette.graphics.Palette.from(bitmap).generate()
-                }
-                val swatch = palette.vibrantSwatch
-                    ?: palette.darkVibrantSwatch
-                    ?: palette.mutedSwatch
-                    ?: palette.darkMutedSwatch
-                    ?: palette.lightVibrantSwatch
-                    ?: palette.lightMutedSwatch
-                    ?: palette.dominantSwatch
-                if (swatch != null) {
-                    val hsl = FloatArray(3)
-                    androidx.core.graphics.ColorUtils.colorToHSL(swatch.rgb, hsl)
-                    
-                    // Saturation boost for more prominent color theme (if not grayscale)
-                    if (hsl[1] > 0.05f) {
-                        hsl[1] = hsl[1].coerceAtLeast(0.45f)
-                    }
-                    
-                    // 12% lightness ensures rich colors that are dark enough for white text readability
-                    hsl[2] = 0.12f
-                    
-                    val adjustedColorInt = androidx.core.graphics.ColorUtils.HSLToColor(hsl)
-                    val targetColor = Color(adjustedColorInt)
-                    
-                    // Blend 80% dynamic color + 20% theme background for visible dynamic shift with theme integration
-                    dynamicBgColor = Color(
-                        red = targetColor.red * 0.8f + fallbackColor.red * 0.2f,
-                        green = targetColor.green * 0.8f + fallbackColor.green * 0.2f,
-                        blue = targetColor.blue * 0.8f + fallbackColor.blue * 0.2f,
-                        alpha = 1f
-                    )
-                } else {
-                    dynamicBgColor = fallbackColor
-                }
-            }
-        } else {
-            dynamicBgColor = fallbackColor
-        }
-    }
-
-    val animatedBgColor by animateColorAsState(
-        targetValue = dynamicBgColor,
-        animationSpec = tween(durationMillis = 800),
-        label = "bgColorAnimation"
-    )
-    return animatedBgColor
+    // Retorna a cor de fallback diretamente para evitar o processamento pesado de imagens e economizar RAM/CPU.
+    return fallbackColor
 }
 
 @Composable
