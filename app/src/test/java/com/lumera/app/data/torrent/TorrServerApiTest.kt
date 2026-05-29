@@ -33,12 +33,12 @@ class TorrServerApiTest {
         val base32Hash = "mjxxol2vipqyhh6k3pq6ixl7z4w4e7e4"
         val magnet = "magnet:?xt=urn:btih:$base32Hash&dn=Test"
         val extracted = api.extractHash(magnet)
-        assertEquals("6271772f558421839fcaf3e1e45d7fcf70427c9c", extracted)
+        assertEquals("626f772f5543e1839fcadbe1e45d7fcf2dc27c9c", extracted)
     }
 
     @Test
     fun testBase32ToHexConversion() {
         val hex = api.base32ToHex("mjxxol2vipqyhh6k3pq6ixl7z4w4e7e4")
-        assertEquals("6271772f558421839fcaf3e1e45d7fcf70427c9c", hex)
+        assertEquals("626f772f5543e1839fcadbe1e45d7fcf2dc27c9c", hex)
     }
 }

@@ -269,17 +269,16 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        val splashEnabledInProfile = profileConfigurationManager.getLastActiveProfileId()?.let { id ->
-            runBlocking(Dispatchers.IO) { addonDao.getProfileById(id) }
-        }?.splashEnabled ?: true
-        val showSplash = splashEnabledInProfile && safeState?.getBoolean(KEY_SPLASH_SHOWN) != true
-        if (!showSplash) _splashFinished.value = true
+        val hasSplashShown = safeState?.getBoolean(KEY_SPLASH_SHOWN) == true
+        val showSplash = !hasSplashShown
 
         if (showSplash) {
             splashManager = com.lumera.app.ui.splash.SplashManager(this) {
                 _splashFinished.value = true
             }
             splashManager?.prepare()
+        } else {
+            _splashFinished.value = true
         }
 
         setContent {
@@ -1006,9 +1005,22 @@ class MainActivity : ComponentActivity() {
             } // closes LocaleWrapper
         } // closes setContent
 
-        // Attach native splash overlay on top of Compose content â€” renders immediately
+        // Attach native splash overlay on top of Compose content — renders immediately
         if (showSplash) {
             splashManager?.attachOverlay()
+            lifecycleScope.launch(Dispatchers.IO) {
+                val profileId = profileConfigurationManager.getLastActiveProfileId()
+                val splashEnabled = if (profileId != null) {
+                    addonDao.getProfileById(profileId)?.splashEnabled ?: true
+                } else {
+                    true
+                }
+                if (!splashEnabled) {
+                    withContext(Dispatchers.Main) {
+                        splashManager?.dismiss()
+                    }
+                }
+            }
         }
     } // closes onCreate
 

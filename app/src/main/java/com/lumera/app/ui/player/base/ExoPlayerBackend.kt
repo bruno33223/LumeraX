@@ -1139,14 +1139,14 @@ class ExoPlayerBackend(
         }
 
         val loadControl = if (isTorrentStream) {
-            // Torrent: start playback with minimal buffered data (500ms vs default 2500ms).
-            // Data arrives piece-by-piece so waiting for 2.5s of buffer wastes time.
+            // Torrent: start playback with optimal buffers for volatile P2P networks.
+            // Increased minBufferMs and maxBufferMs to ensure stable playbacks and prevent stutters.
             DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
-                    /* minBufferMs = */ 5_000,
-                    /* maxBufferMs = */ 30_000,
-                    /* bufferForPlaybackMs = */ 500,
-                    /* bufferForPlaybackAfterRebufferMs = */ 1_500
+                    /* minBufferMs = */ 30_000,
+                    /* maxBufferMs = */ 120_000,
+                    /* bufferForPlaybackMs = */ 2_000,
+                    /* bufferForPlaybackAfterRebufferMs = */ 5_000
                 )
                 .build()
         } else {

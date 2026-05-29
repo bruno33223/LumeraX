@@ -231,9 +231,10 @@ class TorrentService : Service() {
 
     override fun onDestroy() {
         downloadJob?.cancel()
-        // Run cleanup synchronously on IO thread — must complete before job is cancelled
-        runBlocking(Dispatchers.IO) {
-            currentMagnet?.let { api.dropTorrent(it) }
+        // Run cleanup asynchronously to prevent blocking the UI thread during teardown
+        val magnetToDrop = currentMagnet
+        CoroutineScope(Dispatchers.IO).launch {
+            magnetToDrop?.let { api.dropTorrent(it) }
             engine.stop()
         }
         currentMagnet = null
