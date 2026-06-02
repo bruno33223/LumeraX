@@ -49,11 +49,11 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
             addProperty("action", "set")
             add("sets", JsonObject().apply {
                 addProperty("CacheSize", cacheBytes) // Dynamic RAM Cache
-                addProperty("ReaderReadAHead", 90) // Increased for more aggressive read ahead
-                addProperty("PreloadCache", 30) // Preload 30% of cache to ensure buffer stability
-                addProperty("ForceAllPeers", true) // Ensure it queries all possible peers for rare torrents
-                addProperty("ConnectionsLimit", connectionsLimit) // Increased for max peer discovery
-                addProperty("DhtConnectionLimit", connectionsLimit) // Increased for better DHT discovery
+                addProperty("ReaderReadAHead", 95) // Optimized to 95% for better buffer ahead on volatile P2P networks
+                addProperty("PreloadCache", 50) // 50% preload to guarantee stable chunk buffer before play start
+                addProperty("ForceAllPeers", false) // Set to false to avoid CPU/network congestion from slow peers
+                addProperty("ConnectionsLimit", connectionsLimit) // Enforce user-configured peer limits
+                addProperty("DhtConnectionLimit", connectionsLimit) // Enforce user-configured DHT limits
                 addProperty("PeersListenPort", 0)
                 addProperty("EnableIPv6", false) // IPv6 sometimes causes slow peer discovery timeout
                 addProperty("DisableUPNP", false) // Crucial for getting inbound connections from peers

@@ -235,7 +235,6 @@ class TorrentService : Service() {
         val magnetToDrop = currentMagnet
         CoroutineScope(Dispatchers.IO).launch {
             magnetToDrop?.let { api.dropTorrent(it) }
-            engine.stop()
         }
         currentMagnet = null
         job.cancel()

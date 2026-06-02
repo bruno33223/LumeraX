@@ -69,7 +69,7 @@ class AppUpdateManager @Inject constructor(
     @Volatile
     private var lastReleaseBody: String? = null
 
-    suspend fun checkForUpdate() {
+    suspend fun checkForUpdate(force: Boolean = false) {
         _state.value = UpdateState.Checking
         try {
             val release = withContext(Dispatchers.IO) { fetchLatestRelease() }
@@ -81,7 +81,7 @@ class AppUpdateManager @Inject constructor(
             val remoteVersion = release.tagName.removePrefix("v")
             val currentVersion = BuildConfig.VERSION_NAME
 
-            if (remoteVersion != currentVersion) {
+            if (force || remoteVersion != currentVersion) {
                 val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
                 if (apkAsset != null) {
                     if (!isAllowedDownloadUrl(apkAsset.downloadUrl)) {

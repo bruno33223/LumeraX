@@ -1140,13 +1140,14 @@ class ExoPlayerBackend(
 
         val loadControl = if (isTorrentStream) {
             // Torrent: start playback with optimal buffers for volatile P2P networks.
-            // Increased minBufferMs and maxBufferMs to ensure stable playbacks and prevent stutters.
+            // Adjusted minBufferMs to 20s and bufferForPlaybackMs to 8s to let peers warm up, 
+            // preventing the initial stutter cycle.
             DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
-                    /* minBufferMs = */ 30_000,
+                    /* minBufferMs = */ 20_000,
                     /* maxBufferMs = */ 120_000,
-                    /* bufferForPlaybackMs = */ 2_000,
-                    /* bufferForPlaybackAfterRebufferMs = */ 5_000
+                    /* bufferForPlaybackMs = */ 8_000,
+                    /* bufferForPlaybackAfterRebufferMs = */ 12_000
                 )
                 .build()
         } else {
@@ -1486,6 +1487,9 @@ class ExoPlayerBackend(
 
         _uiState.update { it.copy(errorMessage = null, isBuffering = true) }
 
+        // Preserve the current position (where the user sought to) instead of resetting to 0.
+        // This prevents the seek operation from snapping the video back to the beginning.
+        val currentPos = player.currentPosition
         runCatching {
             val mediaItem = MediaItem.Builder()
                 .setUri(source.url)
@@ -1494,8 +1498,8 @@ class ExoPlayerBackend(
             player.stop()
             player.clearMediaItems()
             player.setMediaSource(mediaSource)
-            pendingStartPositionMs = 0L
-            player.seekTo(0L)
+            pendingStartPositionMs = currentPos
+            player.seekTo(currentPos)
             player.prepare()
             player.playWhenReady = true
         }.onFailure { e ->

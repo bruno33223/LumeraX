@@ -38,6 +38,10 @@ android {
         buildConfigField("String", "GITHUB_OWNER", "\"bruno33223\"")
         buildConfigField("String", "GITHUB_REPO", "\"LumeraX\"")
 
+        // Local development config: set to true to enable the "Reinstall Current Version" button
+        val debugUserMode = project.findProperty("lumera.debug_user_mode")?.toString() ?: "false"
+        buildConfigField("boolean", "DEBUG_USER_MODE", debugUserMode)
+
         // ACRA crash reporting (loaded from local.properties)
         buildConfigField("String", "ACRA_URL", "\"$acraUrl\"")
         buildConfigField("String", "ACRA_TOKEN", "\"$acraToken\"")
@@ -67,6 +71,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

@@ -69,3 +69,6 @@ ANALISE_PERFORMANCE.md
 
 # Local build script
 build_apks.bat
+
+# Local debug and deployment tools
+debug_user_mode/

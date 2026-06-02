@@ -58,6 +58,7 @@ import com.lumera.app.data.update.UpdateState
 import com.lumera.app.data.player.PlaybackTrackSelectionStore
 import com.lumera.app.data.torrent.TorrentProgress
 import com.lumera.app.data.torrent.TorrentService
+import com.lumera.app.data.torrent.TorrServerEngine
 import com.lumera.app.data.player.SourceSelectionStore
 import com.lumera.app.ui.MainViewModel
 import com.lumera.app.ui.components.LumeraBackground
@@ -185,6 +186,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var streamSortingService: StreamSortingService
 
+    @Inject
+    lateinit var torrServerEngine: TorrServerEngine
+
     private var splashManager: com.lumera.app.ui.splash.SplashManager? = null
     private val _splashFinished = mutableStateOf(false)
 
@@ -197,6 +201,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         splashManager?.dismiss()
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            torrServerEngine.stop()
+        }
         super.onDestroy()
     }
 

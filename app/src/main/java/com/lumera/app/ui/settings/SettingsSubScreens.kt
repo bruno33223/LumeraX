@@ -2302,6 +2302,40 @@ fun AboutSettings(
             )
         }
 
+        if (BuildConfig.DEBUG_USER_MODE && updateState is UpdateState.UpToDate) {
+            Spacer(Modifier.height(12.dp))
+            val reinstallInteraction = remember { MutableInteractionSource() }
+            val isReinstallFocused by reinstallInteraction.collectIsFocusedAsState()
+            val reinstallScale by animateFloatAsState(if (isReinstallFocused) 1.02f else 1f)
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .scale(reinstallScale)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isReinstallFocused) accentColor.copy(0.15f) else Color.White.copy(0.05f))
+                    .border(
+                        if (isReinstallFocused) 1.dp else 0.dp,
+                        if (isReinstallFocused) accentColor else Color.Transparent,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .clickable(interactionSource = reinstallInteraction, indication = null) {
+                        scope.launch { updateManager.checkForUpdate(force = true) }
+                    }
+                    .focusable(interactionSource = reinstallInteraction)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "Reinstall Current Version",
+                    color = if (isReinstallFocused) Color.White else Color.White.copy(0.8f),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                )
+            }
+        }
+
         // UPDATE AVAILABLE SECTION
         if (updateState is UpdateState.UpdateAvailable) {
             val info = (updateState as UpdateState.UpdateAvailable).info
