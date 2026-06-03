@@ -415,6 +415,24 @@ class MainActivity : ComponentActivity() {
                         val settingsEntryRequester = remember { FocusRequester() }
                         val watchlistEntryRequester = remember { FocusRequester() }
 
+                        // Auto-focus content when update dialog finishes to prevent drawer expansion
+                        val isUpdateDialogVisible = _splashFinished.value && !updateDismissed && appUpdateManager.isPopupEnabled && (updateState is UpdateState.UpdateAvailable || updateState is UpdateState.Downloading || updateState is UpdateState.Error)
+                        var wasUpdateDialogVisible by remember { mutableStateOf(false) }
+                        LaunchedEffect(isUpdateDialogVisible) {
+                            if (wasUpdateDialogVisible && !isUpdateDialogVisible) {
+                                if (activeView == "menu") {
+                                    when (currentNav) {
+                                        NavDestination.Home, NavDestination.Movies, NavDestination.Series -> homeEntryRequester.requestFocus()
+                                        NavDestination.Search -> searchEntryRequester.requestFocus()
+                                        NavDestination.Settings -> settingsEntryRequester.requestFocus()
+                                        NavDestination.Watchlist -> watchlistEntryRequester.requestFocus()
+                                        else -> {}
+                                    }
+                                }
+                            }
+                            wasUpdateDialogVisible = isUpdateDialogVisible
+                        }
+
                         // STATE CHANGE TRIGGER:
                         LaunchedEffect(currentNav, activeView) {
                             if (activeView != "menu") return@LaunchedEffect

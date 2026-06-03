@@ -100,7 +100,7 @@ fun SettingsScreen(
         if (isContentFocused) {
             itemRequesters[selectedSection]?.requestFocus()
         } else {
-            drawerRequester.requestFocus()
+            onBack()
         }
     }
     
@@ -196,7 +196,7 @@ fun SettingsScreen(
                                         }
                                         Key.Back -> {
                                             if (!isTransitioning) {
-                                                drawerRequester.requestFocus()
+                                                onBack()
                                                 true
                                             } else false
                                         }

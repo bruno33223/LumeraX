@@ -107,7 +107,7 @@ fun MainDashboardContent(
                 currentProfile = currentProfile,
                 onBack = {
                     onNavigate(NavDestination.Home)
-                    drawerRequesters[NavDestination.Home]?.requestFocus()
+                    homeEntryRequester.requestFocus()
                 },
                 entryRequester = settingsEntryRequester,
                 drawerRequester = drawerRequesters[NavDestination.Settings]!!,
