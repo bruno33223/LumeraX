@@ -82,7 +82,7 @@ class TorrentService : Service() {
             TrackerFetcher.updateTrackersIfNeeded(this@TorrentService)
         }
 
-        val sanitizedMagnet = appendDefaultTrackers(magnet)
+        val sanitizedMagnet = appendDefaultTrackers(sanitizeMagnet(magnet))
 
         // Drop previous torrent to free TorrServer's RAM cache
         val previousMagnet = currentMagnet
@@ -280,6 +280,35 @@ class TorrentService : Service() {
             } catch (_: Exception) {}
         }
         return builder.toString()
+    }
+
+    private fun sanitizeMagnet(magnet: String): String {
+        if (!magnet.startsWith("magnet:", ignoreCase = true)) return magnet
+        val parts = magnet.split("&")
+        val cleanParts = mutableListOf<String>()
+        for (part in parts) {
+            if (part.startsWith("tr=", ignoreCase = true)) {
+                var trackerVal = part.substring(3)
+                if (trackerVal.startsWith("tracker:", ignoreCase = true)) {
+                    trackerVal = trackerVal.substring(8)
+                } else if (trackerVal.startsWith("tracker%3A", ignoreCase = true)) {
+                    trackerVal = trackerVal.substring(9)
+                }
+                val decoded = try {
+                    java.net.URLDecoder.decode(trackerVal, "UTF-8")
+                } catch (_: Exception) {
+                    trackerVal
+                }
+                if (decoded.startsWith("udp://", ignoreCase = true) || 
+                    decoded.startsWith("http://", ignoreCase = true) || 
+                    decoded.startsWith("https://", ignoreCase = true)) {
+                    cleanParts.add("tr=" + trackerVal)
+                }
+            } else {
+                cleanParts.add(part)
+            }
+        }
+        return cleanParts.joinToString("&")
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

@@ -45,12 +45,15 @@ class TorrServerApi(private val baseUrl: String = "http://127.0.0.1:8090") {
 
     suspend fun applyOptimalSettings(cacheSizeMb: Int = 200, connectionsLimit: Int = 500): Unit = withContext(Dispatchers.IO) {
         val cacheBytes = cacheSizeMb.toLong() * 1024 * 1024
+        // Calculate dynamic preload percent targeting ~15MB of data buffer (clamped between 3% and 15%)
+        // This ensures extremely fast playback start and instant seeking without playback stutters.
+        val preloadPercent = ((15 * 100) / cacheSizeMb).coerceIn(3, 15)
         val body = JsonObject().apply {
             addProperty("action", "set")
             add("sets", JsonObject().apply {
                 addProperty("CacheSize", cacheBytes) // Dynamic RAM Cache
                 addProperty("ReaderReadAHead", 95) // Optimized to 95% for better buffer ahead on volatile P2P networks
-                addProperty("PreloadCache", 50) // 50% preload to guarantee stable chunk buffer before play start
+                addProperty("PreloadCache", preloadPercent) // Dynamic preload to guarantee stable chunk buffer (10MB-15MB)
                 addProperty("ForceAllPeers", false) // Set to false to avoid CPU/network congestion from slow peers
                 addProperty("ConnectionsLimit", connectionsLimit) // Enforce user-configured peer limits
                 addProperty("DhtConnectionLimit", connectionsLimit) // Enforce user-configured DHT limits

@@ -1139,15 +1139,15 @@ class ExoPlayerBackend(
         }
 
         val loadControl = if (isTorrentStream) {
-            // Torrent: start playback with optimal buffers for volatile P2P networks.
-            // Adjusted minBufferMs to 20s and bufferForPlaybackMs to 8s to let peers warm up, 
-            // preventing the initial stutter cycle.
+            // Torrent: start playback with optimal buffers. Since TorrServer preloads ~15MB,
+            // we can reduce bufferForPlaybackMs to 3s to start almost instantly, while maintaining
+            // a healthy minBufferMs to absorb network jitter.
             DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
                     /* minBufferMs = */ 20_000,
                     /* maxBufferMs = */ 120_000,
-                    /* bufferForPlaybackMs = */ 8_000,
-                    /* bufferForPlaybackAfterRebufferMs = */ 12_000
+                    /* bufferForPlaybackMs = */ 3_000,
+                    /* bufferForPlaybackAfterRebufferMs = */ 6_000
                 )
                 .build()
         } else {
@@ -1230,10 +1230,14 @@ class ExoPlayerBackend(
         return intent.resolveActivity(pm) != null
     }
 
-    private fun createExtractorsFactory(): DefaultExtractorsFactory {
-        return DefaultExtractorsFactory()
+    private fun createExtractorsFactory(isTorrent: Boolean = false): DefaultExtractorsFactory {
+        val factory = DefaultExtractorsFactory()
             .setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS)
             .setTsExtractorTimestampSearchBytes(1_500 * TsExtractor.TS_PACKET_SIZE)
+        if (isTorrent) {
+            factory.setMatroskaExtractorFlags(androidx.media3.extractor.mkv.MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES)
+        }
+        return factory
     }
 
     private fun createMediaSource(sourceUrl: String, mediaItem: MediaItem): MediaSource {
@@ -1269,10 +1273,11 @@ class ExoPlayerBackend(
         // so for non-HLS/non-DASH (e.g. MKV) pass the full mediaItem directly.
         if (!isHls && !isDash) {
             val handler = assHandler
+            val extractorsFactory = createExtractorsFactory(isTorrent = isLocalhost)
             val factory = if (playbackSettings.assRendererEnabled && handler != null) {
                 DefaultMediaSourceFactory(okHttpFactory, AssExtractorsFactory(handler))
             } else {
-                DefaultMediaSourceFactory(okHttpFactory)
+                DefaultMediaSourceFactory(okHttpFactory, extractorsFactory)
             }
             return factory.createMediaSource(mediaItem)
         }

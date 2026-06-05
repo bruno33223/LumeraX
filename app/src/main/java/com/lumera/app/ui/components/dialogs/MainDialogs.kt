@@ -21,6 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.onFocusChanged
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -124,21 +129,68 @@ fun UpdateAvailableDialog(
                 )
                 if (info.changelog.isNotBlank()) {
                     Spacer(Modifier.height(16.dp))
+                    var isFocused by remember { mutableStateOf(false) }
+                    var isScrollingMode by remember { mutableStateOf(false) }
+                    val isScrollable = scrollState.maxValue > 0
+
+                    val borderColor = if (isScrollingMode && isFocused) {
+                        MaterialTheme.colorScheme.primary
+                    } else if (isFocused) {
+                        Color.White.copy(0.4f)
+                    } else {
+                        Color.White.copy(0.1f)
+                    }
+
+                    val borderWidth = if (isScrollingMode && isFocused) 2.dp else 1.dp
+                    val padding = if (isScrollingMode && isFocused) 12.dp else 8.dp
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(max = 180.dp)
+                            .border(borderWidth, borderColor, RoundedCornerShape(8.dp))
+                            .padding(padding)
                             .verticalScroll(scrollState)
-                            .focusable()
+                            .onFocusChanged {
+                                isFocused = it.isFocused
+                                if (!it.isFocused) {
+                                    isScrollingMode = false
+                                }
+                            }
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = null,
+                                enabled = isScrollable
+                            ) {
+                                isScrollingMode = !isScrollingMode
+                            }
                             .onPreviewKeyEvent { keyEvent ->
                                 if (keyEvent.type == KeyEventType.KeyDown) {
                                     when (keyEvent.key) {
+                                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                                            if (isScrollable) {
+                                                isScrollingMode = !isScrollingMode
+                                                true
+                                            } else {
+                                                false
+                                            }
+                                        }
+                                        Key.Back -> {
+                                            if (isScrollingMode) {
+                                                isScrollingMode = false
+                                                true
+                                            } else {
+                                                false
+                                            }
+                                        }
                                         Key.DirectionDown -> {
-                                            if (scrollState.value < scrollState.maxValue) {
-                                                coroutineScope.launch {
-                                                    scrollState.animateScrollTo(
-                                                        (scrollState.value + 40).coerceAtMost(scrollState.maxValue)
-                                                    )
+                                            if (isScrollingMode) {
+                                                if (scrollState.value < scrollState.maxValue) {
+                                                    coroutineScope.launch {
+                                                        scrollState.animateScrollTo(
+                                                            (scrollState.value + 40).coerceAtMost(scrollState.maxValue)
+                                                        )
+                                                    }
                                                 }
                                                 true
                                             } else {
@@ -146,11 +198,13 @@ fun UpdateAvailableDialog(
                                             }
                                         }
                                         Key.DirectionUp -> {
-                                            if (scrollState.value > 0) {
-                                                coroutineScope.launch {
-                                                    scrollState.animateScrollTo(
-                                                        (scrollState.value - 40).coerceAtLeast(0)
-                                                    )
+                                            if (isScrollingMode) {
+                                                if (scrollState.value > 0) {
+                                                    coroutineScope.launch {
+                                                        scrollState.animateScrollTo(
+                                                            (scrollState.value - 40).coerceAtLeast(0)
+                                                        )
+                                                    }
                                                 }
                                                 true
                                             } else {
@@ -159,10 +213,21 @@ fun UpdateAvailableDialog(
                                         }
                                         else -> false
                                     }
+                                } else if (keyEvent.type == KeyEventType.KeyUp) {
+                                    when (keyEvent.key) {
+                                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                                            isScrollable
+                                        }
+                                        Key.Back -> {
+                                            isScrollingMode
+                                        }
+                                        else -> false
+                                    }
                                 } else {
                                     false
                                 }
                             }
+                            .focusable(enabled = isScrollable)
                     ) {
                         Text(
                             info.changelog,
