@@ -1234,9 +1234,6 @@ class ExoPlayerBackend(
         val factory = DefaultExtractorsFactory()
             .setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS)
             .setTsExtractorTimestampSearchBytes(1_500 * TsExtractor.TS_PACKET_SIZE)
-        if (isTorrent) {
-            factory.setMatroskaExtractorFlags(androidx.media3.extractor.mkv.MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES)
-        }
         return factory
     }
 
