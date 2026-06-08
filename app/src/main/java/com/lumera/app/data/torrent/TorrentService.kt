@@ -253,17 +253,25 @@ class TorrentService : Service() {
     // Esta lista curada (Tier 1) garante o discovery mais rápido sem estourar a tabela NAT.
     private val defaultTrackers = listOf(
         "udp://tracker.opentrackr.org:1337/announce",
-        "udp://tracker.internetwarriors.net:1337/announce",
-        "udp://exodus.desync.com:6969/announce",
-        "udp://tracker.cyberia.is:6969/announce",
-        "udp://tracker.torrent.eu.org:451/announce",
-        "udp://tracker.moeking.me:6969/announce",
-        "udp://retracker.lanta-net.ru:2710/announce",
-        "udp://open.demonii.com:1337/announce",
-        "udp://tracker.coppersurfer.tk:6969/announce",
-        "udp://tracker.tiny-vps.com:6969/announce",
         "udp://open.stealth.si:80/announce",
-        "http://tracker.openbittorrent.com:80/announce"
+        "udp://tracker.torrent.eu.org:451/announce",
+        "udp://tracker.publictracker.xyz:6969/announce",
+        "udp://open.demonii.com:1337/announce",
+        "udp://zer0day.ch:1337/announce",
+        "udp://wepzone.net:6969/announce",
+        "udp://uabits.today:6990/announce",
+        "udp://tracker.wildkat.net:6969/announce",
+        "udp://tracker.tryhackx.org:6969/announce",
+        "udp://tracker.theoks.net:6969/announce",
+        "udp://tracker.t-1.org:6969/announce",
+        "udp://tracker.qu.ax:6969/announce",
+        "udp://tracker.opentorrent.top:6969/announce",
+        "udp://tracker.flatuslifir.is:6969/announce",
+        "udp://tracker.dler.org:6969/announce",
+        "udp://tracker.corpscorp.online:80/announce",
+        "udp://tracker.bluefrog.pw:2710/announce",
+        "udp://tracker.bittor.pw:1337/announce",
+        "udp://tracker.auctor.tv:6969/announce"
     )
 
     private fun appendDefaultTrackers(magnet: String): String {
