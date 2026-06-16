@@ -102,7 +102,7 @@ class TorrentService : Service() {
                 engine.start()
                 val prefs = getSharedPreferences("lumera_prefs", android.content.Context.MODE_PRIVATE)
                 val cacheMb = prefs.getInt("torrserver_cache_mb", 200)
-                val connectionsLimit = prefs.getInt("torrserver_connections_limit", 500)
+                val connectionsLimit = prefs.getInt("torrserver_connections_limit", 120).coerceIn(40, 200)
                 api.applyOptimalSettings(cacheMb, connectionsLimit)
 
                 // Phase 2: Add torrent

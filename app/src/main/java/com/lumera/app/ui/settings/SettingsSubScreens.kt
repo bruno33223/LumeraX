@@ -663,7 +663,7 @@ fun PlaybackSettings(
                 steps = 14
             )
             
-            var torrConnections by remember { mutableIntStateOf(prefs.getInt("torrserver_connections_limit", 500)) }
+            var torrConnections by remember { mutableIntStateOf(prefs.getInt("torrserver_connections_limit", 120)) }
             
             Spacer(Modifier.height(16.dp))
             Text(
@@ -684,8 +684,8 @@ fun PlaybackSettings(
                     torrConnections = it.toInt()
                     prefs.edit().putInt("torrserver_connections_limit", torrConnections).apply()
                 },
-                valueRange = 250f..1000f,
-                steps = 2
+                valueRange = 80f..300f,
+                steps = 11
             )
             Spacer(Modifier.height(12.dp))
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(0.1f)))

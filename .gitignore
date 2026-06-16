@@ -72,3 +72,4 @@ build_apks.bat
 
 # Local debug and deployment tools
 debug_user_mode/
+build_apk.bat

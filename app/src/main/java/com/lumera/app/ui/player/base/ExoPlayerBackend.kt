@@ -517,12 +517,27 @@ class ExoPlayerBackend(
             } else {
                 // mediaUrl doesn't match any source (e.g. resolved torrent localhost URL)
                 // Play the mediaUrl directly, mark first source as current
-                currentSourceId = normalizedSources.firstOrNull()?.id
-                prepareSource(
-                    source = defaultSource,
-                    startPositionMs = request.startPositionMs,
-                    autoPlay = request.autoPlay
-                )
+                val firstSource = normalizedSources.firstOrNull()
+                if (firstSource != null) {
+                    currentSourceId = firstSource.id
+                    // Update the first source's URL in the options list so that it points to the playable localhost URL
+                    val updatedSources = normalizedSources.map {
+                        if (it.id == firstSource.id) it.copy(url = normalizedRequest.mediaUrl) else it
+                    }
+                    _sourceOptions.value = updatedSources
+                    prepareSource(
+                        source = firstSource.copy(url = normalizedRequest.mediaUrl),
+                        startPositionMs = request.startPositionMs,
+                        autoPlay = request.autoPlay
+                    )
+                } else {
+                    currentSourceId = defaultSource.id
+                    prepareSource(
+                        source = defaultSource,
+                        startPositionMs = request.startPositionMs,
+                        autoPlay = request.autoPlay
+                    )
+                }
             }
         }
     }
@@ -532,7 +547,7 @@ class ExoPlayerBackend(
         val player = exoPlayer ?: return
         val wasPaused = !player.playWhenReady
         player.play()
-        if (wasPaused && player.playbackState == Player.STATE_READY) {
+        if (wasPaused && player.playbackState == Player.STATE_READY && !isTorrentStream) {
             // Force a codec flush on resume to prevent indefinite buffering on
             // certain MKV files. Seeking to current position + 1ms ensures
             // ExoPlayer doesn't optimise the seek away, while CLOSEST_SYNC
@@ -599,6 +614,10 @@ class ExoPlayerBackend(
                 handler(source.url, source.fileIdx, source.fileName) { localUrl ->
                     if (released) return@handler
                     val resolvedSource = source.copy(url = localUrl)
+                    // Update the source options list so that the source now has the resolved localhost URL
+                    _sourceOptions.value = _sourceOptions.value.map {
+                        if (it.id == sourceId) resolvedSource else it
+                    }
                     switchToSource(sourceId, resolvedSource)
                 }
                 return

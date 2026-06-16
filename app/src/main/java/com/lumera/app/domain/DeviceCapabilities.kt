@@ -40,9 +40,9 @@ object DeviceCapabilities {
         }
         
         val connections = when (tier) {
-            HardwareTier.LOW -> 250
-            HardwareTier.MID -> 500
-            HardwareTier.HIGH -> 1000
+            HardwareTier.LOW -> 80
+            HardwareTier.MID -> 120
+            HardwareTier.HIGH -> 200
         }
 
         prefs.edit()
