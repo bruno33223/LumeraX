@@ -77,11 +77,24 @@ fun PlayerScreen(
     val context = LocalContext.current
     val hostView = LocalView.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val runtime = remember(movieId, backendType, playbackSettings) {
+    val runtime = remember(movieId, backendType) {
         PlayerBackendFactory.create(context, backendType, playbackSettings)
     }
     val playbackController = runtime.playbackController
     val renderSurface = runtime.renderSurface
+
+    LaunchedEffect(playbackController, playbackSettings.subtitleOffset) {
+        playbackController.setSubtitleVerticalOffset(playbackSettings.subtitleOffset)
+    }
+    LaunchedEffect(playbackController, playbackSettings.subtitleSize) {
+        playbackController.setSubtitleSize(playbackSettings.subtitleSize)
+    }
+    LaunchedEffect(playbackController, playbackSettings.subtitleTextColor) {
+        playbackController.setSubtitleTextColor(playbackSettings.subtitleTextColor)
+    }
+    LaunchedEffect(playbackController, playbackSettings.subtitleBackgroundColor) {
+        playbackController.setSubtitleBackgroundColor(playbackSettings.subtitleBackgroundColor)
+    }
 
     LaunchedEffect(playbackController, onMagnetSourceSelected) {
         (playbackController as? ExoPlayerBackend)?.onMagnetSourceSelected = onMagnetSourceSelected
