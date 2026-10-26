@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.viewinterop.AndroidView
@@ -68,6 +69,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -85,6 +88,7 @@ private const val IO_AUTO_RETRY_DELAY_MS = 450L
 private const val AUDIO_AUTO_RETRY_DELAY_MS = 1_200L
 private const val MAX_IO_AUTO_RETRIES_PER_SOURCE = 1
 private const val MAX_AUDIO_AUTO_RETRIES_PER_SOURCE = 3
+private const val WATCHDOG_TUNNELING_TIMEOUT_MS = 4_000L
 
 class ExoPlayerBackend(
     private val appContext: Context,
@@ -218,6 +222,13 @@ class ExoPlayerBackend(
     private var subtitleTextColor: Int = 0xFFFFFFFF.toInt()
     private var subtitleBackgroundColor: Int = 0x00000000
     private var lastCueGroup: androidx.media3.common.text.CueGroup? = null
+
+    // Dynamic decoder, tunneling and TV resilience recovery state
+    private var isTunnelingActive: Boolean = playbackSettings.tunnelingEnabled
+    private var currentDecoderPriority: Int = playbackSettings.decoderPriority
+    private var tunnelingFallbackAttempted: Boolean = false
+    private var softwareDecoderFallbackAttempted: Boolean = false
+    private var audioPlaybackStartedElapsedMs: Long = 0L
     private companion object {
         private const val DEFAULT_SUBTITLE_BOTTOM_PADDING_FRACTION = 0.08f
         private const val MIN_SUBTITLE_OFFSET_PERCENT = -20
@@ -285,6 +296,7 @@ class ExoPlayerBackend(
         }
 
         override fun onRenderedFirstFrame() {
+            audioPlaybackStartedElapsedMs = 0L
             _uiState.update { it.copy(hasRenderedFirstFrame = true) }
         }
 
@@ -302,6 +314,7 @@ class ExoPlayerBackend(
         override fun onPlayerError(error: PlaybackException) {
             if (retryFromStartAfter416(error)) return
             if (attemptAutoRetryFromIoError(error)) return
+            if (attemptDecoderRecovery(error)) return
             // Parsing errors near the end of a stream are common with some sources.
             // Treat them as playback completion instead of showing an error.
             if (isParsingErrorNearEnd(error)) {
@@ -375,7 +388,13 @@ class ExoPlayerBackend(
     @Composable
     override fun Content(modifier: Modifier) {
         val player by _playerReady.collectAsState()
-        val currentUiState by _uiState.collectAsState()
+        val resizeMode by remember { _uiState.map { it.resizeMode }.distinctUntilChanged() }
+            .collectAsState(initial = _uiState.value.resizeMode)
+        val subtitleOffset by remember { _uiState.map { it.subtitleVerticalOffsetPercent }.distinctUntilChanged() }
+            .collectAsState(initial = _uiState.value.subtitleVerticalOffsetPercent)
+        val subtitleSize by remember { _uiState.map { it.subtitleSizePercent }.distinctUntilChanged() }
+            .collectAsState(initial = _uiState.value.subtitleSizePercent)
+
         if (player != null) {
             AndroidView(
                 modifier = modifier.fillMaxSize(),
@@ -401,6 +420,7 @@ class ExoPlayerBackend(
                         // ASS subtitle overlay as sibling ON TOP of PlayerView
                         if (playbackSettings.assRendererEnabled) {
                             val overlay = assHandler?.overlayView ?: SubtitleOverlayView(context)
+                            (overlay.parent as? android.view.ViewGroup)?.removeView(overlay)
                             addView(overlay, android.widget.FrameLayout.LayoutParams(
                                 android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
                                 android.widget.FrameLayout.LayoutParams.MATCH_PARENT
@@ -411,27 +431,33 @@ class ExoPlayerBackend(
                 update = { frame ->
                     val pv = frame.getChildAt(0) as? PlayerView
                     if (pv != null) {
-                        pv.keepScreenOn = player?.isPlaying == true
-                        pv.resizeMode = if (currentUiState.resizeMode == 5) 0 else currentUiState.resizeMode
-                        
-                        val exoContentFrame = pv.findViewById<android.view.View>(androidx.media3.ui.R.id.exo_content_frame)
-                        val targetView = exoContentFrame ?: pv.videoSurfaceView as? android.view.View
-                        
-                        val scale = if (currentUiState.resizeMode == 5) 1.34f else 1.0f
-                        if (targetView?.scaleX != scale) {
-                            targetView?.scaleX = scale
-                            targetView?.scaleY = scale
-                            targetView?.requestLayout()
-                            targetView?.invalidate()
-                            
-                            // Force parent layout update to ensure Window Manager (HWC) applies the new surface bounds
-                            pv.requestLayout()
-                            pv.invalidate()
+                        if (pv.player !== player) {
+                            pv.player = player
                         }
-                        
-                        applySubtitleOffset(pv, currentUiState.subtitleVerticalOffsetPercent)
-                        applySubtitleSize(pv, currentUiState.subtitleSizePercent)
+                        // Use native AspectRatioFrameLayout resize mode (RESIZE_MODE_ZOOM for ultra-wide mode 5)
+                        pv.resizeMode = if (resizeMode == 5) {
+                            androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                        } else {
+                            resizeMode
+                        }
+
+                        // Ensure clean 1.0 scaling on video views without SurfaceView matrix hacks
+                        val exoContentFrame = pv.findViewById<android.view.View>(androidx.media3.ui.R.id.exo_content_frame)
+                        if (exoContentFrame?.scaleX != 1.0f) {
+                            exoContentFrame?.scaleX = 1.0f
+                            exoContentFrame?.scaleY = 1.0f
+                        }
+
+                        applySubtitleOffset(pv, subtitleOffset)
+                        applySubtitleSize(pv, subtitleSize)
                         applySubtitleCaptionStyle(pv)
+                    }
+                },
+                onRelease = { frame ->
+                    val pv = frame.getChildAt(0) as? PlayerView
+                    pv?.player = null
+                    if (playerView === pv) {
+                        playerView = null
                     }
                 }
             )
@@ -979,6 +1005,10 @@ class ExoPlayerBackend(
         stopProgressLoop()
         audioSwitchRecoveryJob = null
 
+        audioPlaybackStartedElapsedMs = 0L
+        playerView?.player = null
+        playerView = null
+
         exoPlayer?.let { player ->
             player.removeListener(playerListener)
             player.removeAnalyticsListener(analyticsListener)
@@ -986,7 +1016,6 @@ class ExoPlayerBackend(
         }
         exoPlayer = null
         _playerReady.value = null
-        playerView = null
         lastCueGroup = null
         subtitleDelayUs.set(0L)
 
@@ -1044,6 +1073,11 @@ class ExoPlayerBackend(
             ioAutoRetrySourceId = source.id
             ioAutoRetryCountForCurrentSource = 0
             hasRetriedCurrentSourceAfter416 = false
+            tunnelingFallbackAttempted = false
+            softwareDecoderFallbackAttempted = false
+            isTunnelingActive = playbackSettings.tunnelingEnabled
+            currentDecoderPriority = playbackSettings.decoderPriority
+            audioPlaybackStartedElapsedMs = 0L
         }
 
         audioSwitchRecoveryJob?.cancel()
@@ -1146,6 +1180,25 @@ class ExoPlayerBackend(
         }
     }
 
+    private fun buildTvLoadControl(isTorrent: Boolean): DefaultLoadControl {
+        val minBufferMs = 15_000
+        val maxBufferMs = 30_000
+        val bufferForPlaybackMs = if (isTorrent) 2_500 else 2_000
+        val bufferForPlaybackAfterRebufferMs = 5_000
+        val targetBufferBytes = if (isTorrent) 64 * 1024 * 1024 else 48 * 1024 * 1024
+
+        return DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                minBufferMs,
+                maxBufferMs,
+                bufferForPlaybackMs,
+                bufferForPlaybackAfterRebufferMs
+            )
+            .setTargetBufferBytes(targetBufferBytes)
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+    }
+
     private fun ensurePlayer(): ExoPlayer {
         exoPlayer?.let { return it }
 
@@ -1153,38 +1206,24 @@ class ExoPlayerBackend(
             setParameters(
                 buildUponParameters()
                     .setAllowInvalidateSelectionsOnRendererCapabilitiesChange(true)
-                    .setTunnelingEnabled(playbackSettings.tunnelingEnabled)
+                    .setTunnelingEnabled(isTunnelingActive)
             )
         }
 
-        val loadControl = if (isTorrentStream) {
-            // Torrent: start playback with optimal buffers. Since TorrServer preloads ~15MB,
-            // we can reduce bufferForPlaybackMs to 3s to start almost instantly, while maintaining
-            // a healthy minBufferMs to absorb network jitter.
-            DefaultLoadControl.Builder()
-                .setBufferDurationsMs(
-                    /* minBufferMs = */ 20_000,
-                    /* maxBufferMs = */ 120_000,
-                    /* bufferForPlaybackMs = */ 3_000,
-                    /* bufferForPlaybackAfterRebufferMs = */ 6_000
-                )
-                .build()
-        } else {
-            DefaultLoadControl.Builder().build()
-        }
+        val loadControl = buildTvLoadControl(isTorrentStream)
 
         val renderersFactory = if (playbackSettings.assRendererEnabled) {
             val handler = getOrCreateAssHandler()
             AssRenderersFactory(appContext, handler).apply {
                 setEnableDecoderFallback(true)
             }
-                .setExtensionRendererMode(playbackSettings.decoderPriority)
+                .setExtensionRendererMode(currentDecoderPriority)
                 .setMapDV7ToHevc(playbackSettings.mapDV7ToHevc)
         } else {
             SubtitleDelayRenderersFactory(appContext, subtitleDelayUs::get).apply {
                 setEnableDecoderFallback(true)
             }
-                .setExtensionRendererMode(playbackSettings.decoderPriority)
+                .setExtensionRendererMode(currentDecoderPriority)
                 .setMapDV7ToHevc(playbackSettings.mapDV7ToHevc)
         }
 
@@ -1390,6 +1429,119 @@ class ExoPlayerBackend(
                 isReady = player.playbackState == Player.STATE_READY,
                 playbackSpeed = speed,
                 currentSourceId = currentSourceId ?: it.currentSourceId
+            )
+        }
+
+        // Watchdog: detect audio playing while video surface never renders a frame (common DSP tunneling failure on TV chips)
+        if (player.isPlaying && !_uiState.value.hasRenderedFirstFrame && isTunnelingActive && !tunnelingFallbackAttempted) {
+            val now = SystemClock.elapsedRealtime()
+            if (audioPlaybackStartedElapsedMs == 0L) {
+                audioPlaybackStartedElapsedMs = now
+            } else if (now - audioPlaybackStartedElapsedMs >= WATCHDOG_TUNNELING_TIMEOUT_MS) {
+                audioPlaybackStartedElapsedMs = 0L
+                triggerTunnelingWatchdogRecovery()
+                return
+            }
+        } else {
+            audioPlaybackStartedElapsedMs = 0L
+        }
+    }
+
+    private fun triggerTunnelingWatchdogRecovery() {
+        if (released) return
+        val player = exoPlayer ?: return
+        val sourceId = currentSourceId ?: return
+        val source = _sourceOptions.value.firstOrNull { it.id == sourceId } ?: return
+
+        tunnelingFallbackAttempted = true
+        isTunnelingActive = false
+
+        val resumePosition = player.currentPosition.coerceAtLeast(0L)
+        val shouldAutoPlay = player.playWhenReady
+
+        _uiState.update {
+            it.copy(
+                errorMessage = "Recovering video sync (tunneling disabled)...",
+                isBuffering = true
+            )
+        }
+        recreatePlayerAndResume(source, resumePosition, shouldAutoPlay)
+    }
+
+    private fun isDecoderError(error: PlaybackException): Boolean {
+        val codeName = error.errorCodeName.uppercase(Locale.US)
+        if (codeName.startsWith("ERROR_CODE_DECODER_") || codeName.startsWith("ERROR_CODE_DECODING_")) {
+            return true
+        }
+        val cause = error.cause
+        if (cause is android.media.MediaCodec.CodecException) return true
+        if (cause?.javaClass?.simpleName?.contains("Decoder") == true) return true
+        return false
+    }
+
+    private fun attemptDecoderRecovery(error: PlaybackException): Boolean {
+        if (!isDecoderError(error)) return false
+        val player = exoPlayer ?: return false
+        val sourceId = currentSourceId ?: return false
+        val source = _sourceOptions.value.firstOrNull { it.id == sourceId } ?: return false
+        val resumePosition = player.currentPosition.coerceAtLeast(0L)
+        val shouldAutoPlay = player.playWhenReady
+
+        // Phase 1: If hardware tunneling was enabled, disable it first and retry
+        if (isTunnelingActive && !tunnelingFallbackAttempted) {
+            tunnelingFallbackAttempted = true
+            isTunnelingActive = false
+            _uiState.update {
+                it.copy(
+                    errorMessage = "Reconfiguring decoder (disabling tunneling)...",
+                    isBuffering = true
+                )
+            }
+            recreatePlayerAndResume(source, resumePosition, shouldAutoPlay)
+            return true
+        }
+
+        // Phase 2: Fallback to software extension decoders (FFmpeg/AV1)
+        if (!softwareDecoderFallbackAttempted) {
+            softwareDecoderFallbackAttempted = true
+            isTunnelingActive = false
+            currentDecoderPriority = 2 // PREFER_EXTENSION
+            _uiState.update {
+                it.copy(
+                    errorMessage = "Switching to software decoder fallback...",
+                    isBuffering = true
+                )
+            }
+            recreatePlayerAndResume(source, resumePosition, shouldAutoPlay)
+            return true
+        }
+
+        return false
+    }
+
+    private fun recreatePlayerAndResume(
+        source: PlayerSourceOption,
+        resumePosition: Long,
+        shouldAutoPlay: Boolean
+    ) {
+        scope.launch {
+            playerView?.player = null
+            exoPlayer?.let { p ->
+                p.removeListener(playerListener)
+                p.removeAnalyticsListener(analyticsListener)
+                p.release()
+            }
+            exoPlayer = null
+            _playerReady.value = null
+
+            delay(200L)
+            if (released) return@launch
+
+            prepareSource(
+                source = source,
+                startPositionMs = resumePosition,
+                autoPlay = shouldAutoPlay,
+                resetSourceRetryBudget = false
             )
         }
     }

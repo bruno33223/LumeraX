@@ -73,3 +73,14 @@ build_apks.bat
 # Local debug and deployment tools
 debug_user_mode/
 build_apk.bat
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# E2E Test Credentials & Results
+.env.test
+.env.test.*
+!.env.test.example
+test-results/

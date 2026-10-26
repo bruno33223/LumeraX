@@ -29,26 +29,24 @@ android {
 }
 
 dependencies {
-    val media3Version = "1.10.0-beta01"
-
-    api("androidx.media3:media3-common:$media3Version")
-    api("androidx.media3:media3-container:$media3Version")
-    api("androidx.media3:media3-datasource:$media3Version")
-    api("androidx.media3:media3-datasource-okhttp:$media3Version")
-    api("androidx.media3:media3-decoder:$media3Version")
-    api("androidx.media3:media3-exoplayer-dash:$media3Version") {
+    api(libs.androidx.media3.common)
+    api(libs.androidx.media3.container)
+    api(libs.androidx.media3.datasource)
+    api(libs.androidx.media3.datasource.okhttp)
+    api(libs.androidx.media3.decoder)
+    api(libs.androidx.media3.exoplayer.dash) {
         exclude(group = "androidx.media3", module = "media3-exoplayer")
     }
-    api("androidx.media3:media3-exoplayer-hls:$media3Version") {
+    api(libs.androidx.media3.exoplayer.hls) {
         exclude(group = "androidx.media3", module = "media3-exoplayer")
     }
-    api("androidx.media3:media3-exoplayer-rtsp:$media3Version") {
+    api(libs.androidx.media3.exoplayer.rtsp) {
         exclude(group = "androidx.media3", module = "media3-exoplayer")
     }
-    api("androidx.media3:media3-exoplayer-smoothstreaming:$media3Version") {
+    api(libs.androidx.media3.exoplayer.smoothstreaming) {
         exclude(group = "androidx.media3", module = "media3-exoplayer")
     }
-    api("androidx.media3:media3-extractor:$media3Version")
-    api("androidx.media3:media3-session:$media3Version")
-    api("androidx.media3:media3-ui:$media3Version")
+    api(libs.androidx.media3.extractor)
+    api(libs.androidx.media3.session)
+    api(libs.androidx.media3.ui)
 }

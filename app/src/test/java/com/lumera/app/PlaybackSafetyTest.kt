@@ -46,7 +46,7 @@ class PlaybackSafetyTest {
         }
 
         // Simulating the play() method
-        val simulatePlay: (isTorrent: Boolean, isPaused: Boolean, currentPos: Long) -> Unit = { isTorrent, isPaused, currentPos ->
+        fun simulatePlay(isTorrent: Boolean, isPaused: Boolean, currentPos: Long) {
             val wasPaused = isPaused
             // Simulate starting playback
             if (wasPaused) {
