@@ -72,21 +72,57 @@ jobs:
           name: Lumera-Debug-APK
           path: Lumera/app/build/outputs/apk/debug/*.apk
 
-      # 8. Decode Release Keystore (if secret is configured)
-      - name: Decode Release Keystore
-        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+      # 8. Validate Release Signing Credentials (Fail-Fast)
+      - name: Validate Release Signing Credentials
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD || secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > Lumera/app/release.keystore
+          echo "Validando credenciais de assinatura para Release APK..."
+          MISSING=0
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Secret de assinatura ausente: RELEASE_KEYSTORE_BASE64"
+            MISSING=1
+          fi
+          if [ -z "$STORE_PASSWORD" ]; then
+            echo "::error::Secret de assinatura ausente: RELEASE_STORE_PASSWORD (ou RELEASE_KEYSTORE_PASSWORD)"
+            MISSING=1
+          fi
+          if [ -z "$KEY_ALIAS" ]; then
+            echo "::error::Secret de assinatura ausente: RELEASE_KEY_ALIAS"
+            MISSING=1
+          fi
+          if [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Secret de assinatura ausente: RELEASE_KEY_PASSWORD"
+            MISSING=1
+          fi
+          if [ "$MISSING" -ne 0 ]; then
+            echo "::error::Credenciais de assinatura de Release incompletas no GitHub Secrets! Abortando execução para impedir geração de APK não assinado."
+            exit 1
+          fi
+          echo "Todas as credenciais de assinatura de release foram validadas com sucesso."
 
-      # 9. Build Release APK (Signed Production version)
+      # 9. Decode Release Keystore
+      - name: Decode Release Keystore
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > Lumera/app/release.keystore
+          if [ ! -s "Lumera/app/release.keystore" ]; then
+            echo "::error::Falha na decodificação do keystore: arquivo Lumera/app/release.keystore vazio ou inexistente!"
+            exit 1
+          fi
+
+      # 10. Build Release APK (Signed Production version)
       - name: Build Release APK
-        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
         working-directory: Lumera
         env:
           KEYSTORE_PATH: "app/release.keystore"
           RELEASE_KEYSTORE_PATH: "app/release.keystore"
-          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD || secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD || secrets.RELEASE_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
@@ -94,9 +130,8 @@ jobs:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
         run: ./gradlew assembleRelease --stacktrace
 
-      # 10. Upload Release APK
+      # 11. Upload Release APK
       - name: Upload Release APK
-        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: LumeraX-Release-APK
