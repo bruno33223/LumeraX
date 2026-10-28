@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -11,16 +12,31 @@ plugins {
 
 }
 
-// Read ACRA config from local.properties (keeps secrets out of version control)
+// Read config from local.properties and environment variables (keeps secrets out of version control)
 val localProperties = Properties().apply {
     val localPropsFile = rootProject.file("local.properties")
     if (localPropsFile.exists()) load(localPropsFile.inputStream())
 }
-val acraUrl: String = localProperties.getProperty("acra.url", "")
-val acraToken: String = localProperties.getProperty("acra.token", "")
-val tmdbApiKey: String = localProperties.getProperty("tmdb.api_key", "")
-val traktClientId: String = localProperties.getProperty("TRAKT_CLIENT_ID", "")
-val traktClientSecret: String = localProperties.getProperty("TRAKT_CLIENT_SECRET", "")
+
+fun getSecureProperty(key: String, vararg envVars: String, default: String = ""): String {
+    for (envVar in envVars) {
+        val envVal = System.getenv(envVar)
+        if (!envVal.isNullOrBlank()) return envVal
+    }
+    val propVal = localProperties.getProperty(key)
+    if (!propVal.isNullOrBlank()) return propVal
+
+    val projectProp = project.findProperty(key)?.toString()
+    if (!projectProp.isNullOrBlank()) return projectProp
+
+    return default
+}
+
+val acraUrl: String = getSecureProperty("acra.url", "ACRA_URL")
+val acraToken: String = getSecureProperty("acra.token", "ACRA_TOKEN")
+val tmdbApiKey: String = getSecureProperty("tmdb.api_key", "TMDB_API_KEY")
+val traktClientId: String = getSecureProperty("TRAKT_CLIENT_ID", "TRAKT_CLIENT_ID")
+val traktClientSecret: String = getSecureProperty("TRAKT_CLIENT_SECRET", "TRAKT_CLIENT_SECRET")
 
 android {
     namespace = "com.lumera.app"
@@ -63,13 +79,28 @@ android {
     }
 
     signingConfigs {
-        val releaseKeystore = project.file("lumera-release.jks")
-        if (releaseKeystore.exists()) {
+        val keystorePath = getSecureProperty("release.keystore.path", "KEYSTORE_PATH", "RELEASE_KEYSTORE_PATH", default = "lumera-release.jks")
+        val keystoreFile = if (File(keystorePath).isAbsolute) {
+            File(keystorePath)
+        } else {
+            val rootFile = rootProject.file(keystorePath)
+            if (rootFile.exists()) rootFile else project.file(keystorePath)
+        }
+        val storePassword = getSecureProperty("release.store.password", "STORE_PASSWORD", "RELEASE_STORE_PASSWORD")
+        val keyAlias = getSecureProperty("release.key.alias", "KEY_ALIAS", "RELEASE_KEY_ALIAS")
+        val keyPassword = getSecureProperty("release.key.password", "KEY_PASSWORD", "RELEASE_KEY_PASSWORD")
+
+        val isReleaseSigningConfigured = keystoreFile.exists() &&
+            storePassword.isNotBlank() &&
+            keyAlias.isNotBlank() &&
+            keyPassword.isNotBlank()
+
+        if (isReleaseSigningConfigured) {
             create("release") {
-                storeFile = releaseKeystore
-                storePassword = "lumerapass"
-                keyAlias = "lumera"
-                keyPassword = "lumerapass"
+                storeFile = keystoreFile
+                this.storePassword = storePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
             }
         }
     }
@@ -87,6 +118,7 @@ android {
             if (releaseConfig != null) {
                 signingConfig = releaseConfig
             } else {
+                logger.warn("AVISO CRÍTICO: Chaves de assinatura de release não configuradas. Utilizando assinatura de debug para compilação local de teste.")
                 signingConfig = signingConfigs.getByName("debug")
             }
             proguardFiles(
