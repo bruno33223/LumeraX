@@ -118,14 +118,8 @@ android {
             if (releaseConfig != null) {
                 signingConfig = releaseConfig
             } else {
-                val isBuildingRelease = gradle.startParameter.taskNames.any { task ->
-                    task.contains("assembleRelease", ignoreCase = true) ||
-                    task.contains("bundleRelease", ignoreCase = true) ||
-                    task.endsWith("assemble", ignoreCase = true) ||
-                    task.endsWith("bundle", ignoreCase = true)
-                }
                 val isCi = System.getenv("CI") == "true" || System.getenv("GITHUB_ACTIONS") == "true"
-                if (isCi && isBuildingRelease) {
+                if (isCi) {
                     throw GradleException("FATAL: Tentativa de compilar build de Release em ambiente CI sem chaves de assinatura válidas configuradas. Abortando.")
                 }
                 logger.warn("AVISO: Chaves de assinatura de release não configuradas. Utilizando assinatura de debug para compilação local de teste.")
