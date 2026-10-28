@@ -118,12 +118,7 @@ android {
             if (releaseConfig != null) {
                 signingConfig = releaseConfig
             } else {
-                val isCi = System.getenv("CI") == "true" || System.getenv("GITHUB_ACTIONS") == "true"
-                if (isCi) {
-                    throw GradleException("FATAL: Tentativa de compilar build de Release em ambiente CI sem chaves de assinatura válidas configuradas. Abortando.")
-                }
-                logger.warn("AVISO: Chaves de assinatura de release não configuradas. Utilizando assinatura de debug para compilação local de teste.")
-                signingConfig = signingConfigs.getByName("debug")
+                logger.warn("AVISO: Chaves de assinatura de release não configuradas no signingConfigs.")
             }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -161,6 +156,19 @@ android {
         }
         jniLibs {
             useLegacyPackaging = true
+        }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val isCi = System.getenv("CI") == "true" || System.getenv("GITHUB_ACTIONS") == "true"
+    if (isCi) {
+        val requiresReleaseSigning = allTasks.any { task ->
+            task.name.contains("Release", ignoreCase = true) &&
+                (task.name.startsWith("assemble") || task.name.startsWith("bundle") || task.name.startsWith("package"))
+        }
+        if (requiresReleaseSigning && android.signingConfigs.findByName("release") == null) {
+            throw GradleException("FATAL: Tentativa de compilar build de Release em ambiente CI sem chaves de assinatura válidas configuradas. Abortando.")
         }
     }
 }
